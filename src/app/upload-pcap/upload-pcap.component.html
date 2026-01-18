@@ -1,0 +1,41 @@
+<app-file-drop-overlay
+  [isActive]="isDragActive"
+  (fileDropped)="onFileDropped($event)"
+></app-file-drop-overlay>
+
+<div class="page">
+  <div class="center">
+    <div class="header">
+      <div class="headline">Flight Data</div>
+      <div class="subhead">Upload a PCAP file or continue with an existing flight</div>
+    </div>
+
+    <div class="cards">
+      <app-upload-choice-card
+        title="Upload PCAP"
+        description="Click to choose a file (.pcap / .pcapng) or drag & drop anywhere"
+        iconText="⬆"
+        (action)="onUploadClick()"
+      ></app-upload-choice-card>
+
+      <app-upload-choice-card
+        title="Continue with existing flight"
+        description="Proceed using a flight already stored in the system"
+        iconText="✈"
+        (action)="onContinueExisting()"
+      ></app-upload-choice-card>
+    </div>
+
+    <div class="fileHint" *ngIf="selectedFileName">
+      Selected: <span class="fileName">{{ selectedFileName }}</span>
+    </div>
+
+    <input
+      #fileInput
+      class="hiddenInput"
+      type="file"
+      accept=".pcap,.pcapng"
+      (change)="onFileInputChange($event)"
+    />
+  </div>
+</div>

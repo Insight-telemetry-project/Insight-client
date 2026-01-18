@@ -1,0 +1,58 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(900px 500px at 20% 20%, rgba(168, 85, 247, 0.15), transparent 60%),
+    radial-gradient(900px 500px at 80% 80%, rgba(124, 58, 237, 0.12), transparent 60%),
+    #0b0614;
+}
+
+.center {
+  width: min(680px, 100%);
+  display: grid;
+  gap: 22px;
+  justify-items: center;
+}
+
+.header {
+  text-align: center;
+}
+
+.headline {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.subhead {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.cards {
+  display: grid;
+  gap: 16px;
+}
+
+.fileHint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.fileName {
+  color: var(--purple-2);
+  font-weight: 700;
+}
+
+.hiddenInput {
+  display: none;
+}

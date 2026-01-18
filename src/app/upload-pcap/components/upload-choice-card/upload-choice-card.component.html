@@ -1,0 +1,8 @@
+<button class="card" type="button" [class.disabled]="disabled" (click)="onClick()">
+  <div class="icon">{{ iconText }}</div>
+  <div class="content">
+    <div class="title">{{ title }}</div>
+    <div class="desc" *ngIf="description">{{ description }}</div>
+  </div>
+  <div class="chev">›</div>
+</button>

@@ -1,0 +1,43 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 6, 20, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+.overlay.active {
+  display: flex;
+}
+
+.panel {
+  width: min(560px, calc(100% - 40px));
+  padding: 30px 26px;
+  border-radius: 20px;
+  text-align: center;
+
+  border: 2px dashed rgba(168, 85, 247, 0.6);
+  background: rgba(20, 10, 35, 0.8);
+
+  box-shadow:
+    0 0 40px rgba(168, 85, 247, 0.35),
+    inset 0 0 20px rgba(168, 85, 247, 0.15);
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
