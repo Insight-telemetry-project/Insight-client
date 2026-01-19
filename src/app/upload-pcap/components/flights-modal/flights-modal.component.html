@@ -1,0 +1,61 @@
+<div class="backdrop" [class.open]="isOpen" (click)="onBackdropClick($event)">
+  <div class="modal" role="dialog" aria-modal="true" [class.open]="isOpen">
+    <div class="header">
+      <div class="titleGroup">
+        <div class="title">Existing Flights</div>
+        <div class="subtitle">Select a flight to continue</div>
+      </div>
+
+      <button class="closeBtn" type="button" (click)="close()">×</button>
+    </div>
+
+    <div class="content">
+      <div class="state loading" *ngIf="state === 'loading'">
+        <div class="spinner"></div>
+        <div class="hint">Loading flights...</div>
+      </div>
+
+      <div class="state error" *ngIf="state === 'error'">
+        <div class="errorTitle">Could not load flights</div>
+        <div class="errorHint">{{ errorMessage }}</div>
+        <button class="actionBtn" type="button" (click)="retry()">Retry</button>
+      </div>
+
+      <div class="empty" *ngIf="state === 'ready' && flights.length === 0">
+        <div class="emptyTitle">No flights found</div>
+        <div class="emptyHint">Your database returned an empty list.</div>
+      </div>
+
+      <div class="grid" *ngIf="state === 'ready' && flights.length > 0">
+        <button class="flightCard" type="button" *ngFor="let flight of flights" (click)="selectFlight(flight.flightNumber)">
+          <div class="topRow">
+            <div class="flightLabel">Master Index</div>
+            <div class="flightNumber">{{ flight.flightNumber }}</div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="metricName">Length</div>
+              <div class="metricValue metricYellow">{{ flight.flightLenght }}</div>
+            </div>
+
+            <div class="metric">
+              <div class="metricName">Anomalies</div>
+              <div class="metricValue metricRed">{{ flight.anomaliesCount }}</div>
+            </div>
+
+            <div class="metric">
+              <div class="metricName">Connections</div>
+              <div class="metricValue metricGreen">{{ flight.connections }}</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div class="pill">Continue</div>
+            <div class="chev">›</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

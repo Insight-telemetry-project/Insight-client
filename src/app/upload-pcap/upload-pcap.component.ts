@@ -12,20 +12,19 @@ export class UploadPcapComponent {
 
   public isDragActive: boolean = false;
   public selectedFileName: string | null = null;
+  public isFlightsModalOpen: boolean = false;
 
   public onUploadClick(): void {
     this.fileInputRef.nativeElement.value = '';
     this.fileInputRef.nativeElement.click();
   }
 
-  public onContinueExisting(): void {
-    this.handleMode('existing');
-  }
-
   public onFileInputChange(event: Event): void {
     const input: HTMLInputElement = event.target as HTMLInputElement;
-    const file: File | null = input.files?.item(0) ?? null;
-    if (!file) return;
+    if (!input.files || input.files.length === 0) {
+      return;
+  }
+    const file: File = input.files[0];
     this.handleSelectedFile(file);
   }
 
@@ -89,4 +88,17 @@ export class UploadPcapComponent {
     if (!types) return false;
     return Array.from(types).includes('Files');
   }
+
+  public onContinueExisting(): void {
+  this.isFlightsModalOpen = true;
+}
+
+public onFlightsModalClosed(): void {
+  this.isFlightsModalOpen = false;
+}
+
+public onFlightSelected(flightNumber: number): void {
+  this.isFlightsModalOpen = false;
+  console.log('Selected flight:', flightNumber);
+}
 }

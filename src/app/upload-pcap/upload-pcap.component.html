@@ -39,3 +39,9 @@
     />
   </div>
 </div>
+
+<app-flights-modal
+  [isOpen]="isFlightsModalOpen"
+  (closed)="onFlightsModalClosed()"
+  (flightSelected)="onFlightSelected($event)"
+></app-flights-modal>

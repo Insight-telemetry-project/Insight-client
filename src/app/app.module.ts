@@ -6,17 +6,21 @@ import { AppComponent } from './app.component';
 import { UploadPcapComponent } from './upload-pcap/upload-pcap.component';
 import { FileDropOverlayComponent } from './upload-pcap/components/file-drop-overlay/file-drop-overlay.component';
 import { UploadChoiceCardComponent } from './upload-pcap/components/upload-choice-card/upload-choice-card.component';
+import { HttpClientModule } from '@angular/common/http';
+import { FlightsModalComponent } from './upload-pcap/components/flights-modal/flights-modal.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     UploadPcapComponent,
     FileDropOverlayComponent,
-    UploadChoiceCardComponent
+    UploadChoiceCardComponent,
+    FlightsModalComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]
