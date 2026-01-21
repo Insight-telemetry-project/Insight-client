@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
 import { FlightArchiveService } from '../services/flight-archive.service';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
+import { TelemetryDeviceService } from '../services/telemetry-device.services';
 
 @Component({
   selector: 'app-main-page',
@@ -15,7 +16,7 @@ export class MainPageComponent implements OnInit {
 
   public isDropActive: boolean = false;
 
-  public constructor(private readonly flightArchiveService: FlightArchiveService) {}
+  public constructor(private readonly flightArchiveService: FlightArchiveService, private readonly telemetryDeviceService: TelemetryDeviceService) {}
 
   public ngOnInit(): void {
     this.loadFlights();
@@ -66,12 +67,13 @@ export class MainPageComponent implements OnInit {
     this.isDropActive = true;
   }
 
-  @HostListener('window:dragover', ['$event'])
-  public onWindowDragOver(event: DragEvent): void {
-    if (!this.isDraggingFiles(event)) return;
-    event.preventDefault();
-    this.isDropActive = true;
-  }
+@HostListener('window:dragover', ['$event'])
+public onWindowDragOver(event: DragEvent): void {
+  if (!this.isDraggingFiles(event)) return;
+  event.preventDefault();
+  this.isDropActive = true;
+}
+
 
   @HostListener('window:dragleave', ['$event'])
   public onWindowDragLeave(event: DragEvent): void {
@@ -83,12 +85,19 @@ export class MainPageComponent implements OnInit {
     }
   }
 
-  @HostListener('window:drop', ['$event'])
-  public onWindowDrop(event: DragEvent): void {
-    if (!this.isDropActive) return;
-    event.preventDefault();
-    this.isDropActive = false;
-  }
+ @HostListener('window:drop', ['$event'])
+public onWindowDrop(event: DragEvent): void {
+  if (!this.isDraggingFiles(event)) return;
+
+  event.preventDefault();
+  this.isDropActive = false;
+
+  const file: File | null = event.dataTransfer?.files?.item(0) ?? null;
+  if (!file) return;
+
+  this.handlePcapFile(file);
+}
+
 
   public onFlightSelected(flightNumber: number): void {
   }
@@ -115,7 +124,14 @@ export class MainPageComponent implements OnInit {
     const fileName: string = file.name.toLowerCase();
     const isAllowed: boolean = fileName.endsWith('.pcap') || fileName.endsWith('.pcapng');
     if (!isAllowed) return;
-
+    this.telemetryDeviceService.uploadPcap(file).subscribe({
+      next: () => {
+        this.loadFlights();
+      },
+      error: (err: any) => {
+        console.error('Failed to upload PCAP file:', err);
+      }
+    });
     console.log('Selected file:', file.name, file.size);
   }
 }
