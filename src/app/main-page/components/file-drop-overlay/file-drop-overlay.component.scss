@@ -1,0 +1,42 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 7, 18, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.panel {
+  width: min(520px, calc(100vw - 48px));
+  padding: 26px 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(190, 120, 255, 0.26);
+  background: linear-gradient(
+    180deg,
+    rgba(176, 96, 255, 0.18),
+    rgba(90, 40, 170, 0.14)
+  );
+  box-shadow: 0 22px 90px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.icon {
+  font-size: 34px;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.75;
+}
