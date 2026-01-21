@@ -1,0 +1,46 @@
+<div class="page">
+  <header class="header">
+    <div class="headerLeft">
+      <h1 class="title">Flights</h1>
+      <p class="subtitle">Choose an existing flight or add a new PCAP</p>
+    </div>
+
+    <button class="addButton" type="button" (click)="onAddFlight()">
+      <span class="plusBadge">+</span>
+      <span class="addText">Add flight</span>
+    </button>
+  </header>
+
+  <section class="toolbar">
+    <div class="search">
+      <span class="searchIcon">⌕</span>
+
+      <input
+        class="searchInput"
+        type="text"
+        inputmode="numeric"
+        placeholder="Filter by Master Index..."
+        [value]="searchText"
+        (input)="onSearchChange(($any($event.target)).value)"
+      />
+
+      <button
+        class="clearBtn"
+        type="button"
+        *ngIf="searchText.length > 0"
+        (click)="clearSearch()"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div class="count">
+      {{ filteredFlights.length }} flights
+    </div>
+  </section>
+
+  <app-flights-grid
+    [flights]="filteredFlights"
+    (flightSelected)="onFlightSelected($event)"
+  ></app-flights-grid>
+</div>

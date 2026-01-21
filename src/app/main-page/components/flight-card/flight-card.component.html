@@ -1,0 +1,12 @@
+<div class="flightCard" tabindex="0" (click)="onSelect()">
+  <div class="flightTop">
+    <div class="flightNumber">Master Index {{ flight.flightNumber }}</div>
+  </div>
+
+  <div class="durationBox">
+    <div class="durationLabel">Duration</div>
+    <div class="durationValue">{{ getDurationText() }}</div>
+  </div>
+
+  <div class="openHint">Open →</div>
+</div>

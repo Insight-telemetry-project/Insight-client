@@ -1,0 +1,7 @@
+<div class="grid">
+  <app-flight-card
+    *ngFor="let flight of flights; trackBy: trackByFlightNumber"
+    [flight]="flight"
+    (selected)="selectFlight($event)"
+  ></app-flight-card>
+</div>

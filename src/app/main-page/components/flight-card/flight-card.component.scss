@@ -1,0 +1,57 @@
+.flightCard {
+  border-radius: 16px;
+  border: 1px solid rgba(155, 88, 255, 0.18);
+  background: linear-gradient(180deg, rgba(23, 18, 40, 0.62), rgba(14, 10, 26, 0.56));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  padding: 14px;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease;
+  outline: none;
+}
+
+.flightCard:hover,
+.flightCard:focus {
+  transform: translateY(-2px);
+  border-color: rgba(199, 142, 255, 0.4);
+}
+
+.flightTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.flightNumber {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.durationBox {
+  border-radius: 12px;
+  padding: 10px 10px;
+  border: 1px solid rgba(155, 88, 255, 0.14);
+  background: rgba(151, 71, 255, 0.06);
+}
+
+.durationLabel {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-bottom: 5px;
+}
+
+.durationValue {
+  font-size: 16px;
+  font-weight: 900;
+  color: #bda8ff;
+  letter-spacing: 0.2px;
+}
+
+.openHint {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.7;
+  text-align: right;
+}
