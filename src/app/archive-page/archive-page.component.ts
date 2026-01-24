@@ -35,6 +35,7 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private mainChart: Highcharts.Chart | null = null;
   private miniCharts: Map<string, Highcharts.Chart> = new Map<string, Highcharts.Chart>();
 
+  
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService
