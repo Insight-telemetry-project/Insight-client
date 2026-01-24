@@ -1,0 +1,83 @@
+.archivePage {
+  padding: 24px;
+}
+
+.archiveHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  .title {
+    font-size: 32px;
+    margin: 0;
+  }
+
+  .subtitle {
+    margin: 0;
+    opacity: 0.75;
+  }
+}
+
+.mainChartSection {
+  margin-bottom: 18px;
+}
+
+.mainChartCard {
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.mainChart {
+  width: 100%;
+  height: 360px;
+}
+
+.paramsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 2px;
+
+  .paramsTitle {
+    font-weight: 600;
+  }
+
+  .paramsCount {
+    opacity: 0.75;
+    font-size: 12px;
+  }
+}
+
+.paramsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.paramCard {
+  text-align: left;
+  border-radius: 18px;
+  padding: 12px 12px 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.10);
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  &.selected {
+    outline: 2px solid rgba(255, 255, 255, 0.22);
+  }
+}
+
+.paramTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.miniChart {
+  width: 100%;
+}

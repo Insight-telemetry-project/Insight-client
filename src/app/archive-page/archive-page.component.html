@@ -1,0 +1,33 @@
+<div class="archivePage">
+  <header class="archiveHeader">
+    <div class="headerLeft">
+      <h1 class="title">Flight {{ masterIndex }}</h1>
+      <p class="subtitle">Click a parameter to add/remove it to the main chart</p>
+    </div>
+  </header>
+
+  <section class="mainChartSection">
+    <div class="mainChartCard">
+      <div #mainChart class="mainChart"></div>
+    </div>
+  </section>
+
+  <section class="paramsSection">
+    <div class="paramsHeader">
+      <span class="paramsTitle">Parameters</span>
+      <span class="paramsCount">{{ parameters.length }} charts</span>
+    </div>
+
+    <div class="paramsGrid">
+      <button
+        class="paramCard"
+        *ngFor="let param of parameters"
+        [class.selected]="isSelected(param)"
+        (click)="toggleParam(param)"
+      >
+        <div class="paramTitle">{{ param }}</div>
+        <div class="miniChart" #miniChart [attr.data-param]="param"></div>
+      </button>
+    </div>
+  </section>
+</div>

@@ -1,4 +1,5 @@
-import { Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { FlightArchiveService } from '../services/flight-archive.service';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { TelemetryDeviceService } from '../services/telemetry-device.services';
@@ -13,10 +14,13 @@ export class MainPageComponent implements OnInit {
 
   public flights: FlightSummary[] = [];
   public searchText: string = '';
-
   public isDropActive: boolean = false;
 
-  public constructor(private readonly flightArchiveService: FlightArchiveService, private readonly telemetryDeviceService: TelemetryDeviceService) {}
+  public constructor(
+    private readonly flightArchiveService: FlightArchiveService,
+    private readonly telemetryDeviceService: TelemetryDeviceService,
+    private readonly router: Router
+  ) {}
 
   public ngOnInit(): void {
     this.loadFlights();
@@ -67,13 +71,13 @@ export class MainPageComponent implements OnInit {
     this.isDropActive = true;
   }
 
-@HostListener('window:dragover', ['$event'])
-public onWindowDragOver(event: DragEvent): void {
-  if (!this.isDraggingFiles(event)) return;
-  event.preventDefault();
-  this.isDropActive = true;
-}
-
+  @HostListener('window:dragover', ['$event'])
+  public onWindowDragOver(event: DragEvent): void {
+    if (!this.isDraggingFiles(event)) return;
+    event.preventDefault();
+    this.isDropActive = true;
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  }
 
   @HostListener('window:dragleave', ['$event'])
   public onWindowDragLeave(event: DragEvent): void {
@@ -85,21 +89,15 @@ public onWindowDragOver(event: DragEvent): void {
     }
   }
 
- @HostListener('window:drop', ['$event'])
-public onWindowDrop(event: DragEvent): void {
-  if (!this.isDraggingFiles(event)) return;
-
-  event.preventDefault();
-  this.isDropActive = false;
-
-  const file: File | null = event.dataTransfer?.files?.item(0) ?? null;
-  if (!file) return;
-
-  this.handlePcapFile(file);
-}
-
+  @HostListener('window:drop', ['$event'])
+  public onWindowDrop(event: DragEvent): void {
+    if (!this.isDropActive) return;
+    event.preventDefault();
+    this.isDropActive = false;
+  }
 
   public onFlightSelected(flightNumber: number): void {
+    this.router.navigate(['/archive', flightNumber]);
   }
 
   private loadFlights(): void {
@@ -116,7 +114,6 @@ public onWindowDrop(event: DragEvent): void {
   private isDraggingFiles(event: DragEvent): boolean {
     const types: readonly string[] | undefined = event.dataTransfer?.types;
     if (!types) return false;
-
     return Array.from(types).includes('Files');
   }
 
@@ -124,14 +121,10 @@ public onWindowDrop(event: DragEvent): void {
     const fileName: string = file.name.toLowerCase();
     const isAllowed: boolean = fileName.endsWith('.pcap') || fileName.endsWith('.pcapng');
     if (!isAllowed) return;
+
     this.telemetryDeviceService.uploadPcap(file).subscribe({
-      next: () => {
-        this.loadFlights();
-      },
-      error: (err: any) => {
-        console.error('Failed to upload PCAP file:', err);
-      }
+      next: () => this.loadFlights(),
+      error: (err: any) => console.error('Failed to upload PCAP file:', err)
     });
-    console.log('Selected file:', file.name, file.size);
   }
 }
