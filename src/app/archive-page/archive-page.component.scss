@@ -81,3 +81,21 @@
 .miniChart {
   width: 100%;
 }
+.back-btn {
+  position: absolute;
+  top: 16px;
+  right: 35px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(20, 10, 40, 0.35);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.back-btn:hover {
+  background: rgba(20, 10, 40, 0.55);
+}

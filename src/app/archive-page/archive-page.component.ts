@@ -8,7 +8,7 @@ import {
   ViewChild,
   ViewChildren
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import * as Highcharts from 'highcharts';
@@ -37,9 +37,11 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   
   public constructor(
-    private readonly route: ActivatedRoute,
-    private readonly archiveService: FlightArchiveService
-  ) {}
+  private readonly route: ActivatedRoute,
+  private readonly archiveService: FlightArchiveService,
+  private readonly router: Router
+) {}
+
 
   public ngOnInit(): void {
     const sub = this.route.paramMap.subscribe((params) => {
@@ -66,6 +68,10 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subs.unsubscribe();
     this.destroyCharts();
   }
+
+  public goBack(): void {
+  this.router.navigate(['/']);
+}
 
   private loadFlight(): void {
     this.archiveService.getFlightFields(this.masterIndex).subscribe({
