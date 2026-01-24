@@ -1,6 +1,9 @@
 <div class="flightCard" tabindex="0" (click)="onSelect()">
   <div class="flightTop">
     <div class="flightNumber">Flight Number {{ flight.flightNumber }}</div>
+    <button class="deleteBtn" (click)="$event.stopPropagation(); onDelete()">
+   🗑️
+</button>
   </div>
 
   <div class="durationBox">

@@ -19,4 +19,8 @@ export class FlightArchiveService {
   public getFlightFields(masterIndex: number): Observable<TelemetrySensorFields[]> {
     return this.http.get<TelemetrySensorFields[]>(`${this.baseUrl}/fields/${masterIndex}`);
   }
+
+  public deleteFlight(masterIndex: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/delete-flight/${masterIndex}`);
+  }
 }
