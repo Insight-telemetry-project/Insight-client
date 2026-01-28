@@ -9,9 +9,14 @@ import { FlightSummary } from '../../../common/interfaces/flight-summary.interfa
 export class FlightsGridComponent {
   @Input() public flights: FlightSummary[] = [];
   @Output() public flightSelected: EventEmitter<number> = new EventEmitter<number>();
+  @Output() public flightDeleted: EventEmitter<number> = new EventEmitter<number>();
 
   public selectFlight(flightNumber: number): void {
     this.flightSelected.emit(flightNumber);
+  }
+
+  public deleteFlight(flightNumber: number): void {
+    this.flightDeleted.emit(flightNumber);
   }
 
   public trackByFlightNumber(index: number, item: FlightSummary): number {

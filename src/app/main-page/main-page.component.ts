@@ -100,6 +100,10 @@ export class MainPageComponent implements OnInit {
     this.router.navigate(['/archive', flightNumber]);
   }
 
+  public onFlightDeleted(flightNumber: number): void {
+    this.flights = this.flights.filter((flight: FlightSummary) => flight.flightNumber !== flightNumber);
+  }
+
   private loadFlights(): void {
     this.flightArchiveService.getAllFlights().subscribe({
       next: (result: FlightSummary[]) => {
@@ -123,7 +127,9 @@ export class MainPageComponent implements OnInit {
     if (!isAllowed) return;
 
     this.telemetryDeviceService.uploadPcap(file).subscribe({
-      next: () => this.loadFlights(),
+      next: () => {
+        this.loadFlights();
+      },
       error: (err: any) => console.error('Failed to upload PCAP file:', err)
     });
   }

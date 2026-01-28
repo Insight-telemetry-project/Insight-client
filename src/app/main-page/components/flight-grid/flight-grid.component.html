@@ -3,5 +3,6 @@
     *ngFor="let flight of flights; trackBy: trackByFlightNumber"
     [flight]="flight"
     (selected)="selectFlight($event)"
+    (flightDeleted)="deleteFlight($event)"
   ></app-flight-card>
 </div>
