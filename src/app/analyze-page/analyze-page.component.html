@@ -6,9 +6,7 @@
     </div>
   </header>
 
-  <button class="back-btn" type="button" (click)="goBack()" aria-label="Back">
-  ←
-</button>
+  <button class="back-btn" type="button" (click)="goBack()" aria-label="Back">←</button>
 
   <section class="mainChartSection">
     <div class="mainChartCard">
@@ -16,25 +14,25 @@
     </div>
   </section>
 
-  <div class="relatedInline" *ngIf="relatedForParam">
-  <button class="relatedInlineBtn" type="button" (click)="toggleRelatedList()">
-    Related: {{ relatedForParam }} ({{ relatedLoading ? '...' : relatedParams.length }})
-  </button>
-
-  <div class="relatedInlineList" *ngIf="relatedOpen">
-    <div class="relatedInlineError" *ngIf="relatedError">{{ relatedError }}</div>
-
-    <button
-      class="relatedInlineItem"
-      *ngFor="let p of relatedParams"
-      type="button"
-      (click)="onRelatedParamClick(p)"
-    >
-      {{ p }}
+  <div class="relatedInline" *ngIf="related.relatedForParam">
+    <button class="relatedInlineBtn" type="button" (click)="toggleRelatedList()">
+      Related: {{ related.relatedForParam }} ({{ related.relatedLoading ? '...' : related.relatedParams.length }})
     </button>
-  </div>
-</div>
 
+    <div class="relatedInlineList" *ngIf="related.relatedOpen">
+      <div class="relatedInlineError" *ngIf="related.relatedError">{{ related.relatedError }}</div>
+
+      <button
+        class="relatedInlineItem"
+        *ngFor="let p of related.relatedParams"
+        [class.selected]="isSelected(p)"
+        type="button"
+        (click)="onRelatedParamClick(p)"
+      >
+        {{ p }}
+      </button>
+    </div>
+  </div>
 
   <section class="paramsSection">
     <div class="paramsHeader">
