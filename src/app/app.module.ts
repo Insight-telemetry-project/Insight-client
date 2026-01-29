@@ -9,6 +9,7 @@ import { MainPageComponent } from './main-page/main-page.component';
 import { FlightsGridComponent } from './main-page/components/flight-grid/flight-grid.component';
 import { FlightCardComponent } from './main-page/components/flight-card/flight-card.component';
 import { FileDropOverlayComponent } from './main-page/components/file-drop-overlay/file-drop-overlay.component';
+import { AnalyzePageComponent } from './analyze-page/analyze-page.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { FileDropOverlayComponent } from './main-page/components/file-drop-overl
     MainPageComponent,
     FlightsGridComponent,
     FlightCardComponent,
-    FileDropOverlayComponent
+    FileDropOverlayComponent,
+    AnalyzePageComponent
   ],
   imports: [
     BrowserModule,

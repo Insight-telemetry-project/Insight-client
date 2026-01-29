@@ -1,9 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { MainPageComponent } from './main-page/main-page.component';
+import { AnalyzePageComponent } from './analyze-page/analyze-page.component';
 
 const routes: Routes = [
   { path: '', component: MainPageComponent },
+  { path: 'archive/:masterIndex', component: AnalyzePageComponent },
   { path: '**', redirectTo: '' }
 ];
 
