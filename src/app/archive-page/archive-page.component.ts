@@ -35,16 +35,14 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private mainChart: Highcharts.Chart | null = null;
   private miniCharts: Map<string, Highcharts.Chart> = new Map<string, Highcharts.Chart>();
 
-  
   public constructor(
-  private readonly route: ActivatedRoute,
-  private readonly archiveService: FlightArchiveService,
-  private readonly router: Router
-) {}
-
+    private readonly route: ActivatedRoute,
+    private readonly archiveService: FlightArchiveService,
+    private readonly router: Router
+  ) {}
 
   public ngOnInit(): void {
-    const sub = this.route.paramMap.subscribe((params) => {
+    const sub: Subscription = this.route.paramMap.subscribe((params) => {
       this.masterIndex = Number(params.get('masterIndex'));
       this.selected.clear();
       this.destroyCharts();
@@ -57,10 +55,10 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public ngAfterViewInit(): void {
     this.createEmptyMainChart();
 
-
-    const sub = this.miniChartEls.changes.subscribe(() => {
+    const sub: Subscription = this.miniChartEls.changes.subscribe(() => {
       this.drawMiniCharts();
     });
+
     this.subs.add(sub);
   }
 
@@ -70,11 +68,11 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public goBack(): void {
-  this.router.navigate(['/']);
-}
+    this.router.navigate(['/']);
+  }
 
   private loadFlight(): void {
-    this.archiveService.getFlightFields(this.masterIndex).subscribe({
+    const sub: Subscription = this.archiveService.getFlightFields(this.masterIndex).subscribe({
       next: (rows: TelemetrySensorFields[]) => {
         const sortedRows: TelemetrySensorFields[] = (rows ?? [])
           .slice()
@@ -94,12 +92,14 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.updateMainChartSeries();
       }
     });
-  }
 
+    this.subs.add(sub);
+  }
 
   public toggleParam(param: string): void {
     if (this.selected.has(param)) {
       this.selected.delete(param);
+      this.removeAnomaliesSeries(param);
     } else {
       this.selected.add(param);
     }
@@ -111,9 +111,7 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.selected.has(param);
   }
 
-
   private createEmptyMainChart(): void {
-
     const options: Highcharts.Options = {
       chart: {
         backgroundColor: 'transparent',
@@ -162,8 +160,11 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.mainChart.redraw();
-  }
 
+    for (const param of selectedParams) {
+      this.loadAndShowAnomalies(param);
+    }
+  }
 
   private drawMiniCharts(): void {
     if (this.flightData.length === 0) return;
@@ -179,7 +180,7 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const dataPoints: [number, number][] = this.buildSeries(param);
 
-      const chart = Highcharts.chart(ref.nativeElement as HTMLElement, {
+      const chart: Highcharts.Chart = Highcharts.chart(ref.nativeElement as HTMLElement, {
         chart: {
           backgroundColor: 'transparent',
           height: 140,
@@ -212,7 +213,6 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-
   private buildSeries(param: string): [number, number][] {
     const points: [number, number][] = [];
 
@@ -225,6 +225,116 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     return points;
+  }
+
+  private buildTimeToValueMap(param: string): Map<number, number> {
+    const map: Map<number, number> = new Map<number, number>();
+
+    for (const row of this.flightData) {
+      const value: number | undefined = row.fields[param];
+      if (value === undefined || value === null) continue;
+
+      map.set(row.timestep, value);
+    }
+
+    return map;
+  }
+
+  private mapAnomalyEpochSecondsToXY(param: string, anomalyEpochSeconds: number[]): [number, number][] {
+    const points: [number, number][] = [];
+    const timeToValue: Map<number, number> = this.buildTimeToValueMap(param);
+
+    for (const t of anomalyEpochSeconds) {
+      const y: number | undefined = timeToValue.get(t);
+      if (y === undefined) continue;
+
+      points.push([t * 1000, y]);
+    }
+
+    return points;
+  }
+
+  private loadAndShowAnomalies(param: string): void {
+    const sub: Subscription = this.archiveService.getFlightPointsParam(this.masterIndex, param).subscribe({
+      next: (anomalyTimes: number[]) => {
+        const points: [number, number][] = this.mapAnomalyEpochSecondsToXY(param, anomalyTimes);
+        this.addAnomaliesScatterToMainChart(param, points);
+      },
+      error: (err: any) => console.error('Failed to load anomalies for', param, err)
+    });
+
+    this.subs.add(sub);
+  }
+
+  private addAnomaliesScatterToMainChart(param: string, points: [number, number][]): void {
+  if (!this.mainChart) return;
+
+  const seriesId: string = `anomalies:${param}`;
+
+  const existing: Highcharts.Series | undefined =
+    this.mainChart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+
+  if (existing) {
+    existing.remove(false);
+  }
+
+  this.mainChart.addSeries(
+    {
+      type: 'scatter',
+      id: seriesId as any,
+      name: `${param} anomalies`,
+      data: points,
+      color: '#ff2d2d',
+      marker: {
+        enabled: true,
+        radius: 5,
+        symbol: 'circle',
+        fillColor: '#ff2d2d',
+        lineColor: '#ffffff',
+        lineWidth: 1,
+        states: {
+          hover: {
+            enabled: true,
+            radius: 8,
+            fillColor: '#ff0000',
+            lineColor: '#000000',
+            lineWidth: 2
+          }
+        }
+      },
+      states: {
+        hover: {
+          enabled: true
+        }
+      },
+      tooltip: {
+        useHTML: true,
+        pointFormat: `
+          <b style="color:#ff2d2d">Anomaly</b><br/>
+          <b>${param}</b>: {point.y}<br/>
+          Time: {point.x:%H:%M:%S}
+        `
+      }
+    } as Highcharts.SeriesOptionsType,
+    false
+  );
+
+  this.mainChart.redraw();
+}
+
+
+  private removeAnomaliesSeries(param: string): void {
+    if (!this.mainChart) return;
+
+    const seriesId: string = `anomalies:${param}`;
+
+    const existing: Highcharts.Series | undefined =
+      this.mainChart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+
+    if (existing) {
+      existing.remove(false);
+      this.mainChart.redraw();
+    }
   }
 
   private destroyCharts(): void {

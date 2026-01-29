@@ -23,4 +23,13 @@ export class FlightArchiveService {
   public deleteFlight(masterIndex: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/delete-flight/${masterIndex}`);
   }
+
+  public getFlightPointsParam(masterIndex: number, parameter: string): Observable<number[]> {
+  const encodedParameter: string = encodeURIComponent(parameter);
+
+  return this.http.get<number[]>(
+    `${this.baseUrl}/get-flight-points/${masterIndex}/${encodedParameter}`
+  );
+}
+
 }
