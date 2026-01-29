@@ -31,5 +31,11 @@ export class FlightArchiveService {
     `${this.baseUrl}/get-flight-points/${masterIndex}/${encodedParameter}`
   );
 }
+  public getFlightConnectionsParam(masterIndex: number, parameter: string): Observable<string[]> {
+  const encodedParameter: string = encodeURIComponent(parameter);
 
+  return this.http.get<string[]>(
+    `${this.baseUrl}/get-flight-connections/${masterIndex}/${encodedParameter}`
+  );
+}
 }

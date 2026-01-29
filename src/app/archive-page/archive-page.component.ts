@@ -121,13 +121,26 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       title: { text: '' },
       credits: { enabled: false },
-      legend: { enabled: true },
+      legend: {
+        enabled: true,
+        itemStyle: {
+        color: '#ffffff',
+        fontSize: '12px',
+        fontWeight: '400'
+      },
+      itemHoverStyle: {
+      color: '#ff2d2d'
+    }
+  },
+
       xAxis: {
         type: 'datetime',
-        title: { text: 'Time' }
+        title: { text: 'Time', style: { color: '#ffffff' } },
+        labels: { style: { color: '#cfcfe6' } }
       },
       yAxis: {
-        title: { text: '' }
+        title: { text: '', style: { color: '#ffffff' } },
+        labels: { style: { color: '#cfcfe6' } }
       },
       tooltip: { shared: true },
       series: []
