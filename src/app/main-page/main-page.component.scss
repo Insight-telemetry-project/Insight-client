@@ -1,0 +1,158 @@
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 34px 46px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.subtitle {
+  margin: 0;
+  opacity: 0.78;
+  font-size: 14px;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid rgba(190, 120, 255, 0.26);
+  background: linear-gradient(
+    180deg,
+    rgba(176, 96, 255, 0.18),
+    rgba(90, 40, 170, 0.12)
+  );
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.26);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(220, 170, 255, 0.5);
+  background: linear-gradient(
+    180deg,
+    rgba(176, 96, 255, 0.23),
+    rgba(90, 40, 170, 0.14)
+  );
+}
+
+.plusBadge {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  border: 1px solid rgba(190, 120, 255, 0.22);
+  background: rgba(176, 96, 255, 0.22);
+}
+
+.addText {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.toolbar {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.search {
+  flex: 1;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(190, 120, 255, 0.20);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(176, 96, 255, 0.10)
+  );
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.searchIcon {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-size: 14px;
+  padding: 2px 0;
+}
+
+.clearBtn {
+  padding: 7px 11px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: inherit;
+  border: 1px solid rgba(190, 120, 255, 0.18);
+  background: rgba(176, 96, 255, 0.10);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.clearBtn:hover {
+  background: rgba(176, 96, 255, 0.16);
+  border-color: rgba(220, 170, 255, 0.45);
+}
+
+.countPill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(190, 120, 255, 0.18);
+  background: rgba(10, 7, 18, 0.18);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.14);
+}
+
+.countValue {
+  font-weight: 900;
+  font-size: 16px;
+  color: rgba(220, 190, 255, 0.95);
+}
+
+.countLabel {
+  font-size: 13px;
+  opacity: 0.75;
+}

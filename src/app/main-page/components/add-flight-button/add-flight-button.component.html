@@ -1,0 +1,12 @@
+<button class="addButton" type="button" (click)="openFilePicker()">
+  <span class="plus">+</span>
+  <span class="label">Add flight</span>
+</button>
+
+<input
+  #fileInput
+  class="hiddenFileInput"
+  type="file"
+  accept=".pcap,.pcapng"
+  (change)="onFileSelected($event)"
+/>
