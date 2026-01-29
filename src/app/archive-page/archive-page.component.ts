@@ -35,6 +35,13 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private mainChart: Highcharts.Chart | null = null;
   private miniCharts: Map<string, Highcharts.Chart> = new Map<string, Highcharts.Chart>();
 
+  public relatedOpen: boolean = false;
+  public relatedParams: string[] = [];
+  public relatedLoading: boolean = false;
+  public relatedError: string | null = null;
+  public relatedForParam: string | null = null;
+  private relatedSub: Subscription | null = null;
+  
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
@@ -97,15 +104,33 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public toggleParam(param: string): void {
-    if (this.selected.has(param)) {
-      this.selected.delete(param);
-      this.removeAnomaliesSeries(param);
-    } else {
-      this.selected.add(param);
-    }
+  const wasSelected: boolean = this.selected.has(param);
 
-    this.updateMainChartSeries();
+  if (wasSelected) {
+    this.selected.delete(param);
+    this.removeAnomaliesSeries(param);
+  } else {
+    this.selected.add(param);
   }
+
+  if (!wasSelected && this.selected.size === 1 && this.relatedForParam === null) {
+    this.relatedForParam = param;
+    this.relatedOpen = true;
+    this.loadRelatedParams(this.relatedForParam);
+  }
+
+  if (wasSelected && this.relatedForParam === param) {
+    this.relatedForParam = null;
+    this.relatedOpen = false;
+    this.relatedParams = [];
+    this.relatedLoading = false;
+    this.relatedError = null;
+  }
+
+  this.updateMainChartSeries();
+}
+
+
 
   public isSelected(param: string): boolean {
     return this.selected.has(param);
@@ -129,7 +154,7 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
         fontWeight: '400'
       },
       itemHoverStyle: {
-      color: '#ff2d2d'
+      color: '#948f8f'
     }
   },
 
@@ -361,4 +386,60 @@ export class ArchivePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.miniCharts.clear();
   }
+
+  private getSingleSelectedParam(): string | null {
+  if (this.selected.size !== 1) return null;
+  return Array.from(this.selected.values())[0];
+}
+
+public toggleRelatedList(): void {
+  if (!this.relatedForParam) return;
+
+  this.relatedOpen = !this.relatedOpen;
+
+  if (this.relatedOpen) {
+    this.loadRelatedParams(this.relatedForParam);
+  }
+}
+
+
+
+public onRelatedParamClick(param: string): void {
+  if (this.selected.has(param)) {
+    this.selected.delete(param);
+    this.removeAnomaliesSeries(param);
+  } else {
+    this.selected.add(param);
+  }
+
+  this.updateMainChartSeries();
+}
+
+
+private loadRelatedParams(param: string): void {
+  this.relatedLoading = true;
+  this.relatedError = null;
+  this.relatedParams = [];
+
+  if (this.relatedSub) {
+    this.relatedSub.unsubscribe();
+    this.relatedSub = null;
+  }
+
+  this.relatedSub = this.archiveService.getFlightConnectionsParam(this.masterIndex, param).subscribe({
+    next: (items: string[]) => {
+      this.relatedParams = (items ?? []).slice();
+      this.relatedLoading = false;
+    },
+    error: (err: any) => {
+      console.error('Failed to load related params for', param, err);
+      this.relatedError = 'Failed to load related parameters';
+      this.relatedLoading = false;
+    }
+  });
+
+  this.subs.add(this.relatedSub);
+}
+
+
 }

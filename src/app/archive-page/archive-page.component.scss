@@ -99,3 +99,63 @@
 .back-btn:hover {
   background: rgba(20, 10, 40, 0.55);
 }
+
+
+.relatedInline {
+  margin: 8px 2px 14px 2px;
+  display: inline-block;
+}
+
+.relatedInlineBtn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.10);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.relatedInlineBtn:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.relatedInlineList {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.10);
+  display: grid;
+  gap: 6px;
+  max-width: 260px;
+}
+
+.relatedInlineItem {
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.relatedInlineItem:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.relatedInlineError {
+  color: #ff8080;
+  font-size: 12px;
+}
+.relatedInlineList {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.10);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+}

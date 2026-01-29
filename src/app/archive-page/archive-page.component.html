@@ -16,6 +16,26 @@
     </div>
   </section>
 
+  <div class="relatedInline" *ngIf="relatedForParam">
+  <button class="relatedInlineBtn" type="button" (click)="toggleRelatedList()">
+    Related: {{ relatedForParam }} ({{ relatedLoading ? '...' : relatedParams.length }})
+  </button>
+
+  <div class="relatedInlineList" *ngIf="relatedOpen">
+    <div class="relatedInlineError" *ngIf="relatedError">{{ relatedError }}</div>
+
+    <button
+      class="relatedInlineItem"
+      *ngFor="let p of relatedParams"
+      type="button"
+      (click)="onRelatedParamClick(p)"
+    >
+      {{ p }}
+    </button>
+  </div>
+</div>
+
+
   <section class="paramsSection">
     <div class="paramsHeader">
       <span class="paramsTitle">Parameters</span>
