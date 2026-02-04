@@ -5,35 +5,55 @@ import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
   public createMainChart(container: HTMLElement): Highcharts.Chart {
-    const options: Highcharts.Options = {
-      chart: {
-        backgroundColor: 'transparent',
-        zooming: { type: 'x' },
-        panning: { enabled: true, type: 'x' },
-        panKey: 'shift'
+  const options: Highcharts.Options = {
+    chart: {
+      backgroundColor: 'transparent',
+      zooming: { type: 'x' },
+      panning: { enabled: true, type: 'x' },
+      panKey: 'shift'
+    },
+    title: { text: '' },
+    credits: { enabled: false },
+    legend: {
+      enabled: true,
+      itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
+      itemHoverStyle: { color: '#948f8f' }
+    },
+    xAxis: {
+      type: 'datetime',
+      title: { text: 'Time', style: { color: '#ffffff' } },
+      labels: { style: { color: '#cfcfe6' } }
+    },
+    yAxis: {
+      title: { text: '', style: { color: '#ffffff' } },
+      labels: { style: { color: '#cfcfe6' } }
+    },
+    tooltip: {
+      shared: false,
+      snap: 80,
+      useHTML: true
+    },
+    plotOptions: {
+      line: {
+        enableMouseTracking: false
       },
-      title: { text: '' },
-      credits: { enabled: false },
-      legend: {
-        enabled: true,
-        itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
-        itemHoverStyle: { color: '#948f8f' }
-      },
-      xAxis: {
-        type: 'datetime',
-        title: { text: 'Time', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } }
-      },
-      yAxis: {
-        title: { text: '', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } }
-      },
-      tooltip: { shared: true },
-      series: []
-    };
+      scatter: {
+        stickyTracking: true,
+        states: {
+          inactive: {
+            opacity: 1
+          }
+        }
+      }
+    },
+    series: []
+  };
 
-    return Highcharts.chart(container, options);
-  }
+  return Highcharts.chart(container, options);
+}
+
+
+
 
   public updateMainChartSeries(
     chart: Highcharts.Chart,
@@ -209,4 +229,111 @@ export class AnalyzeChartsService {
 
     return points;
   }
+
+  public addOrReplaceHistoricalSimilaritySeries(
+  chart: Highcharts.Chart,
+  param: string,
+  points: Highcharts.PointOptionsObject[]
+): void {
+  const seriesId: string = `history:${param}`;
+
+  const existing: Highcharts.Series | undefined =
+    chart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+
+  if (existing) {
+    existing.remove(false);
+  }
+
+  chart.addSeries(
+    {
+      type: 'scatter',
+      id: seriesId as any,
+      name: `${param} similar past`,
+      data: points,
+      color: '#ffd400',
+      zIndex: 20,
+      enableMouseTracking: true,
+      stickyTracking: true,
+      tooltip: {
+        shared: false,
+        useHTML: true,
+        pointFormat: `
+          <div style="min-width:220px">
+            <div style="font-weight:700;margin-bottom:6px">
+              Similar historical point
+            </div>
+            <div><b>${param}</b>: {point.y}</div>
+            <div>Time: {point.x:%H:%M:%S}</div>
+            <div style="opacity:0.9;margin-top:6px">
+              {point.custom.info}
+            </div>
+          </div>
+        `
+      },
+      marker: {
+        enabled: true,
+        symbol: 'circle',
+        radius: 6,
+        fillColor: '#ffd400',
+        lineColor: '#000000',
+        lineWidth: 2,
+        states: {
+          hover: {
+            enabled: true,
+            radius: 9,
+            lineWidth: 3
+          }
+        }
+      },
+      states: {
+        hover: {
+          enabled: true
+        }
+      }
+    } as Highcharts.SeriesOptionsType,
+    false
+  );
+
+  chart.redraw();
+}
+
+
+
+public mapHistoricalSimilarityToPoints(
+  flightData: TelemetrySensorFields[],
+  param: string,
+  items: any[]
+): Highcharts.PointOptionsObject[] {
+  const timeToValue: Map<number, number> = new Map<number, number>();
+
+  for (const row of flightData) {
+    const value: number | undefined = row.fields[param];
+    if (value === undefined || value === null) continue;
+    timeToValue.set(row.timestep, value);
+  }
+
+  const points: Highcharts.PointOptionsObject[] = [];
+
+  for (const item of items) {
+
+    const start: number = Number(item.startIndex);
+    const end: number = Number(item.endIndex);
+    const t: number = Math.round((start + end) / 2);
+
+    const y: number | undefined = timeToValue.get(t);
+    if (y === undefined) continue;
+
+    points.push({
+      x: t * 1000,
+      y,
+      custom: {
+        info: `Matched flight ${item.comparedFlightIndex}, label ${item.label}, score ${Number(item.finalScore).toFixed(2)}`
+      }
+    });
+  }
+
+  return points;
+}
+
+
 }
