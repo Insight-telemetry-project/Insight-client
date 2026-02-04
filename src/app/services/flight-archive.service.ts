@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TelemetrySensorFields } from '../common/interfaces/telemetry-sensor-fields.interface';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
+import { HistoricalSimilarityPoint } from '../common/interfaces/historical-similarity-point.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -38,4 +39,13 @@ export class FlightArchiveService {
     `${this.baseUrl}/get-flight-connections/${masterIndex}/${encodedParameter}`
   );
 }
+
+  public getFlightHistoricalSimilarity(masterIndex: number, parameter: string): Observable<HistoricalSimilarityPoint[]> {
+  const encodedParameter: string = encodeURIComponent(parameter);
+
+  return this.http.get<HistoricalSimilarityPoint[]>(
+    `${this.baseUrl}/get-flight-historical-similarity/${masterIndex}/${encodedParameter}`
+  );
+}
+
 }

@@ -16,6 +16,7 @@ import { FlightArchiveService } from '../services/flight-archive.service';
 import { TelemetrySensorFields } from '../common/interfaces/telemetry-sensor-fields.interface';
 import { AnalyzeChartsService } from './services/analyze-charts.service';
 import { RelatedParamsService } from './services/related-params.service';
+import { HistoricalSimilarityPoint } from '../common/interfaces/historical-similarity-point.interface';
 
 @Component({
   selector: 'app-analyze-page',
@@ -144,6 +145,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     for (const param of selectedParams) {
       this.loadAndShowAnomalies(param);
+      this.loadAndShowHistoricalSimilarity(param);
+
     }
   }
 
@@ -185,4 +188,22 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.charts.destroyMiniCharts(this.miniCharts);
   }
+
+  private loadAndShowHistoricalSimilarity(param: string): void {
+  const sub: Subscription =
+    this.archiveService.getFlightHistoricalSimilarity(this.masterIndex, param).subscribe({
+      next: (items: HistoricalSimilarityPoint[]) => {
+        if (!this.mainChart) return;
+
+        const points: Highcharts.PointOptionsObject[] =
+          this.charts.mapHistoricalSimilarityToPoints(this.flightData, param, items);
+
+        this.charts.addOrReplaceHistoricalSimilaritySeries(this.mainChart, param, points);
+      },
+      error: (err: any) => console.error('Failed to load historical similarity for', param, err)
+    });
+
+  this.subs.add(sub);
+}
+
 }
