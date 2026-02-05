@@ -31,6 +31,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public flightData: TelemetrySensorFields[] = [];
   public parameters: string[] = [];
   public selected: Set<string> = new Set<string>();
+  public paramSearchText: string = '';
 
   public constructor(
     private readonly route: ActivatedRoute,
@@ -51,6 +52,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.destroyCharts();
       this.related.clear();
       this.loadFlight();
+      this.paramSearchText = '';
     });
 
     this.subs.add(sub);
@@ -204,6 +206,19 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
   this.subs.add(sub);
+}
+public get filteredParameters(): string[] {
+  const query: string = this.paramSearchText.trim().toLowerCase();
+  if (query.length === 0) return this.parameters;
+
+  return this.parameters.filter((p: string) => p.toLowerCase().includes(query));
+}
+public onParamSearchChange(value: string): void {
+  this.paramSearchText = value;
+}
+
+public clearParamSearch(): void {
+  this.paramSearchText = '';
 }
 
 }

@@ -1,12 +1,12 @@
-<div class="archivePage">
-  <header class="archiveHeader">
+<div class="page">
+  <header class="header">
     <div class="headerLeft">
       <h1 class="title">Flight {{ masterIndex }}</h1>
       <p class="subtitle">Click a parameter to add/remove it to the main chart</p>
     </div>
-  </header>
 
-  <button class="back-btn" type="button" (click)="goBack()" aria-label="Back">←</button>
+    <button class="back-btn" type="button" (click)="goBack()" aria-label="Back">←</button>
+  </header>
 
   <section class="mainChartSection">
     <div class="mainChartCard">
@@ -34,16 +34,43 @@
     </div>
   </div>
 
+  <section class="toolbar paramsToolbar">
+    <div class="search">
+      <span class="searchIcon">⌕</span>
+
+      <input
+        class="searchInput"
+        type="text"
+        placeholder="Filter parameters..."
+        [value]="paramSearchText"
+        (input)="onParamSearchChange(($any($event.target)).value)"
+      />
+
+      <button
+        class="clearBtn"
+        type="button"
+        *ngIf="paramSearchText.length > 0"
+        (click)="clearParamSearch()"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div class="countPill">
+      <span class="countValue">{{ filteredParameters.length }}</span>
+      <span class="countLabel">params</span>
+    </div>
+  </section>
+
   <section class="paramsSection">
     <div class="paramsHeader">
       <span class="paramsTitle">Parameters</span>
-      <span class="paramsCount">{{ parameters.length }} charts</span>
     </div>
 
     <div class="paramsGrid">
       <button
         class="paramCard"
-        *ngFor="let param of parameters"
+        *ngFor="let param of filteredParameters"
         [class.selected]="isSelected(param)"
         (click)="toggleParam(param)"
       >
