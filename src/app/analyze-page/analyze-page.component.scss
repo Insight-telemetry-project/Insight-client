@@ -81,6 +81,7 @@
 .miniChart {
   width: 100%;
 }
+
 .back-btn {
   position: absolute;
   top: 16px;
@@ -99,7 +100,6 @@
 .back-btn:hover {
   background: rgba(20, 10, 40, 0.55);
 }
-
 
 .relatedInline {
   margin: 8px 2px 14px 2px;
@@ -148,6 +148,7 @@
   color: #ff8080;
   font-size: 12px;
 }
+
 .relatedInlineList {
   margin-top: 8px;
   padding: 8px;
@@ -159,7 +160,145 @@
   gap: 8px;
   max-width: 100%;
 }
+
 .relatedInlineItem.selected {
   outline: 2px solid rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.08);
+}
+
+
+.paramsToolbar {
+  margin-top: 18px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.search {
+  flex: 1;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-left: 40px;
+  border-radius: 18px;
+  border: 1px solid rgba(190, 120, 255, 0.20);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(176, 96, 255, 0.10)
+  );
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.searchIcon {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-size: 14px;
+  padding: 2px 0;
+  
+}
+
+.clearBtn {
+  padding: 7px 11px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: inherit;
+  border: 1px solid rgba(190, 120, 255, 0.18);
+  background: rgba(176, 96, 255, 0.10);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.clearBtn:hover {
+  background: rgba(176, 96, 255, 0.16);
+  border-color: rgba(220, 170, 255, 0.45);
+}
+
+.countPill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(190, 120, 255, 0.18);
+  background: rgba(10, 7, 18, 0.18);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.14);
+}
+
+.countValue {
+  font-weight: 900;
+  font-size: 16px;
+  color: rgba(220, 190, 255, 0.95);
+}
+
+.countLabel {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+
+.mainChartCard {
+  border-radius: 22px;
+  border: 1px solid rgba(190, 120, 255, 0.14);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(176, 96, 255, 0.08)
+  );
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(12px);
+}
+
+.paramCard {
+  border-radius: 22px;
+  border: 1px solid rgba(190, 120, 255, 0.12);
+  background: rgba(10, 7, 18, 0.12);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.22);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(220, 170, 255, 0.32);
+    background: rgba(176, 96, 255, 0.08);
+  }
+
+  &.selected {
+    outline: none;
+    border-color: rgba(220, 170, 255, 0.55);
+    background: rgba(176, 96, 255, 0.18);
+  }
+}
+
+.back-btn {
+  border-radius: 16px;
+  border: 1px solid rgba(190, 120, 255, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(176, 96, 255, 0.16),
+    rgba(90, 40, 170, 0.12)
+  );
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.back-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(220, 170, 255, 0.5);
+  background: linear-gradient(
+    180deg,
+    rgba(176, 96, 255, 0.22),
+    rgba(90, 40, 170, 0.14)
+  );
 }
