@@ -22,30 +22,38 @@ export class AnalyzeChartsService {
     xAxis: {
       type: 'datetime',
       title: { text: 'Time', style: { color: '#ffffff' } },
-      labels: { style: { color: '#cfcfe6' } }
+      labels: { style: { color: '#cfcfe6' } },
+      gridLineColor: 'rgba(255,255,255,0.08)',
+      gridLineWidth: 1
     },
     yAxis: {
       title: { text: '', style: { color: '#ffffff' } },
-      labels: { style: { color: '#cfcfe6' } }
+      labels: { style: { color: '#cfcfe6' } },
+      gridLineColor: 'rgba(255,255,255,0.08)',
+      gridLineWidth: 1
     },
+    
     tooltip: {
       shared: false,
       snap: 80,
       useHTML: true
     },
     plotOptions: {
-      line: {
-        enableMouseTracking: false
-      },
-      scatter: {
-        stickyTracking: true,
-        states: {
-          inactive: {
-            opacity: 1
-          }
-        }
+  series: {
+    states: {
+      inactive: {
+        opacity: 1
       }
-    },
+    }
+  },
+  areaspline: {
+    marker: { enabled: false }
+  },
+  scatter: {
+    stickyTracking: true
+  }
+}
+,
     series: []
   };
 
@@ -56,30 +64,55 @@ export class AnalyzeChartsService {
 
 
   public updateMainChartSeries(
-    chart: Highcharts.Chart,
-    flightData: TelemetrySensorFields[],
-    selectedParams: string[]
-  ): void {
-    while (chart.series.length > 0) {
-      chart.series[0].remove(false);
-    }
+  chart: Highcharts.Chart,
+  flightData: TelemetrySensorFields[],
+  selectedParams: string[]
+): void {
 
-    for (const param of selectedParams) {
-      const dataPoints: [number, number][] = this.buildSeries(flightData, param);
-
-      chart.addSeries(
-        {
-          type: 'line',
-          name: param,
-          data: dataPoints,
-          turboThreshold: 0
-        } as Highcharts.SeriesOptionsType,
-        false
-      );
-    }
-
-    chart.redraw();
+  while (chart.series.length > 0) {
+    chart.series[0].remove(false);
   }
+
+  const colors = Highcharts.getOptions().colors as string[];
+
+for (let index: number = 0; index < selectedParams.length; index++) {
+
+    const param: string = selectedParams[index];
+    const dataPoints: [number, number][] = this.buildSeries(flightData, param);
+
+    const baseColor: string =
+      colors?.[index % colors.length] ?? '#00bfff';
+
+    const softTop: string =
+      Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+
+    const softBottom: string =
+      Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
+
+    chart.addSeries(
+      {
+        type: 'areaspline',
+        name: param,
+        data: dataPoints,
+        color: baseColor,
+        lineWidth: 1.5,
+        marker: { enabled: false },
+        fillColor: {
+          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+          stops: [
+            [0, softTop],
+            [1, softBottom]
+          ]
+        },
+        shadow: false
+      } as Highcharts.SeriesOptionsType,
+      false
+    );
+  }
+
+  chart.redraw();
+}
+
 
   public addOrReplaceAnomaliesSeries(
     chart: Highcharts.Chart,
@@ -176,6 +209,7 @@ export class AnalyzeChartsService {
           type: 'line',
           name: param,
           data: dataPoints,
+          color: '#8b5cf6',
           turboThreshold: 0
         } as Highcharts.SeriesLineOptions
       ]
