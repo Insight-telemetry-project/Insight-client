@@ -40,7 +40,9 @@
     </section>
 
     <section class="paramsSection">
-      <p class="subtitle">Click a parameter to add/remove it to the main chart</p>
+      <p class="subtitle">
+        Click a parameter to add/remove it to the main chart
+      </p>
 
       <div class="paramsGrid">
         <button
@@ -50,7 +52,11 @@
           (click)="toggleParam(param)"
         >
           <div class="paramTitle">{{ param }}</div>
-          <div class="miniChart" #miniChart [attr.data-param]="param"></div>
+          <div
+            class="miniChart"
+            #miniChart
+            [attr.data-param]="param"
+          ></div>
         </button>
       </div>
     </section>
@@ -70,19 +76,93 @@
 
     <div class="sidebarInner" *ngIf="related.relatedOpen">
 
+      <div class="sidebarModeSwitch">
+        <button
+          class="modeBtn"
+          [class.active]="sidebarMode === 'related'"
+          (click)="sidebarMode = 'related'"
+        >
+          Related
+        </button>
+
+        <button
+          class="modeBtn"
+          [class.active]="sidebarMode === 'historical'"
+          (click)="sidebarMode = 'historical'"
+        >
+          Historical
+        </button>
+      </div>
+
       <div class="sidebarHeader">
-        Related: {{ related.relatedForParam }}
+        {{
+          sidebarMode === 'related'
+            ? ('Related: ' + related.relatedForParam)
+            : 'Historical Similar Points'
+        }}
       </div>
 
       <div class="sidebarContent">
-        <button
-          class="sidebarItem"
-          *ngFor="let p of related.relatedParams"
-          [class.selected]="isSelected(p)"
-          (click)="onRelatedParamClick(p)"
-        >
-          {{ p }}
-        </button>
+
+        <ng-container *ngIf="sidebarMode === 'related'">
+          <button
+            class="sidebarItem"
+            *ngFor="let p of related.relatedParams"
+            [class.selected]="isSelected(p)"
+            (click)="onRelatedParamClick(p)"
+          >
+            {{ p }}
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="sidebarMode === 'historical'">
+
+          <div class="historicalSortSwitch">
+            <button
+              class="sortBtn"
+              [class.active]="historicalSortBy === 'time'"
+              (click)="historicalSortBy = 'time'"
+            >
+              Sort by Time
+            </button>
+
+            <button
+              class="sortBtn"
+              [class.active]="historicalSortBy === 'score'"
+              (click)="historicalSortBy = 'score'"
+            >
+              Sort by Score
+            </button>
+          </div>
+
+          <div
+            class="historicalCard"
+            *ngFor="let item of sortedHistoricalItems"
+          >
+            <div class="histRow">
+              <span class="histLabel">Flight</span>
+              <span class="histValue">
+                {{ item.comparedFlightIndex }}
+              </span>
+            </div>
+
+            <div class="histRow">
+              <span class="histLabel">Score</span>
+              <span class="histValue">
+                {{ item.score | number:'1.2-2' }}
+              </span>
+            </div>
+
+            <div class="histRow">
+              <span class="histLabel">Time</span>
+              <span class="histValue">
+                {{ item.time * 1000 | date:'HH:mm:ss' }}
+              </span>
+            </div>
+          </div>
+
+        </ng-container>
+
       </div>
 
     </div>

@@ -11,6 +11,7 @@ export class RelatedParamsService {
   public relatedForParam: string | null = null;
 
   private relatedSub: Subscription | null = null;
+  public sidebarMode: 'related' | 'historical' = 'related';
 
   public constructor(private readonly archiveService: FlightArchiveService) {}
 
