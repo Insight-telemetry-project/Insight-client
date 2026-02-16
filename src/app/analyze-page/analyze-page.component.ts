@@ -58,15 +58,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subs.add(sub);
   }
 
-  public ngAfterViewInit(): void {
-    this.mainChart = this.charts.createMainChart(this.mainChartEl.nativeElement as HTMLElement);
-
-    const sub: Subscription = this.miniChartEls.changes.subscribe(() => {
-      this.drawMiniCharts();
-    });
-
-    this.subs.add(sub);
-  }
+ public ngAfterViewInit(): void {
+  this.mainChart =
+    this.charts.createMainChart(this.mainChartEl.nativeElement as HTMLElement);
+}
 
   public ngOnDestroy(): void {
     this.subs.unsubscribe();
@@ -83,21 +78,23 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public toggleParam(param: string): void {
-    const wasSelected: boolean = this.selected.has(param);
+  const wasSelected: boolean = this.selected.has(param);
 
-    if (wasSelected) {
-      this.selected.delete(param);
-      if (this.mainChart) this.charts.removeAnomaliesSeries(this.mainChart, param);
-      this.related.closeIfOwner(param);
-    } else {
-      this.selected.add(param);
-      if (this.selected.size === 1 && this.related.relatedForParam === null) {
-        this.related.openFor(this.masterIndex, param, this.subs);
-      }
+  if (wasSelected) {
+    this.selected.delete(param);
+    if (this.mainChart) {
+      this.charts.removeAnomaliesSeries(this.mainChart, param);
     }
-
-    this.refreshMainChart();
+  } else {
+    this.selected.add(param);
+    this.related.openFor(this.masterIndex, param, this.subs);
   }
+
+  this.related.relatedOpen = this.selected.size > 0;
+
+  this.refreshMainChart();
+}
+
 
   public toggleRelatedList(): void {
     this.related.toggle(this.masterIndex, this.subs);
@@ -115,7 +112,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadFlight(): void {
-    const sub: Subscription = this.archiveService.getFlightFields(this.masterIndex).subscribe({
+  const sub: Subscription =
+    this.archiveService.getFlightFields(this.masterIndex).subscribe({
       next: (rows: TelemetrySensorFields[]) => {
         const sortedRows: TelemetrySensorFields[] = (rows ?? [])
           .slice()
@@ -123,10 +121,16 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.flightData = sortedRows;
 
-        const firstFields: Record<string, number> = this.flightData[0]?.fields ?? {};
+        const firstFields: Record<string, number> =
+          this.flightData[0]?.fields ?? {};
+
         this.parameters = Object.keys(firstFields);
 
         this.refreshMainChart();
+
+        setTimeout(() => {
+          this.drawMiniCharts();
+        });
       },
       error: (err: any) => {
         console.error('Failed to load flight:', err);
@@ -136,8 +140,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    this.subs.add(sub);
-  }
+  this.subs.add(sub);
+}
+
 
   private refreshMainChart(): void {
     if (!this.mainChart) return;
@@ -153,20 +158,27 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawMiniCharts(): void {
-    if (this.flightData.length === 0) return;
+  if (this.flightData.length === 0) return;
+  if (this.miniCharts.size > 0) return;
 
-    this.charts.destroyMiniCharts(this.miniCharts);
+  this.miniChartEls.forEach((ref: ElementRef<HTMLDivElement>) => {
+    const param: string | undefined = ref.nativeElement.dataset['param'];
+    if (!param) return;
 
-    this.miniChartEls.forEach((ref: ElementRef<HTMLDivElement>) => {
-      const param: string | undefined = ref.nativeElement.dataset['param'];
-      if (!param) return;
+    const dataPoints: [number, number][] =
+      this.charts.buildSeries(this.flightData, param);
 
-      const dataPoints: [number, number][] = this.charts.buildSeries(this.flightData, param);
-      const chart: Highcharts.Chart = this.charts.createMiniChart(ref.nativeElement as HTMLElement, param, dataPoints);
+    const chart: Highcharts.Chart =
+      this.charts.createMiniChart(
+        ref.nativeElement as HTMLElement,
+        param,
+        dataPoints
+      );
 
-      this.miniCharts.set(param, chart);
-    });
-  }
+    this.miniCharts.set(param, chart);
+  });
+}
+
 
   private loadAndShowAnomalies(param: string): void {
     const sub: Subscription = this.archiveService.getFlightPointsParam(this.masterIndex, param).subscribe({
