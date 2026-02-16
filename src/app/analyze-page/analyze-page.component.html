@@ -1,82 +1,92 @@
-<div class="page">
-  <header class="header">
-    <div class="headerLeft">
+<div class="layout">
+
+  <div class="content" [class.sidebar-open]="related.relatedOpen">
+
+    <header class="header">
       <h1 class="title">Flight {{ masterIndex }}</h1>
+      <button class="back-btn" type="button" (click)="goBack()">←</button>
+    </header>
+
+    <section class="mainChartSection">
+      <div class="mainChartCard">
+        <div #mainChart class="mainChart"></div>
+      </div>
+    </section>
+
+    <section class="toolbar paramsToolbar">
+      <div class="search">
+        <span class="searchIcon">⌕</span>
+        <input
+          class="searchInput"
+          type="text"
+          placeholder="Filter parameters..."
+          [value]="paramSearchText"
+          (input)="onParamSearchChange(($any($event.target)).value)"
+        />
+        <button
+          class="clearBtn"
+          type="button"
+          *ngIf="paramSearchText.length > 0"
+          (click)="clearParamSearch()"
+        >
+          Clear
+        </button>
+      </div>
+
+      <div class="countPill">
+        <span class="countValue">{{ filteredParameters.length }}</span>
+        <span class="countLabel">params</span>
+      </div>
+    </section>
+
+    <section class="paramsSection">
       <p class="subtitle">Click a parameter to add/remove it to the main chart</p>
-    </div>
 
-    <button class="back-btn" type="button" (click)="goBack()" aria-label="Back">←</button>
-  </header>
+      <div class="paramsGrid">
+        <button
+          class="paramCard"
+          *ngFor="let param of filteredParameters"
+          [class.selected]="isSelected(param)"
+          (click)="toggleParam(param)"
+        >
+          <div class="paramTitle">{{ param }}</div>
+          <div class="miniChart" #miniChart [attr.data-param]="param"></div>
+        </button>
+      </div>
+    </section>
 
-  <section class="mainChartSection">
-    <div class="mainChartCard">
-      <div #mainChart class="mainChart"></div>
-    </div>
-  </section>
-
-  <div class="relatedInline" *ngIf="related.relatedForParam">
-    <button class="relatedInlineBtn" type="button" (click)="toggleRelatedList()">
-      Related: {{ related.relatedForParam }} ({{ related.relatedLoading ? '...' : related.relatedParams.length }})
-    </button>
-
-    <div class="relatedInlineList" *ngIf="related.relatedOpen">
-      <div class="relatedInlineError" *ngIf="related.relatedError">{{ related.relatedError }}</div>
-
-      <button
-        class="relatedInlineItem"
-        *ngFor="let p of related.relatedParams"
-        [class.selected]="isSelected(p)"
-        type="button"
-        (click)="onRelatedParamClick(p)"
-      >
-        {{ p }}
-      </button>
-    </div>
   </div>
 
-  <section class="toolbar paramsToolbar">
-    <div class="search">
-      <span class="searchIcon">⌕</span>
+  <button
+    class="sidebarToggle"
+    type="button"
+    [disabled]="selected.size === 0"
+    (click)="related.relatedOpen = !related.relatedOpen"
+  >
+    {{ related.relatedOpen ? '❯' : '❮' }}
+  </button>
 
-      <input
-        class="searchInput"
-        type="text"
-        placeholder="Filter parameters..."
-        [value]="paramSearchText"
-        (input)="onParamSearchChange(($any($event.target)).value)"
-      />
+  <aside class="sidebar" [class.open]="related.relatedOpen">
 
-      <button
-        class="clearBtn"
-        type="button"
-        *ngIf="paramSearchText.length > 0"
-        (click)="clearParamSearch()"
-      >
-        Clear
-      </button>
+    <div class="sidebarInner" *ngIf="related.relatedOpen">
+
+      <div class="sidebarHeader">
+        Related: {{ related.relatedForParam }}
+      </div>
+
+      <div class="sidebarContent">
+        <button
+          class="sidebarItem"
+          *ngFor="let p of related.relatedParams"
+          [class.selected]="isSelected(p)"
+          (click)="onRelatedParamClick(p)"
+        >
+          {{ p }}
+        </button>
+      </div>
+
     </div>
 
-    <div class="countPill">
-      <span class="countValue">{{ filteredParameters.length }}</span>
-      <span class="countLabel">params</span>
-    </div>
-  </section>
+  </aside>
 
-  <section class="paramsSection">
-    <div class="paramsHeader">
-      <span class="paramsTitle">Parameters</span>
-    </div>
-
-    <div class="paramsGrid">
-      <button
-        class="paramCard"
-        *ngFor="let param of filteredParameters"
-        [class.selected]="isSelected(param)"
-        (click)="toggleParam(param)"
-      >
-        <div class="paramTitle">{{ param }}</div>
-        <div class="miniChart" #miniChart [attr.data-param]="param"></div>
-      </button>
-    </div>
-  </section>
 </div>

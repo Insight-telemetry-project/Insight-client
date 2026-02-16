@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import * as Highcharts from 'highcharts';
+import * as Highcharts from 'highcharts/highstock';
 import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-fields.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -7,11 +7,22 @@ export class AnalyzeChartsService {
   public createMainChart(container: HTMLElement): Highcharts.Chart {
   const options: Highcharts.Options = {
     chart: {
-      backgroundColor: 'transparent',
-      zooming: { type: 'x' },
-      panning: { enabled: true, type: 'x' },
-      panKey: 'shift'
-    },
+  backgroundColor: 'transparent',
+  zooming: { type: 'x' },
+  panning: { enabled: true, type: 'x' },
+  panKey: 'shift',
+
+  events: {
+    load: function () {
+      const chart = this;
+
+      chart.container.ondblclick = function () {
+        chart.xAxis[0].setExtremes(undefined, undefined);
+      };
+    }
+  }
+},
+
     title: { text: '' },
     credits: { enabled: false },
     legend: {
@@ -27,12 +38,32 @@ export class AnalyzeChartsService {
       gridLineWidth: 1
     },
     yAxis: {
+      opposite: false,
       title: { text: '', style: { color: '#ffffff' } },
       labels: { style: { color: '#cfcfe6' } },
       gridLineColor: 'rgba(255,255,255,0.08)',
       gridLineWidth: 1
-    },
-    
+},
+
+    navigator: {
+  enabled: true,
+  height: 60,
+
+  xAxis: {
+    gridLineWidth: 0,
+    lineWidth: 0,
+    tickLength: 0,
+  },
+},
+
+scrollbar: {
+  enabled: false
+},
+
+rangeSelector: {
+  enabled: false
+},
+
     tooltip: {
       shared: false,
       snap: 80,
@@ -57,13 +88,13 @@ export class AnalyzeChartsService {
     series: []
   };
 
-  return Highcharts.chart(container, options);
+  return Highcharts.stockChart(container, options);
 }
 
 
 
 
-  public updateMainChartSeries(
+ public updateMainChartSeries(
   chart: Highcharts.Chart,
   flightData: TelemetrySensorFields[],
   selectedParams: string[]
@@ -73,9 +104,9 @@ export class AnalyzeChartsService {
     chart.series[0].remove(false);
   }
 
-  const colors = Highcharts.getOptions().colors as string[];
+  const colors: string[] = Highcharts.getOptions().colors as string[];
 
-for (let index: number = 0; index < selectedParams.length; index++) {
+  for (let index: number = 0; index < selectedParams.length; index++) {
 
     const param: string = selectedParams[index];
     const dataPoints: [number, number][] = this.buildSeries(flightData, param);
@@ -97,6 +128,7 @@ for (let index: number = 0; index < selectedParams.length; index++) {
         color: baseColor,
         lineWidth: 1.5,
         marker: { enabled: false },
+        threshold: null,
         fillColor: {
           linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
           stops: [
@@ -109,6 +141,12 @@ for (let index: number = 0; index < selectedParams.length; index++) {
       false
     );
   }
+
+  chart.update({
+    navigator: {
+      enabled: selectedParams.length > 0
+    }
+  }, false);
 
   chart.redraw();
 }
@@ -198,12 +236,25 @@ for (let index: number = 0; index < selectedParams.length; index++) {
       yAxis: { title: { text: '' }, visible: false },
       tooltip: { enabled: false },
       plotOptions: {
-        series: {
-          animation: false,
-          marker: { enabled: false },
-          lineWidth: 1
+      series: {
+        animation: false,
+        lineWidth: 1,
+        enableMouseTracking: false,
+        states: {
+          hover: {
+            enabled: false
+          }
+        },
+        marker: {
+          enabled: false,
+          states: {
+            hover: {
+              enabled: false
+            }
+          }
         }
-      },
+      }
+    },
       series: [
         {
           type: 'line',
