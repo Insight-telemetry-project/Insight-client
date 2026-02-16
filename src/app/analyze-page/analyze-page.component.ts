@@ -18,6 +18,9 @@ import { AnalyzeChartsService } from './services/analyze-charts.service';
 import { RelatedParamsService } from './services/related-params.service';
 import { HistoricalSimilarityPoint } from '../common/interfaces/historical-similarity-point.interface';
 
+
+import { HistoricalSidebarItem } from '../common/interfaces/historical-sidebar-item.interface';
+
 @Component({
   selector: 'app-analyze-page',
   templateUrl: './analyze-page.component.html',
@@ -33,6 +36,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public selected: Set<string> = new Set<string>();
   public paramSearchText: string = '';
 
+  public sidebarMode: 'related' | 'historical' = 'related';
+  public historicalSidebarItems: HistoricalSidebarItem[] = [];
+  public historicalSortBy: 'time' | 'score' = 'time';
+
+  
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
@@ -68,6 +76,16 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroyCharts();
     this.related.clear();
   }
+
+  public get sortedHistoricalItems(): HistoricalSidebarItem[] {
+  const items: HistoricalSidebarItem[] = [...this.historicalSidebarItems];
+
+  if (this.historicalSortBy === 'time') {
+    return items.sort((a, b) => a.time - b.time);
+  }
+
+  return items.sort((a, b) => b.score - a.score);
+}
 
   public goBack(): void {
     this.router.navigate(['/']);
@@ -145,17 +163,19 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   private refreshMainChart(): void {
-    if (!this.mainChart) return;
+  if (!this.mainChart) return;
 
-    const selectedParams: string[] = Array.from(this.selected.values());
-    this.charts.updateMainChartSeries(this.mainChart, this.flightData, selectedParams);
+  this.historicalSidebarItems = [];
 
-    for (const param of selectedParams) {
-      this.loadAndShowAnomalies(param);
-      this.loadAndShowHistoricalSimilarity(param);
+  const selectedParams: string[] = Array.from(this.selected.values());
+  this.charts.updateMainChartSeries(this.mainChart, this.flightData, selectedParams);
 
-    }
+  for (const param of selectedParams) {
+    this.loadAndShowAnomalies(param);
+    this.loadAndShowHistoricalSimilarity(param);
   }
+}
+
 
   private drawMiniCharts(): void {
   if (this.flightData.length === 0) return;
@@ -213,12 +233,30 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           this.charts.mapHistoricalSimilarityToPoints(this.flightData, param, items);
 
         this.charts.addOrReplaceHistoricalSimilaritySeries(this.mainChart, param, points);
+
+        const sidebarItems: HistoricalSidebarItem[] = items.map((item) => {
+          const start: number = Number(item.startIndex);
+          const end: number = Number(item.endIndex);
+          const t: number = Math.round((start + end) / 2);
+
+          return {
+            param,
+            comparedFlightIndex: item.comparedFlightIndex,
+            label: item.label,
+            score: Number(item.finalScore),
+            time: t
+          };
+        });
+
+        this.historicalSidebarItems.push(...sidebarItems);
       },
-      error: (err: any) => console.error('Failed to load historical similarity for', param, err)
+      error: (err: any) =>
+        console.error('Failed to load historical similarity for', param, err)
     });
 
   this.subs.add(sub);
 }
+
 public get filteredParameters(): string[] {
   const query: string = this.paramSearchText.trim().toLowerCase();
   if (query.length === 0) return this.parameters;
