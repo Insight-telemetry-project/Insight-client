@@ -7,9 +7,37 @@
       <button class="back-btn" type="button" (click)="goBack()">←</button>
     </header>
 
-    <section class="mainChartSection">
-      <div class="mainChartCard">
-        <div #mainChart class="mainChart"></div>
+    <section class="gridSection" [style.height.px]="gridHeight" *ngIf="gridItems.length > 0">
+      <gridster [options]="gridOptions">
+        <gridster-item
+          *ngFor="let item of gridItems"
+          [item]="item"
+          class="gridsterItemWrapper"
+        >
+          <div class="gridChartCard">
+            <div class="gridChartHeader">
+              <span class="gridChartTitle">{{ item.param }}</span>
+              <button
+                class="gridChartClose"
+                type="button"
+                (click)="toggleParam(item.param)"
+                title="Remove"
+              >✕</button>
+            </div>
+            <div
+              #gridChartEl
+              class="gridChartBody"
+              [attr.data-param]="item.param"
+            ></div>
+          </div>
+        </gridster-item>
+      </gridster>
+    </section>
+
+    <section class="emptyState" *ngIf="gridItems.length === 0">
+      <div class="emptyStateInner">
+        <span class="emptyIcon">📈</span>
+        <p class="emptyText">Click a parameter below to add it to the grid</p>
       </div>
     </section>
 
@@ -41,7 +69,7 @@
 
     <section class="paramsSection">
       <p class="subtitle">
-        Click a parameter to add/remove it to the main chart
+        Click a parameter to add/remove it to the grid
       </p>
 
       <div class="paramsGrid">
@@ -141,23 +169,17 @@
           >
             <div class="histRow">
               <span class="histLabel">Flight</span>
-              <span class="histValue">
-                {{ item.comparedFlightIndex }}
-              </span>
+              <span class="histValue">{{ item.comparedFlightIndex }}</span>
             </div>
 
             <div class="histRow">
               <span class="histLabel">Score</span>
-              <span class="histValue">
-                {{ item.score | number:'1.2-2' }}
-              </span>
+              <span class="histValue">{{ item.score | number:'1.2-2' }}</span>
             </div>
 
             <div class="histRow">
               <span class="histLabel">Time</span>
-              <span class="histValue">
-                {{ item.time * 1000 | date:'HH:mm:ss' }}
-              </span>
+              <span class="histValue">{{ item.time * 1000 | date:'HH:mm:ss' }}</span>
             </div>
           </div>
 

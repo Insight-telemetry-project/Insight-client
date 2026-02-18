@@ -419,6 +419,96 @@ public mapHistoricalSimilarityToPoints(
 
   return points;
 }
+public createGridChart(
+    container: HTMLElement,
+    param: string,
+    flightData: TelemetrySensorFields[]
+  ): Highcharts.Chart {
+    const dataPoints: [number, number][] = this.buildSeries(flightData, param);
+    const colors: string[] = Highcharts.getOptions().colors as string[];
+    const baseColor: string = colors?.[0] ?? '#00bfff';
+    const softTop: string =
+      Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+    const softBottom: string =
+      Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
 
+    const options: Highcharts.Options = {
+      chart: {
+        backgroundColor: 'transparent',
+        zooming: { type: 'x' },
+        panning: { enabled: true, type: 'x' },
+        panKey: 'shift',
+        height: null as any,
+        events: {
+          load: function () {
+            const chart = this;
+            chart.container.ondblclick = function () {
+              chart.xAxis[0].setExtremes(undefined, undefined);
+            };
+          }
+        }
+      },
+      title: { text: '' },
+      credits: { enabled: false },
+      legend: { enabled: false },
+      xAxis: {
+        type: 'datetime',
+        labels: { style: { color: '#cfcfe6', fontSize: '10px' } },
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1
+      },
+      yAxis: {
+        opposite: false,
+        title: { text: '' },
+        labels: { style: { color: '#cfcfe6', fontSize: '10px' } },
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1
+      },
+      navigator: {
+        enabled: true,
+        height: 36,
+        xAxis: { gridLineWidth: 0, lineWidth: 0, tickLength: 0 }
+      },
+      scrollbar: { enabled: false },
+      rangeSelector: { enabled: false },
+      tooltip: {
+        shared: false,
+        snap: 80,
+        useHTML: true
+      },
+      plotOptions: {
+        series: {
+          states: { inactive: { opacity: 1 } }
+        },
+        areaspline: {
+          marker: { enabled: false }
+        },
+        scatter: {
+          stickyTracking: true
+        }
+      },
+      series: [
+        {
+          type: 'areaspline',
+          name: param,
+          data: dataPoints,
+          color: baseColor,
+          lineWidth: 1.5,
+          marker: { enabled: false },
+          threshold: null,
+          fillColor: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, softTop],
+              [1, softBottom]
+            ]
+          },
+          shadow: false
+        } as Highcharts.SeriesOptionsType
+      ]
+    };
+
+    return Highcharts.stockChart(container, options);
+  }
 
 }
