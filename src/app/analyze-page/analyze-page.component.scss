@@ -446,6 +446,7 @@
       display: block;
       width: 100%;
       height: 100% !important;
+      overflow: hidden !important;
     }
 
     gridster-item {
@@ -493,6 +494,58 @@
   padding: 10px 16px 8px 16px;
   flex-shrink: 0;
   border-bottom: 1px solid rgba(190, 120, 255, 0.10);
+}
+
+.gridChartActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gridChartToggleBtn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(190, 120, 255, 0.22);
+  background: rgba(176, 96, 255, 0.10);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 140ms ease;
+
+  &:hover {
+    background: rgba(176, 96, 255, 0.22);
+    border-color: rgba(220, 170, 255, 0.5);
+    color: #fff;
+  }
+
+  &.hidden {
+    opacity: 0.35;
+    text-decoration: line-through;
+  }
+}
+
+.anomalyBtn {
+  color: rgba(255, 100, 100, 0.9);
+  border-color: rgba(255, 80, 80, 0.25);
+  background: rgba(255, 60, 60, 0.08);
+
+  &:hover {
+    background: rgba(255, 60, 60, 0.18);
+    border-color: rgba(255, 100, 100, 0.5);
+    color: #ff6464;
+  }
+}
+
+.historyBtn {
+  color: rgba(255, 220, 50, 0.9);
+  border-color: rgba(255, 210, 0, 0.25);
+  background: rgba(255, 210, 0, 0.08);
+
+  &:hover {
+    background: rgba(255, 210, 0, 0.18);
+    border-color: rgba(255, 220, 50, 0.5);
+    color: #ffd432;
+  }
 }
 
 .gridChartTitle {
