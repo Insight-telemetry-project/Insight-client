@@ -40,38 +40,27 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public historicalSortBy: 'time' | 'score' = 'time';
 
   public gridOptions: GridsterConfig = {
-    gridType: GridType.VerticalFixed,
-    fixedRowHeight: 420,
-    compactType: CompactType.None,
-    displayGrid: DisplayGrid.OnDragAndResize,
-    defaultItemCols: 4,
-    defaultItemRows: 1,
-    minCols: 4,
-    maxCols: 4,
-    minRows: 1,
-    margin: 14,
-    outerMargin: true,
-    draggable: {
-      enabled: true,
-      dragHandleClass: 'gridChartHeader',
-      ignoreContentClass: 'gridChartBody'
-    },
-    resizable: { enabled: true },
-    pushItems: false,
-    swap: false,
-    itemChangeCallback: (item: GridsterItem) => {
-      const gridItem = item as GridChartItem;
-      if (gridItem.chart) {
-        setTimeout(() => (gridItem.chart as any).reflow(), 300);
-      }
-    },
-    itemResizeCallback: (item: GridsterItem) => {
-      const gridItem = item as GridChartItem;
-      if (gridItem.chart) {
-        setTimeout(() => (gridItem.chart as any).reflow(), 50);
-      }
-    }
-  };
+  gridType: GridType.VerticalFixed,
+  fixedRowHeight: 420,
+  compactType: CompactType.CompactUp,
+  displayGrid: DisplayGrid.OnDragAndResize,
+  defaultItemCols: 4,
+  defaultItemRows: 1,
+  minCols: 4,
+  maxCols: 4,
+  minRows: 1,
+  margin: 14,
+  outerMargin: true,
+  draggable: {
+    enabled: true,
+    dragHandleClass: 'gridChartHeader',
+    ignoreContentClass: 'gridChartBody'
+  },
+  resizable: { enabled: true },
+  pushItems: true,
+  swap: false
+};
+
 
   public gridItems: GridChartItem[] = [];
 
