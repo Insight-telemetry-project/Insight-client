@@ -51,7 +51,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     minRows: 1,
     margin: 14,
     outerMargin: true,
-    draggable: { enabled: true },
+    draggable: {
+      enabled: true,
+      dragHandleClass: 'gridChartHeader',
+      ignoreContentClass: 'gridChartBody'
+    },
     resizable: { enabled: true },
     pushItems: false,
     swap: false,
