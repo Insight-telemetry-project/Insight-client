@@ -42,9 +42,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
     fixedRowHeight: 420,
-    compactType: CompactType.CompactUp,
+    compactType: CompactType.None,
     displayGrid: DisplayGrid.OnDragAndResize,
-    defaultItemCols: 2,
+    defaultItemCols: 4,
     defaultItemRows: 1,
     minCols: 4,
     maxCols: 4,
@@ -53,7 +53,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     outerMargin: true,
     draggable: { enabled: true },
     resizable: { enabled: true },
-    pushItems: true,
+    pushItems: false,
     swap: false,
     itemChangeCallback: (item: GridsterItem) => {
       const gridItem = item as GridChartItem;
@@ -105,11 +105,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public get gridHeight(): number {
-    if (this.gridItems.length === 0) return 0;
-    const rows = Math.ceil(this.gridItems.length / 2);
+    const count = this.gridItems.length;
+    if (count === 0) return 0;
     const rowHeight = (this.gridOptions.fixedRowHeight as number) ?? 420;
     const margin = (this.gridOptions.margin as number) ?? 14;
-    return rows * rowHeight + (rows + 1) * margin;
+    return count * rowHeight + (count + 1) * margin;
   }
 
   public get sortedHistoricalItems(): HistoricalSidebarItem[] {
@@ -186,14 +186,13 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private addGridItem(param: string): void {
-    const col: number = (this.gridItems.length % 2) * 2;
-    const row: number = Math.floor(this.gridItems.length / 2);
+    const row = this.gridItems.length;
 
     const item: GridChartItem = {
       param,
-      cols: 2,
+      cols: 4,
       rows: 1,
-      x: col,
+      x: 0,
       y: row,
       chart: undefined,
       showAnomalies: true,
@@ -217,6 +216,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.gridItems.splice(idx, 1);
+
+    this.gridItems.forEach((it, i) => {
+      it.y = i;
+    });
+
+    this.cdr.detectChanges();
   }
 
   private clearGrid(): void {
@@ -264,9 +269,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           this.flightData = sortedRows;
           this.parameters = Object.keys(this.flightData[0]?.fields ?? {});
 
-          setTimeout(() => {
-            this.drawMiniCharts();
-          });
+          setTimeout(() => this.drawMiniCharts());
         },
         error: (err: any) => {
           console.error('Failed to load flight:', err);
@@ -289,12 +292,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       const dataPoints: [number, number][] =
         this.charts.buildSeries(this.flightData, param);
 
-      const chart = this.charts.createMiniChart(
-        ref.nativeElement,
-        param,
-        dataPoints
-      );
-
+      const chart = this.charts.createMiniChart(ref.nativeElement, param, dataPoints);
       this.miniCharts.set(param, chart);
     });
   }
