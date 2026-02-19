@@ -9,7 +9,7 @@ export class AnalyzeChartsService {
     const options: Highcharts.Options = {
       chart: {
         backgroundColor: 'transparent',
-        zooming: { type: 'x' },
+        zooming: { type: 'x', mouseWheel: false },
         panning: { enabled: true, type: 'x' },
         panKey: 'shift',
         events: {
@@ -31,7 +31,7 @@ export class AnalyzeChartsService {
       xAxis: {
         type: 'datetime',
         title: { text: 'Time', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } },
+        labels: ({ style: { color: '#cfcfe6' }, textOutline: 'none' } as any),
         gridLineColor: 'rgba(255,255,255,0.08)',
         gridLineWidth: 1
       },
@@ -116,7 +116,7 @@ export class AnalyzeChartsService {
     const options: Highcharts.Options = {
       chart: {
         backgroundColor: 'transparent',
-        zooming: { type: 'x' },
+        zooming: { type: 'x', mouseWheel: false },
         panning: { enabled: true, type: 'x' },
         panKey: 'shift',
         height: null as any,
@@ -134,7 +134,7 @@ export class AnalyzeChartsService {
       legend: { enabled: false },
       xAxis: {
         type: 'datetime',
-        labels: { style: { color: '#cfcfe6', fontSize: '10px' } },
+        labels: ({ style: { color: '#cfcfe6', fontSize: '10px' }, textOutline: 'none' } as any),
         gridLineColor: 'rgba(255,255,255,0.08)',
         gridLineWidth: 1
       },
