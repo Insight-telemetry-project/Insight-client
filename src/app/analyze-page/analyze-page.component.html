@@ -15,14 +15,30 @@
           class="gridsterItemWrapper"
         >
           <div class="gridChartCard">
-            <div class="gridChartHeader">
+          <div class="gridChartHeader">
               <span class="gridChartTitle">{{ item.param }}</span>
-              <button
-                class="gridChartClose"
-                type="button"
-                (click)="toggleParam(item.param)"
-                title="Remove"
-              >✕</button>
+              <div class="gridChartActions">
+                <button
+                  class="gridChartToggleBtn anomalyBtn"
+                  type="button"
+                  [class.hidden]="!item.showAnomalies"
+                  (click)="toggleAnomalies(item)"
+                  title="Toggle anomalies"
+                >● Anomalies</button>
+                <button
+                  class="gridChartToggleBtn historyBtn"
+                  type="button"
+                  [class.hidden]="!item.showHistory"
+                  (click)="toggleHistory(item)"
+                  title="Toggle historical points"
+                >● Historical</button>
+                <button
+                  class="gridChartClose"
+                  type="button"
+                  (click)="toggleParam(item.param)"
+                  title="Remove"
+                >✕</button>
+              </div>
             </div>
             <div
               #gridChartEl

@@ -163,6 +163,20 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.related.toggle(this.masterIndex, this.subs);
   }
 
+  public toggleAnomalies(item: GridChartItem): void {
+    if (!item.chart) return;
+    item.showAnomalies = !item.showAnomalies;
+    const s = item.chart.series.find((s: any) => s.options.id === `anomalies:${item.param}`);
+    if (s) { item.showAnomalies ? s.show() : s.hide(); }
+  }
+
+  public toggleHistory(item: GridChartItem): void {
+    if (!item.chart) return;
+    item.showHistory = !item.showHistory;
+    const s = item.chart.series.find((s: any) => s.options.id === `history:${item.param}`);
+    if (s) { item.showHistory ? s.show() : s.hide(); }
+  }
+
   public onParamSearchChange(value: string): void {
     this.paramSearchText = value;
   }
@@ -181,7 +195,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       rows: 1,
       x: col,
       y: row,
-      chart: undefined
+      chart: undefined,
+      showAnomalies: true,
+      showHistory: true
     };
 
     this.gridItems.push(item);
@@ -230,10 +246,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.flightData
     );
 
-    setTimeout(() => (item.chart as any)?.reflow(), 0);
+    const chart = item.chart;
+    setTimeout(() => (chart as any)?.reflow(), 0);
 
-    this.loadAndShowAnomalies(item.param, item.chart);
-    this.loadAndShowHistoricalSimilarity(item.param, item.chart);
+    this.loadAndShowAnomalies(item.param, chart);
+    this.loadAndShowHistoricalSimilarity(item.param, chart);
   }
 
   private loadFlight(): void {
@@ -329,7 +346,4 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.subs.add(sub);
   }
-
-
-  
 }
