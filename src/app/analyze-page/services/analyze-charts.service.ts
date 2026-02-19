@@ -315,13 +315,13 @@ export class AnalyzeChartsService {
   }
 
   public buildSeries(flightData: TelemetrySensorFields[], param: string): [number, number][] {
-    const points: [number, number][] = [];
-    for (const row of flightData) {
-      const value: number | undefined = row.fields[param];
-      if (value === undefined || value === null) continue;
-      points.push([row.timestep * 1000, value]);
+    const timeValuePairs: [number, number][] = [];
+    for (const telemetryRow of flightData) {
+      const sensorValue: number | undefined = telemetryRow.fields[param];
+      if (sensorValue === undefined || sensorValue === null) continue;
+      timeValuePairs.push([telemetryRow.timestep * 1000, sensorValue]);
     }
-    return points;
+    return timeValuePairs;
   }
 
   public mapAnomalyEpochSecondsToXY(
@@ -329,19 +329,19 @@ export class AnalyzeChartsService {
     param: string,
     anomalyEpochSeconds: number[]
   ): [number, number][] {
-    const timeToValue: Map<number, number> = new Map<number, number>();
-    for (const row of flightData) {
-      const value: number | undefined = row.fields[param];
-      if (value === undefined || value === null) continue;
-      timeToValue.set(row.timestep, value);
+    const timeToSensorValue: Map<number, number> = new Map<number, number>();
+    for (const telemetryRow of flightData) {
+      const sensorValue: number | undefined = telemetryRow.fields[param];
+      if (sensorValue === undefined || sensorValue === null) continue;
+      timeToSensorValue.set(telemetryRow.timestep, sensorValue);
     }
-    const points: [number, number][] = [];
-    for (const t of anomalyEpochSeconds) {
-      const y: number | undefined = timeToValue.get(t);
-      if (y === undefined) continue;
-      points.push([t * 1000, y]);
+    const anomalyPoints: [number, number][] = [];
+    for (const anomalyEpochSecond of anomalyEpochSeconds) {
+      const anomalyValue: number | undefined = timeToSensorValue.get(anomalyEpochSecond);
+      if (anomalyValue === undefined) continue;
+      anomalyPoints.push([anomalyEpochSecond * 1000, anomalyValue]);
     }
-    return points;
+    return anomalyPoints;
   }
 
   public mapHistoricalSimilarityToPoints(
@@ -349,27 +349,27 @@ export class AnalyzeChartsService {
     param: string,
     items: any[]
   ): Highcharts.PointOptionsObject[] {
-    const timeToValue: Map<number, number> = new Map<number, number>();
-    for (const row of flightData) {
-      const value: number | undefined = row.fields[param];
-      if (value === undefined || value === null) continue;
-      timeToValue.set(row.timestep, value);
+    const timeToSensorValue: Map<number, number> = new Map<number, number>();
+    for (const telemetryRow of flightData) {
+      const sensorValue: number | undefined = telemetryRow.fields[param];
+      if (sensorValue === undefined || sensorValue === null) continue;
+      timeToSensorValue.set(telemetryRow.timestep, sensorValue);
     }
-    const points: Highcharts.PointOptionsObject[] = [];
-    for (const item of items) {
-      const start: number = Number(item.startIndex);
-      const end: number = Number(item.endIndex);
-      const t: number = Math.round((start + end) / 2);
-      const y: number | undefined = timeToValue.get(t);
-      if (y === undefined) continue;
-      points.push({
-        x: t * 1000,
-        y,
+    const similarityPoints: Highcharts.PointOptionsObject[] = [];
+    for (const similarityItem of items) {
+      const startIndex: number = Number(similarityItem.startIndex);
+      const endIndex: number = Number(similarityItem.endIndex);
+      const similarityTime: number = Math.round((startIndex + endIndex) / 2);
+      const similarityValue: number | undefined = timeToSensorValue.get(similarityTime);
+      if (similarityValue === undefined) continue;
+      similarityPoints.push({
+        x: similarityTime * 1000,
+        y: similarityValue,
         custom: {
-          info: `Matched flight ${item.comparedFlightIndex}, label ${item.label}, score ${Number(item.finalScore).toFixed(2)}`
+          info: `Matched flight ${similarityItem.comparedFlightIndex}, label ${similarityItem.label}, score ${Number(similarityItem.finalScore).toFixed(2)}`
         }
       });
     }
-    return points;
+    return similarityPoints;
   }
 }
