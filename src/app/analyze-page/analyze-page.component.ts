@@ -112,22 +112,22 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.gridItems.length === 0) return 0;
     const rowHeight = (this.gridOptions.fixedRowHeight as number) ?? 420;
     const margin = (this.gridOptions.margin as number) ?? 14;
-    const maxRow = Math.max(...this.gridItems.map(i => (i.y ?? 0) + (i.rows ?? 1)));
+    const maxRow = Math.max(...this.gridItems.map(item => (item.y ?? 0) + (item.rows ?? 1)));
     return maxRow * rowHeight + (maxRow + 1) * margin;
   }
 
   public get sortedHistoricalItems(): HistoricalSidebarItem[] {
-    const items: HistoricalSidebarItem[] = [...this.historicalSidebarItems];
+    const sidebarItemsCopy: HistoricalSidebarItem[] = [...this.historicalSidebarItems];
     if (this.historicalSortBy === 'time') {
-      return items.sort((a, b) => a.time - b.time);
+      return sidebarItemsCopy.sort((firstItem, secondItem) => firstItem.time - secondItem.time);
     }
-    return items.sort((a, b) => b.score - a.score);
+    return sidebarItemsCopy.sort((firstItem, secondItem) => secondItem.score - firstItem.score);
   }
 
   public get filteredParameters(): string[] {
-    const query: string = this.paramSearchText.trim().toLowerCase();
-    if (query.length === 0) return this.parameters;
-    return this.parameters.filter((p: string) => p.toLowerCase().includes(query));
+    const searchQuery: string = this.paramSearchText.trim().toLowerCase();
+    if (searchQuery.length === 0) return this.parameters;
+    return this.parameters.filter((parameterName: string) => parameterName.toLowerCase().includes(searchQuery));
   }
 
   public goBack(): void {
@@ -170,15 +170,15 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public toggleAnomalies(item: GridChartItem): void {
     if (!item.chart) return;
     item.showAnomalies = !item.showAnomalies;
-    const s = item.chart.series.find((s: any) => s.options.id === `anomalies:${item.param}`);
-    if (s) { item.showAnomalies ? s.show() : s.hide(); }
+    const anomalySeries = item.chart.series.find((seriesItem: any) => seriesItem.options.id === `anomalies:${item.param}`);
+    if (anomalySeries) { item.showAnomalies ? anomalySeries.show() : anomalySeries.hide(); }
   }
 
   public toggleHistory(item: GridChartItem): void {
     if (!item.chart) return;
     item.showHistory = !item.showHistory;
-    const s = item.chart.series.find((s: any) => s.options.id === `history:${item.param}`);
-    if (s) { item.showHistory ? s.show() : s.hide(); }
+    const historySeries = item.chart.series.find((seriesItem: any) => seriesItem.options.id === `history:${item.param}`);
+    if (historySeries) { item.showHistory ? historySeries.show() : historySeries.hide(); }
   }
 
   public onParamSearchChange(value: string): void {
@@ -190,82 +190,82 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private addGridItem(param: string): void {
-    const row = this.gridItems.length;
+    const gridRowIndex = this.gridItems.length;
 
-    const item: GridChartItem = {
+    const newGridChartItem: GridChartItem = {
       param,
       cols: 4,
       rows: 1,
       x: 0,
-      y: row,
+      y: gridRowIndex,
       chart: undefined,
       showAnomalies: true,
       showHistory: true
     };
 
-    this.gridItems.push(item);
+    this.gridItems.push(newGridChartItem);
     this.cdr.detectChanges();
 
-    setTimeout(() => this.initGridChart(item), 150);
+    setTimeout(() => this.initGridChart(newGridChartItem), 150);
   }
 
   private removeGridItem(param: string): void {
-    const idx: number = this.gridItems.findIndex((i) => i.param === param);
-    if (idx === -1) return;
+    const gridItemIndex: number = this.gridItems.findIndex((gridItem) => gridItem.param === param);
+    if (gridItemIndex === -1) return;
 
-    const item: GridChartItem = this.gridItems[idx];
-    if (item.chart) {
-      item.chart.destroy();
-      item.chart = undefined;
+    const itemToRemove: GridChartItem = this.gridItems[gridItemIndex];
+    if (itemToRemove.chart) {
+      itemToRemove.chart.destroy();
+      itemToRemove.chart = undefined;
     }
 
-    this.gridItems = this.gridItems.filter((_, i) => i !== idx);
+    this.gridItems = this.gridItems.filter((_, currentIndex) => currentIndex !== gridItemIndex);
     this.cdr.detectChanges();
   }
 
   private clearGrid(): void {
-    for (const item of this.gridItems) {
-      if (item.chart) {
-        item.chart.destroy();
-        item.chart = undefined;
+    for (const gridItem of this.gridItems) {
+      if (gridItem.chart) {
+        gridItem.chart.destroy();
+        gridItem.chart = undefined;
       }
     }
     this.gridItems = [];
   }
 
   private initGridChart(item: GridChartItem): void {
-    const ref: ElementRef<HTMLDivElement> | undefined =
+    const gridChartElementRef: ElementRef<HTMLDivElement> | undefined =
       this.gridChartEls.find(
-        (el) => el.nativeElement.dataset['param'] === item.param
+        (elementRef) => elementRef.nativeElement.dataset['param'] === item.param
       );
 
-    if (!ref) {
+    if (!gridChartElementRef) {
       setTimeout(() => this.initGridChart(item), 150);
       return;
     }
 
     item.chart = this.charts.createGridChart(
-      ref.nativeElement,
+      gridChartElementRef.nativeElement,
       item.param,
       this.flightData
     );
 
-    const chart = item.chart;
-    setTimeout(() => (chart as any)?.reflow(), 0);
+    const chartInstance = item.chart;
+    setTimeout(() => (chartInstance as any)?.reflow(), 0);
 
-    this.loadAndShowAnomalies(item.param, chart);
-    this.loadAndShowHistoricalSimilarity(item.param, chart);
+    this.loadAndShowAnomalies(item.param, chartInstance);
+    this.loadAndShowHistoricalSimilarity(item.param, chartInstance);
   }
 
   private loadFlight(): void {
     const sub: Subscription =
       this.archiveService.getFlightFields(this.masterIndex).subscribe({
-        next: (rows: TelemetrySensorFields[]) => {
-          const sortedRows: TelemetrySensorFields[] = (rows ?? [])
+        next: (flightRows: TelemetrySensorFields[]) => {
+          const sortedFlightRows: TelemetrySensorFields[] = (flightRows ?? [])
             .slice()
-            .sort((a, b) => a.timestep - b.timestep);
+            .sort((firstRow, secondRow) => firstRow.timestep - secondRow.timestep);
 
-          this.flightData = sortedRows;
+          this.flightData = sortedFlightRows;
           this.parameters = Object.keys(this.flightData[0]?.fields ?? {});
 
           setTimeout(() => this.drawMiniCharts());
@@ -284,63 +284,63 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.flightData.length === 0) return;
     if (this.miniCharts.size > 0) return;
 
-    this.miniChartEls.forEach((ref: ElementRef<HTMLDivElement>) => {
-      const param: string | undefined = ref.nativeElement.dataset['param'];
-      if (!param) return;
+    this.miniChartEls.forEach((miniChartElementRef: ElementRef<HTMLDivElement>) => {
+      const parameterName: string | undefined = miniChartElementRef.nativeElement.dataset['param'];
+      if (!parameterName) return;
 
       const dataPoints: [number, number][] =
-        this.charts.buildSeries(this.flightData, param);
+        this.charts.buildSeries(this.flightData, parameterName);
 
-      const chart = this.charts.createMiniChart(ref.nativeElement, param, dataPoints);
-      this.miniCharts.set(param, chart);
+      const miniChartInstance = this.charts.createMiniChart(miniChartElementRef.nativeElement, parameterName, dataPoints);
+      this.miniCharts.set(parameterName, miniChartInstance);
     });
   }
 
   private loadAndShowAnomalies(param: string, chart: import('highcharts').Chart): void {
-    const sub: Subscription =
+    const anomaliesSubscription: Subscription =
       this.archiveService.getFlightPointsParam(this.masterIndex, param).subscribe({
-        next: (anomalyTimes: number[]) => {
-          const points: [number, number][] =
-            this.charts.mapAnomalyEpochSecondsToXY(this.flightData, param, anomalyTimes);
-          this.charts.addOrReplaceAnomaliesSeries(chart, param, points);
+        next: (anomalyEpochSecondsList: number[]) => {
+          const anomalyPoints: [number, number][] =
+            this.charts.mapAnomalyEpochSecondsToXY(this.flightData, param, anomalyEpochSecondsList);
+          this.charts.addOrReplaceAnomaliesSeries(chart, param, anomalyPoints);
         },
-        error: (err: any) => console.error('Failed to load anomalies for', param, err)
+        error: (error: any) => console.error('Failed to load anomalies for', param, error)
       });
 
-    this.subs.add(sub);
+    this.subs.add(anomaliesSubscription);
   }
 
   private loadAndShowHistoricalSimilarity(
     param: string,
     chart: import('highcharts').Chart
   ): void {
-    const sub: Subscription =
+    const historicalSimilaritySubscription: Subscription =
       this.archiveService.getFlightHistoricalSimilarity(this.masterIndex, param).subscribe({
-        next: (items: HistoricalSimilarityPoint[]) => {
-          const points: import('highcharts').PointOptionsObject[] =
-            this.charts.mapHistoricalSimilarityToPoints(this.flightData, param, items);
+        next: (historicalSimilarityPoints: HistoricalSimilarityPoint[]) => {
+          const similarityChartPoints: import('highcharts').PointOptionsObject[] =
+            this.charts.mapHistoricalSimilarityToPoints(this.flightData, param, historicalSimilarityPoints);
 
-          this.charts.addOrReplaceHistoricalSimilaritySeries(chart, param, points);
+          this.charts.addOrReplaceHistoricalSimilaritySeries(chart, param, similarityChartPoints);
 
-          const sidebarItems: HistoricalSidebarItem[] = items.map((item) => {
-            const start: number = Number(item.startIndex);
-            const end: number = Number(item.endIndex);
-            const t: number = Math.round((start + end) / 2);
+          const sidebarItems: HistoricalSidebarItem[] = historicalSimilarityPoints.map((historicalSimilarityItem) => {
+            const startIndex: number = Number(historicalSimilarityItem.startIndex);
+            const endIndex: number = Number(historicalSimilarityItem.endIndex);
+            const similarityTime: number = Math.round((startIndex + endIndex) / 2);
             return {
               param,
-              comparedFlightIndex: item.comparedFlightIndex,
-              label: item.label,
-              score: Number(item.finalScore),
-              time: t
+              comparedFlightIndex: historicalSimilarityItem.comparedFlightIndex,
+              label: historicalSimilarityItem.label,
+              score: Number(historicalSimilarityItem.finalScore),
+              time: similarityTime
             };
           });
 
           this.historicalSidebarItems.push(...sidebarItems);
         },
-        error: (err: any) =>
-          console.error('Failed to load historical similarity for', param, err)
+        error: (error: any) =>
+          console.error('Failed to load historical similarity for', param, error)
       });
 
-    this.subs.add(sub);
+    this.subs.add(historicalSimilaritySubscription);
   }
 }
