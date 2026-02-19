@@ -105,11 +105,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public get gridHeight(): number {
-    const count = this.gridItems.length;
-    if (count === 0) return 0;
+    if (this.gridItems.length === 0) return 0;
     const rowHeight = (this.gridOptions.fixedRowHeight as number) ?? 420;
     const margin = (this.gridOptions.margin as number) ?? 14;
-    return count * rowHeight + (count + 1) * margin;
+    const maxRow = Math.max(...this.gridItems.map(i => (i.y ?? 0) + (i.rows ?? 1)));
+    return maxRow * rowHeight + (maxRow + 1) * margin;
   }
 
   public get sortedHistoricalItems(): HistoricalSidebarItem[] {
@@ -215,12 +215,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       item.chart = undefined;
     }
 
-    this.gridItems.splice(idx, 1);
-
-    this.gridItems.forEach((it, i) => {
-      it.y = i;
-    });
-
+    this.gridItems = this.gridItems.filter((_, i) => i !== idx);
     this.cdr.detectChanges();
   }
 
