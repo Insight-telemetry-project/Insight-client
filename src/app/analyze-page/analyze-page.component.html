@@ -1,13 +1,15 @@
 <div class="layout">
-
   <div class="content" [class.sidebar-open]="related.relatedOpen">
-
     <header class="header">
       <h1 class="title">Flight {{ masterIndex }}</h1>
       <button class="back-btn" type="button" (click)="goBack()">←</button>
     </header>
 
-    <section class="gridSection" [style.height.px]="gridHeight" *ngIf="gridItems.length > 0">
+    <section
+      class="gridSection"
+      [style.height.px]="gridHeight"
+      *ngIf="gridItems.length > 0"
+    >
       <gridster [options]="gridOptions">
         <gridster-item
           *ngFor="let item of gridItems"
@@ -15,7 +17,7 @@
           class="gridsterItemWrapper"
         >
           <div class="gridChartCard">
-          <div class="gridChartHeader">
+            <div class="gridChartHeader">
               <span class="gridChartTitle">{{ item.param }}</span>
               <div class="gridChartActions">
                 <button
@@ -24,20 +26,26 @@
                   [class.hidden]="!item.showAnomalies"
                   (click)="toggleAnomalies(item)"
                   title="Toggle anomalies"
-                >● Anomalies</button>
+                >
+                  ● Anomalies
+                </button>
                 <button
                   class="gridChartToggleBtn historyBtn"
                   type="button"
                   [class.hidden]="!item.showHistory"
                   (click)="toggleHistory(item)"
                   title="Toggle historical points"
-                >● Historical</button>
+                >
+                  ● Historical
+                </button>
                 <button
                   class="gridChartClose"
                   type="button"
                   (click)="toggleParam(item.param)"
                   title="Remove"
-                >✕</button>
+                >
+                  ✕
+                </button>
               </div>
             </div>
             <div
@@ -65,7 +73,7 @@
           type="text"
           placeholder="Filter parameters..."
           [value]="paramSearchText"
-          (input)="onParamSearchChange(($any($event.target)).value)"
+          (input)="onParamSearchChange($any($event.target).value)"
         />
         <button
           class="clearBtn"
@@ -84,9 +92,7 @@
     </section>
 
     <section class="paramsSection">
-      <p class="subtitle">
-        Click a parameter to add/remove it to the grid
-      </p>
+      <p class="subtitle">Click a parameter to add/remove it to the grid</p>
 
       <div class="paramsGrid">
         <button
@@ -96,15 +102,10 @@
           (click)="toggleParam(param)"
         >
           <div class="paramTitle">{{ param }}</div>
-          <div
-            class="miniChart"
-            #miniChart
-            [attr.data-param]="param"
-          ></div>
+          <div class="miniChart" #miniChart [attr.data-param]="param"></div>
         </button>
       </div>
     </section>
-
   </div>
 
   <button
@@ -113,13 +114,11 @@
     [disabled]="selected.size === 0"
     (click)="related.relatedOpen = !related.relatedOpen"
   >
-    {{ related.relatedOpen ? '❯' : '❮' }}
+    {{ related.relatedOpen ? "❯" : "❮" }}
   </button>
 
   <aside class="sidebar" [class.open]="related.relatedOpen">
-
     <div class="sidebarInner" *ngIf="related.relatedOpen">
-
       <div class="sidebarModeSwitch">
         <button
           class="modeBtn"
@@ -140,14 +139,13 @@
 
       <div class="sidebarHeader">
         {{
-          sidebarMode === 'related'
-            ? ('Related: ' + related.relatedForParam)
-            : 'Historical Similar Points'
+          sidebarMode === "related"
+            ? "Related: " + related.relatedForParam
+            : "Historical Similar Points"
         }}
       </div>
 
       <div class="sidebarContent">
-
         <ng-container *ngIf="sidebarMode === 'related'">
           <button
             class="sidebarItem"
@@ -160,7 +158,6 @@
         </ng-container>
 
         <ng-container *ngIf="sidebarMode === 'historical'">
-
           <div class="historicalSortSwitch">
             <button
               class="sortBtn"
@@ -182,6 +179,8 @@
           <div
             class="historicalCard"
             *ngFor="let item of sortedHistoricalItems"
+            (click)="navigateToHistoricalFlight(item)"
+            style="cursor: pointer"
           >
             <div class="histRow">
               <span class="histLabel">Flight</span>
@@ -190,21 +189,18 @@
 
             <div class="histRow">
               <span class="histLabel">Score</span>
-              <span class="histValue">{{ item.score | number:'1.2-2' }}</span>
+              <span class="histValue">{{ item.score | number: "1.2-2" }}</span>
             </div>
 
             <div class="histRow">
               <span class="histLabel">Time</span>
-              <span class="histValue">{{ item.time * 1000 | date:'HH:mm:ss' }}</span>
+              <span class="histValue">{{
+                item.time * 1000 | date: "HH:mm:ss"
+              }}</span>
             </div>
           </div>
-
         </ng-container>
-
       </div>
-
     </div>
-
   </aside>
-
 </div>
