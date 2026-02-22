@@ -179,8 +179,10 @@
           <div
             class="historicalCard"
             *ngFor="let item of sortedHistoricalItems"
+            [class.hovered]="
+              hoveredHistoricalId === item.comparedFlightIndex + '_' + item.time
+            "
             (click)="navigateToHistoricalFlight(item)"
-            style="cursor: pointer"
           >
             <div class="histRow">
               <span class="histLabel">Flight</span>

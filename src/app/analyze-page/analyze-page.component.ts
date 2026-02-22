@@ -48,7 +48,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSidebarItems: HistoricalSidebarItem[] = [];
   public historicalSortBy: 'time' | 'score' = 'time';
-
+  hoveredHistoricalId: string | null = null;
   private _pendingParam: string | null = null;
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
@@ -100,6 +100,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadFlight();
     });
     this.subs.add(sub);
+    window.addEventListener('historical-hover', (e: any) => {
+  this.hoveredHistoricalId = e.detail;
+});
   }
 
   public ngAfterViewInit(): void {}
