@@ -432,4 +432,21 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toggleParam(param);
     }
   }
+  onHistoricalCardHover(item: any): void {
+  const historicalId = item.comparedFlightIndex + '_' + item.time;
+
+  window.dispatchEvent(
+    new CustomEvent('historical-card-hover', {
+      detail: historicalId
+    })
+  );
+}
+
+onHistoricalCardLeave(): void {
+  window.dispatchEvent(
+    new CustomEvent('historical-card-hover', {
+      detail: null
+    })
+  );
+}
 }

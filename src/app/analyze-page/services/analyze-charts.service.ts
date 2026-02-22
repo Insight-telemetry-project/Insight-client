@@ -331,32 +331,62 @@ export class AnalyzeChartsService {
       },
 
       marker: {
-        enabled: true,
-        symbol: 'circle',
-        radius: 6,
-        fillColor: '#ffd400',
-        lineColor: '#000000',
-        lineWidth: 2,
-        states: {
-          hover: {
-            enabled: true,
-            radius: 9,
-            lineWidth: 3
-          }
-        }
-      },
+  enabled: true,
+  symbol: 'circle',
+  radius: 6,
+  fillColor: '#ffd400',
+  lineColor: '#000000',
+  lineWidth: 2
+},
 
-      states: {
-        hover: {
-          enabled: true
-        }
+states: {
+  hover: {
+    enabled: true,
+    halo: {
+      size: 18,
+      opacity: 0.6,
+      attributes: {
+        fill: '#ffd400'
       }
+    }
+  }
+},
 
     } as Highcharts.SeriesOptionsType,
     false
   );
 
   chart.redraw();
+
+  if (!(chart as any)._historicalHoverBound) {
+
+  window.addEventListener('historical-card-hover', (e: any) => {
+
+    const targetId: string | null = e.detail;
+
+    const series: Highcharts.Series | undefined =
+      chart.series.find(
+        (s: Highcharts.Series) =>
+          (s.options as any).id === `history:${param}`
+      );
+
+    if (!series) return;
+
+    for (const point of series.points) {
+
+      const pointId = (point.options as any)?.custom?.historicalId;
+
+      if (targetId && pointId === targetId) {
+        point.setState('hover');
+      } else {
+        point.setState('');
+      }
+    }
+
+  });
+
+  (chart as any)._historicalHoverBound = true;
+}
 }
 
   public createMiniChart(
