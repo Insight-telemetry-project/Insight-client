@@ -5,58 +5,73 @@ import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
   public createMainChart(container: HTMLElement): Highcharts.Chart {
-    const options: Highcharts.Options = {
-      chart: {
-        backgroundColor: 'transparent',
-        zooming: { type: 'x' },
-        panning: { enabled: true, type: 'x' },
-        panKey: 'shift',
-      },
-      title: { text: '' },
-      credits: { enabled: false },
-      legend: {
-        enabled: true,
-        itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
-        itemHoverStyle: { color: '#948f8f' },
-      },
-      xAxis: {
-        type: 'datetime',
-        title: { text: 'Time', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } },
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-      },
-      yAxis: {
-        title: { text: '', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } },
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-      },
-      tooltip: {
-        shared: false,
-        snap: 80,
-        useHTML: true,
-      },
-      plotOptions: {
-        series: {
-          states: {
-            inactive: {
-              opacity: 1,
-            },
-          },
-        },
-        areaspline: {
-          marker: { enabled: false },
-        },
-        scatter: {
-          stickyTracking: true,
-        },
-      },
-      series: [],
-    };
 
-    return Highcharts.chart(container, options);
+  return Highcharts.chart(container, {
+    chart: {
+  backgroundColor: 'transparent',
+  zooming: { type: 'x' },
+  panning: {
+    enabled: true,
+    type: 'x'
+  },
+  resetZoomButton: {
+    theme: {
+      display: 'none'
+    }
+  },
+  events: {
+    load: function () {
+      const chart = this;
+
+      chart.container.ondblclick = function () {
+        chart.xAxis[0].setExtremes(undefined, undefined);
+      };
+    }
   }
+},
+    title: { text: '' },
+    credits: { enabled: false },
+    legend: {
+      enabled: true,
+      itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
+      itemHoverStyle: { color: '#948f8f' }
+    },
+    xAxis: {
+      type: 'datetime',
+      title: { text: 'Time', style: { color: '#ffffff' } },
+      labels: { style: { color: '#cfcfe6' } },
+      gridLineColor: 'rgba(255,255,255,0.08)',
+      gridLineWidth: 1
+    },
+    yAxis: {
+      title: { text: '', style: { color: '#ffffff' } },
+      labels: { style: { color: '#cfcfe6' } },
+      gridLineColor: 'rgba(255,255,255,0.08)',
+      gridLineWidth: 1
+    },
+    tooltip: {
+      shared: false,
+      snap: 80,
+      useHTML: true
+    },
+    plotOptions: {
+      series: {
+        states: {
+          inactive: {
+            opacity: 1
+          }
+        }
+      },
+      areaspline: {
+        marker: { enabled: false }
+      },
+      scatter: {
+        stickyTracking: true
+      }
+    },
+    series: []
+  });
+}
 
   public updateMainChartSeries(
     chart: Highcharts.Chart,
@@ -390,83 +405,95 @@ public addOrReplaceHistoricalSimilaritySeries(
   }
 
   public createGridChart(
-    container: HTMLElement,
-    param: string,
-    flightData: TelemetrySensorFields[],
-  ): Highcharts.Chart {
-    const dataPoints: [number, number][] = this.buildSeries(flightData, param);
+  container: HTMLElement,
+  param: string,
+  flightData: TelemetrySensorFields[]
+): Highcharts.Chart {
 
-    const colors = Highcharts.getOptions().colors as string[];
-    const baseColor: string = colors?.[0] ?? '#00bfff';
+  const dataPoints: [number, number][] =
+    this.buildSeries(flightData, param);
 
-    const softTop: string = Highcharts.color(baseColor)
-      .setOpacity(0.25)
-      .get('rgba') as string;
+  const colors = Highcharts.getOptions().colors as string[];
+  const baseColor: string =
+    colors?.[0] ?? '#00bfff';
 
-    const softBottom: string = Highcharts.color(baseColor)
-      .setOpacity(0.02)
-      .get('rgba') as string;
+  const softTop: string =
+    Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
 
-    return Highcharts.chart(container, {
-      chart: {
-        backgroundColor: 'transparent',
-        zooming: { type: 'x' },
-        panning: { enabled: true, type: 'x' },
-        panKey: 'shift',
+  const softBottom: string =
+    Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
+
+  return Highcharts.chart(container, {
+    chart: {
+      backgroundColor: 'transparent',
+      zooming: { type: 'x' },
+      panning: {
+        enabled: true,
+        type: 'x'
       },
+      events: {
+        load: function () {
+          const chart = this;
+
+          chart.container.ondblclick = function () {
+            chart.xAxis[0].setExtremes(undefined, undefined);
+          };
+        }
+      }
+    },
+    title: { text: '' },
+    credits: { enabled: false },
+    legend: { enabled: false },
+    xAxis: {
+      type: 'datetime',
+      gridLineColor: 'rgba(255,255,255,0.08)',
+      gridLineWidth: 1,
+      labels: { style: { color: '#cfcfe6' } }
+    },
+    yAxis: {
       title: { text: '' },
-      credits: { enabled: false },
-      legend: { enabled: false },
-      xAxis: {
-        type: 'datetime',
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-        labels: { style: { color: '#cfcfe6' } },
+      gridLineColor: 'rgba(255,255,255,0.08)',
+      gridLineWidth: 1,
+      labels: { style: { color: '#cfcfe6' } }
+    },
+    tooltip: {
+      shared: false,
+      snap: 80,
+      useHTML: true
+    },
+    plotOptions: {
+      series: {
+        states: {
+          inactive: {
+            opacity: 1
+          }
+        }
       },
-      yAxis: {
-        title: { text: '' },
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-        labels: { style: { color: '#cfcfe6' } },
+      areaspline: {
+        marker: { enabled: false }
       },
-      tooltip: {
-        shared: false,
-        snap: 80,
-        useHTML: true,
-      },
-      plotOptions: {
-        series: {
-          states: {
-            inactive: {
-              opacity: 1,
-            },
-          },
+      scatter: {
+        stickyTracking: true
+      }
+    },
+    series: [
+      {
+        type: 'areaspline',
+        name: param,
+        data: dataPoints,
+        color: baseColor,
+        lineWidth: 1.5,
+        marker: { enabled: false },
+        fillColor: {
+          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+          stops: [
+            [0, softTop],
+            [1, softBottom]
+          ]
         },
-        areaspline: {
-          marker: { enabled: false },
-        },
-        scatter: {
-          stickyTracking: true,
-        },
-      },
-      series: [
-        {
-          type: 'areaspline',
-          name: param,
-          data: dataPoints,
-          color: baseColor,
-          lineWidth: 1.5,
-          marker: { enabled: false },
-          fillColor: {
-            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-            stops: [
-              [0, softTop],
-              [1, softBottom],
-            ],
-          },
-          shadow: false,
-        } as Highcharts.SeriesOptionsType,
-      ],
-    });
-  }
+        shadow: false
+      } as Highcharts.SeriesOptionsType
+    ]
+  });
+}
 }
