@@ -10,49 +10,49 @@ export class AnalyzeChartsService {
         backgroundColor: 'transparent',
         zooming: { type: 'x' },
         panning: { enabled: true, type: 'x' },
-        panKey: 'shift'
+        panKey: 'shift',
       },
       title: { text: '' },
       credits: { enabled: false },
       legend: {
         enabled: true,
         itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
-        itemHoverStyle: { color: '#948f8f' }
+        itemHoverStyle: { color: '#948f8f' },
       },
       xAxis: {
         type: 'datetime',
         title: { text: 'Time', style: { color: '#ffffff' } },
         labels: { style: { color: '#cfcfe6' } },
         gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1
+        gridLineWidth: 1,
       },
       yAxis: {
         title: { text: '', style: { color: '#ffffff' } },
         labels: { style: { color: '#cfcfe6' } },
         gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1
+        gridLineWidth: 1,
       },
       tooltip: {
         shared: false,
         snap: 80,
-        useHTML: true
+        useHTML: true,
       },
       plotOptions: {
         series: {
           states: {
             inactive: {
-              opacity: 1
-            }
-          }
+              opacity: 1,
+            },
+          },
         },
         areaspline: {
-          marker: { enabled: false }
+          marker: { enabled: false },
         },
         scatter: {
-          stickyTracking: true
-        }
+          stickyTracking: true,
+        },
       },
-      series: []
+      series: [],
     };
 
     return Highcharts.chart(container, options);
@@ -61,9 +61,8 @@ export class AnalyzeChartsService {
   public updateMainChartSeries(
     chart: Highcharts.Chart,
     flightData: TelemetrySensorFields[],
-    selectedParams: string[]
+    selectedParams: string[],
   ): void {
-
     while (chart.series.length > 0) {
       chart.series[0].remove(false);
     }
@@ -72,16 +71,20 @@ export class AnalyzeChartsService {
 
     for (let index: number = 0; index < selectedParams.length; index++) {
       const param: string = selectedParams[index];
-      const dataPoints: [number, number][] = this.buildSeries(flightData, param);
+      const dataPoints: [number, number][] = this.buildSeries(
+        flightData,
+        param,
+      );
 
-      const baseColor: string =
-        colors?.[index % colors.length] ?? '#00bfff';
+      const baseColor: string = colors?.[index % colors.length] ?? '#00bfff';
 
-      const softTop: string =
-        Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+      const softTop: string = Highcharts.color(baseColor)
+        .setOpacity(0.25)
+        .get('rgba') as string;
 
-      const softBottom: string =
-        Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
+      const softBottom: string = Highcharts.color(baseColor)
+        .setOpacity(0.02)
+        .get('rgba') as string;
 
       chart.addSeries(
         {
@@ -95,12 +98,12 @@ export class AnalyzeChartsService {
             linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
             stops: [
               [0, softTop],
-              [1, softBottom]
-            ]
+              [1, softBottom],
+            ],
           },
-          shadow: false
+          shadow: false,
         } as Highcharts.SeriesOptionsType,
-        false
+        false,
       );
     }
 
@@ -110,12 +113,13 @@ export class AnalyzeChartsService {
   public addOrReplaceAnomaliesSeries(
     chart: Highcharts.Chart,
     param: string,
-    points: [number, number][]
+    points: [number, number][],
   ): void {
     const seriesId: string = `anomalies:${param}`;
 
-    const existing: Highcharts.Series | undefined =
-      chart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+    const existing: Highcharts.Series | undefined = chart.series.find(
+      (s: Highcharts.Series) => (s.options as any).id === seriesId,
+    );
 
     if (existing) {
       existing.remove(false);
@@ -141,9 +145,9 @@ export class AnalyzeChartsService {
               radius: 8,
               fillColor: '#ff0000',
               lineColor: '#000000',
-              lineWidth: 2
-            }
-          }
+              lineWidth: 2,
+            },
+          },
         },
         states: { hover: { enabled: true } },
         tooltip: {
@@ -152,10 +156,10 @@ export class AnalyzeChartsService {
             <b style="color:#ff2d2d">Anomaly</b><br/>
             <b>${param}</b>: {point.y}<br/>
             Time: {point.x:%H:%M:%S}
-          `
-        }
+          `,
+        },
       } as Highcharts.SeriesOptionsType,
-      false
+      false,
     );
 
     chart.redraw();
@@ -164,8 +168,9 @@ export class AnalyzeChartsService {
   public removeAnomaliesSeries(chart: Highcharts.Chart, param: string): void {
     const seriesId: string = `anomalies:${param}`;
 
-    const existing: Highcharts.Series | undefined =
-      chart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+    const existing: Highcharts.Series | undefined = chart.series.find(
+      (s: Highcharts.Series) => (s.options as any).id === seriesId,
+    );
 
     if (existing) {
       existing.remove(false);
@@ -176,13 +181,13 @@ export class AnalyzeChartsService {
   public createMiniChart(
     container: HTMLElement,
     param: string,
-    dataPoints: [number, number][]
+    dataPoints: [number, number][],
   ): Highcharts.Chart {
     return Highcharts.chart(container, {
       chart: {
         backgroundColor: 'transparent',
         height: 140,
-        margin: [10, 10, 25, 35]
+        margin: [10, 10, 25, 35],
       },
       title: { text: '' },
       credits: { enabled: false },
@@ -194,8 +199,8 @@ export class AnalyzeChartsService {
         series: {
           animation: false,
           marker: { enabled: false },
-          lineWidth: 1
-        }
+          lineWidth: 1,
+        },
       },
       series: [
         {
@@ -203,9 +208,9 @@ export class AnalyzeChartsService {
           name: param,
           data: dataPoints,
           color: '#8b5cf6',
-          turboThreshold: 0
-        } as Highcharts.SeriesLineOptions
-      ]
+          turboThreshold: 0,
+        } as Highcharts.SeriesLineOptions,
+      ],
     });
   }
 
@@ -220,7 +225,10 @@ export class AnalyzeChartsService {
     miniCharts.clear();
   }
 
-  public buildSeries(flightData: TelemetrySensorFields[], param: string): [number, number][] {
+  public buildSeries(
+    flightData: TelemetrySensorFields[],
+    param: string,
+  ): [number, number][] {
     const points: [number, number][] = [];
 
     for (const row of flightData) {
@@ -236,7 +244,7 @@ export class AnalyzeChartsService {
   public mapAnomalyEpochSecondsToXY(
     flightData: TelemetrySensorFields[],
     param: string,
-    anomalyEpochSeconds: number[]
+    anomalyEpochSeconds: number[],
   ): [number, number][] {
     const timeToValue: Map<number, number> = new Map<number, number>();
 
@@ -257,77 +265,98 @@ export class AnalyzeChartsService {
     return points;
   }
 
-  public addOrReplaceHistoricalSimilaritySeries(
-    chart: Highcharts.Chart,
-    param: string,
-    points: Highcharts.PointOptionsObject[]
-  ): void {
-    const seriesId: string = `history:${param}`;
+public addOrReplaceHistoricalSimilaritySeries(
+  chart: Highcharts.Chart,
+  param: string,
+  points: Highcharts.PointOptionsObject[]
+): void {
 
-    const existing: Highcharts.Series | undefined =
-      chart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+  const seriesId: string = `history:${param}`;
 
-    if (existing) {
-      existing.remove(false);
-    }
+  const existing: Highcharts.Series | undefined =
+    chart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
 
-    chart.addSeries(
-      {
-        type: 'scatter',
-        id: seriesId as any,
-        name: `${param} similar past`,
-        data: points,
-        color: '#ffd400',
-        zIndex: 20,
-        enableMouseTracking: true,
-        stickyTracking: true,
-        tooltip: {
-          shared: false,
-          useHTML: true,
-          pointFormat: `
-          <div style="min-width:220px">
-            <div style="font-weight:700;margin-bottom:6px">
-              Similar historical point
-            </div>
-            <div><b>${param}</b>: {point.y}</div>
-            <div>Time: {point.x:%H:%M:%S}</div>
-            <div style="opacity:0.9;margin-top:6px">
-              {point.custom.info}
-            </div>
-          </div>
-        `
-        },
-        marker: {
-          enabled: true,
-          symbol: 'circle',
-          radius: 6,
-          fillColor: '#ffd400',
-          lineColor: '#000000',
-          lineWidth: 2,
-          states: {
-            hover: {
-              enabled: true,
-              radius: 9,
-              lineWidth: 3
-            }
-          }
-        },
-        states: {
-          hover: {
-            enabled: true
+  if (existing) {
+    existing.remove(false);
+  }
+
+  chart.addSeries(
+    {
+      type: 'scatter',
+      id: seriesId as any,
+      name: `${param} similar past`,
+      data: points,
+      color: '#ffd400',
+      zIndex: 20,
+      enableMouseTracking: true,
+      stickyTracking: true,
+      point: {
+        events: {
+          mouseOver: function () {
+            const point: any = this;
+
+            window.dispatchEvent(
+              new CustomEvent('historical-point-hover', {
+                detail: point.options.custom?.historicalId ?? null
+              })
+            );
+          },
+          mouseOut: function () {
+            window.dispatchEvent(
+              new CustomEvent('historical-point-hover', {
+                detail: null
+              })
+            );
           }
         }
-      } as Highcharts.SeriesOptionsType,
-      false
-    );
+      },
+      tooltip: {
+        shared: false,
+        useHTML: true,
+        pointFormat: `
+        <div style="min-width:220px">
+          <div style="font-weight:700;margin-bottom:6px">
+            Similar historical point
+          </div>
+          <div><b>${param}</b>: {point.y}</div>
+          <div>Time: {point.x:%H:%M:%S}</div>
+          <div style="opacity:0.9;margin-top:6px">
+            {point.custom.info}
+          </div>
+        </div>
+        `
+      },
+      marker: {
+        enabled: true,
+        symbol: 'circle',
+        radius: 6,
+        fillColor: '#ffd400',
+        lineColor: '#000000',
+        lineWidth: 2
+      },
+      states: {
+        hover: {
+          enabled: true,
+          halo: {
+            size: 17,
+            opacity: 0.6,
+            attributes: {
+              fill: '#ffd400'
+            }
+          }
+        }
+      }
+    } as Highcharts.SeriesOptionsType,
+    false
+  );
 
-    chart.redraw();
-  }
+  chart.redraw();
+}
 
   public mapHistoricalSimilarityToPoints(
     flightData: TelemetrySensorFields[],
     param: string,
-    items: any[]
+    items: any[],
   ): Highcharts.PointOptionsObject[] {
     const timeToValue: Map<number, number> = new Map<number, number>();
 
@@ -351,8 +380,9 @@ export class AnalyzeChartsService {
         x: t * 1000,
         y,
         custom: {
-          info: `Matched flight ${item.comparedFlightIndex}, label ${item.label}, score ${Number(item.finalScore).toFixed(2)}`
-        }
+          info: `Matched flight ${item.comparedFlightIndex}, label ${item.label}, score ${Number(item.finalScore).toFixed(2)}`,
+          historicalId: item.comparedFlightIndex + '_' + t,
+        },
       });
     }
 
@@ -360,84 +390,83 @@ export class AnalyzeChartsService {
   }
 
   public createGridChart(
-  container: HTMLElement,
-  param: string,
-  flightData: TelemetrySensorFields[]
-): Highcharts.Chart {
+    container: HTMLElement,
+    param: string,
+    flightData: TelemetrySensorFields[],
+  ): Highcharts.Chart {
+    const dataPoints: [number, number][] = this.buildSeries(flightData, param);
 
-  const dataPoints: [number, number][] =
-    this.buildSeries(flightData, param);
+    const colors = Highcharts.getOptions().colors as string[];
+    const baseColor: string = colors?.[0] ?? '#00bfff';
 
-  const colors = Highcharts.getOptions().colors as string[];
-  const baseColor: string =
-    colors?.[0] ?? '#00bfff';
+    const softTop: string = Highcharts.color(baseColor)
+      .setOpacity(0.25)
+      .get('rgba') as string;
 
-  const softTop: string =
-    Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+    const softBottom: string = Highcharts.color(baseColor)
+      .setOpacity(0.02)
+      .get('rgba') as string;
 
-  const softBottom: string =
-    Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
-
-  return Highcharts.chart(container, {
-    chart: {
-      backgroundColor: 'transparent',
-      zooming: { type: 'x' },
-      panning: { enabled: true, type: 'x' },
-      panKey: 'shift'
-    },
-    title: { text: '' },
-    credits: { enabled: false },
-    legend: { enabled: false },
-    xAxis: {
-      type: 'datetime',
-      gridLineColor: 'rgba(255,255,255,0.08)',
-      gridLineWidth: 1,
-      labels: { style: { color: '#cfcfe6' } }
-    },
-    yAxis: {
+    return Highcharts.chart(container, {
+      chart: {
+        backgroundColor: 'transparent',
+        zooming: { type: 'x' },
+        panning: { enabled: true, type: 'x' },
+        panKey: 'shift',
+      },
       title: { text: '' },
-      gridLineColor: 'rgba(255,255,255,0.08)',
-      gridLineWidth: 1,
-      labels: { style: { color: '#cfcfe6' } }
-    },
-    tooltip: {
-      shared: false,
-      snap: 80,
-      useHTML: true
-    },
-    plotOptions: {
-      series: {
-        states: {
-          inactive: {
-            opacity: 1
-          }
-        }
+      credits: { enabled: false },
+      legend: { enabled: false },
+      xAxis: {
+        type: 'datetime',
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1,
+        labels: { style: { color: '#cfcfe6' } },
       },
-      areaspline: {
-        marker: { enabled: false }
+      yAxis: {
+        title: { text: '' },
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1,
+        labels: { style: { color: '#cfcfe6' } },
       },
-      scatter: {
-        stickyTracking: true
-      }
-    },
-    series: [
-      {
-        type: 'areaspline',
-        name: param,
-        data: dataPoints,
-        color: baseColor,
-        lineWidth: 1.5,
-        marker: { enabled: false },
-        fillColor: {
-          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-          stops: [
-            [0, softTop],
-            [1, softBottom]
-          ]
+      tooltip: {
+        shared: false,
+        snap: 80,
+        useHTML: true,
+      },
+      plotOptions: {
+        series: {
+          states: {
+            inactive: {
+              opacity: 1,
+            },
+          },
         },
-        shadow: false
-      } as Highcharts.SeriesOptionsType
-    ]
-  });
-}
+        areaspline: {
+          marker: { enabled: false },
+        },
+        scatter: {
+          stickyTracking: true,
+        },
+      },
+      series: [
+        {
+          type: 'areaspline',
+          name: param,
+          data: dataPoints,
+          color: baseColor,
+          lineWidth: 1.5,
+          marker: { enabled: false },
+          fillColor: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, softTop],
+              [1, softBottom],
+            ],
+          },
+          shadow: false,
+        } as Highcharts.SeriesOptionsType,
+      ],
+    });
+  }
 }
