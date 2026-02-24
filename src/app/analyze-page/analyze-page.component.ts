@@ -101,11 +101,37 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.subs.add(sub);
     window.addEventListener('historical-hover', (e: any) => {
-  this.hoveredHistoricalId = e.detail;
-});
+      this.hoveredHistoricalId = e.detail;
+    });
   }
 
-  public ngAfterViewInit(): void {}
+  public ngAfterViewInit(): void {
+    window.addEventListener('historical-point-hover', (e: any) => {
+      this.hoveredHistoricalId = e.detail;
+    });
+
+    window.addEventListener('historical-card-hover', (e: any) => {
+      const targetId: string | null = e.detail;
+
+      for (const item of this.gridItems) {
+        if (!item.chart) continue;
+
+        for (const series of item.chart.series) {
+          if (!(series.options as any).id?.startsWith('history:')) continue;
+
+          for (const point of series.points) {
+            const pointId = (point.options as any)?.custom?.historicalId;
+
+            if (targetId && pointId === targetId) {
+              point.setState('hover');
+            } else {
+              point.setState('');
+            }
+          }
+        }
+      }
+    });
+  }
 
   public ngOnDestroy(): void {
     this.subs.unsubscribe();
@@ -432,21 +458,21 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toggleParam(param);
     }
   }
-  onHistoricalCardHover(item: any): void {
-  const historicalId = item.comparedFlightIndex + '_' + item.time;
+  public onHistoricalCardHover(item: any): void {
+    const id: string = item.comparedFlightIndex + '_' + item.time;
 
-  window.dispatchEvent(
-    new CustomEvent('historical-card-hover', {
-      detail: historicalId
-    })
-  );
-}
+    this.hoveredHistoricalId = id;
 
-onHistoricalCardLeave(): void {
-  window.dispatchEvent(
-    new CustomEvent('historical-card-hover', {
-      detail: null
-    })
-  );
-}
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', { detail: id }),
+    );
+  }
+
+  public onHistoricalCardLeave(): void {
+    this.hoveredHistoricalId = null;
+
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', { detail: null }),
+    );
+  }
 }
