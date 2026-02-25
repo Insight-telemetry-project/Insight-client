@@ -1,0 +1,89 @@
+<div class="page">
+
+  <header class="header">
+    <div>
+      <h1>🛩️ Flight Telemetry Monitor</h1>
+      <p>Real-time telemetry tracking</p>
+    </div>
+  </header>
+
+  <div class="flightsContainer">
+
+    <div
+      class="flightCard"
+      *ngFor="let flight of flights"
+    >
+
+      <!-- Header -->
+      <div class="cardHeader"
+           (click)="toggleFlight(flight.flightNumber)">
+
+        <div class="left">
+
+          <div class="icon">✈️</div>
+
+          <div>
+            <h3>FL-{{ flight.flightNumber }}</h3>
+            <span>{{ flight.flightLenght }} seconds</span>
+          </div>
+
+        </div>
+
+        <div class="right">
+
+          <div class="anomalyBubble"
+               [ngStyle]="{
+                 borderColor: getAnomalyColor(getTotalAnomalies(flight.flightNumber)),
+                 color: getAnomalyColor(getTotalAnomalies(flight.flightNumber))
+               }">
+            <span>Anomalies</span>
+            <strong>
+              {{ getTotalAnomalies(flight.flightNumber) }}
+            </strong>
+          </div>
+
+          <div class="chevron"
+               [class.rotated]="isExpanded(flight.flightNumber)">
+            ⌃
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Expand Section -->
+      <div class="expand"
+           [class.open]="isExpanded(flight.flightNumber)">
+
+        <div class="paramsGrid">
+
+          <div class="paramCard"
+               *ngFor="let param of parametersMap.get(flight.flightNumber)">
+
+            <div class="paramHeader">
+              <h4>{{ param.name }}</h4>
+
+              <span class="badge"
+                    [ngStyle]="{
+                      background: getAnomalyColor(param.anomalies)+'20',
+                      color: getAnomalyColor(param.anomalies)
+                    }">
+                {{ param.anomalies }} anomal.
+              </span>
+            </div>
+
+            <div class="history">
+              📈 {{ param.historicalPoints }} historical points
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

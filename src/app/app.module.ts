@@ -11,6 +11,7 @@ import { FlightCardComponent } from './main-page/components/flight-card/flight-c
 import { FileDropOverlayComponent } from './main-page/components/file-drop-overlay/file-drop-overlay.component';
 import { AnalyzePageComponent } from './analyze-page/analyze-page.component';
 import { GridsterModule } from 'angular-gridster2';
+import { FlightsOverviewComponent } from './flights-overview/flights-overview.component';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { GridsterModule } from 'angular-gridster2';
     FlightsGridComponent,
     FlightCardComponent,
     FileDropOverlayComponent,
-    AnalyzePageComponent
+    AnalyzePageComponent,
+    FlightsOverviewComponent
   ],
   imports: [
     BrowserModule,

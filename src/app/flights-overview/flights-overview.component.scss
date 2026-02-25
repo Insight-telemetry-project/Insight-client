@@ -1,0 +1,123 @@
+.page {
+  min-height: 100vh;
+  padding: 40px;
+  background: linear-gradient(135deg,#2d0b59,#1a0938);
+  color: white;
+}
+
+.header {
+  margin-bottom: 30px;
+}
+
+.flightsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.flightCard {
+  background: rgba(76,29,149,0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all .3s ease;
+}
+
+.flightCard:hover {
+  transform: translateY(-2px);
+}
+
+.cardHeader {
+  padding: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,#7c3aed,#9333ea);
+  font-size: 22px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.anomalyBubble {
+  border: 1px solid;
+  padding: 6px 16px;
+  border-radius: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chevron {
+  transition: transform .3s ease;
+}
+
+.chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease, opacity .3s ease;
+  opacity: 0;
+}
+
+.expand.open {
+  max-height: 1000px;
+  opacity: 1;
+  padding: 22px;
+  border-top: 1px solid rgba(168,85,247,0.3);
+}
+
+.paramsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+  gap: 16px;
+}
+
+.paramCard {
+  background: rgba(76,29,149,0.8);
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(168,85,247,0.25);
+}
+
+.paramHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.history {
+  font-size: 14px;
+  opacity: .8;
+}
