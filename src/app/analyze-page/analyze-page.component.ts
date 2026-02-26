@@ -32,10 +32,10 @@ import { GridChartItem } from '../common/interfaces/grid-chart-item.interface';
   styleUrls: ['./analyze-page.component.scss'],
 })
 export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChildren('miniChart') public miniChartEls!: QueryList<
+  @ViewChildren('miniChart') public miniChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
-  @ViewChildren('gridChartEl') public gridChartEls!: QueryList<
+  @ViewChildren('gridChartEl') public gridChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
 
@@ -48,8 +48,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSidebarItems: HistoricalSidebarItem[] = [];
   public historicalSortBy: 'time' | 'score' = 'time';
-  hoveredHistoricalId: string | null = null;
-  private _pendingParam: string | null = null;
+  public hoveredHistoricalId: string | null = null;
+
+  private pendingParamToAutoSelect: string | null = null;
+
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
     fixedRowHeight: 420,
@@ -74,60 +76,63 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public gridItems: GridChartItem[] = [];
 
-  private subs: Subscription = new Subscription();
+  private subscriptions: Subscription = new Subscription();
   private miniCharts: Map<string, import('highcharts').Chart> = new Map();
   private historicalKeySet: Set<string> = new Set<string>();
+
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
     private readonly router: Router,
-    private readonly charts: AnalyzeChartsService,
-    private readonly cdr: ChangeDetectorRef,
+    private readonly chartsService: AnalyzeChartsService,
+    private readonly changeDetectorRef: ChangeDetectorRef,
     public readonly related: RelatedParamsService,
   ) {}
 
   public ngOnInit(): void {
-    const sub: Subscription = this.route.paramMap.subscribe((params) => {
-      this.masterIndex = Number(params.get('masterIndex'));
+    const routeParamSubscription: Subscription = this.route.paramMap.subscribe((paramMap) => {
+      this.masterIndex = Number(paramMap.get('masterIndex'));
       this.selected.clear();
       this.clearGrid();
       this.related.clear();
       this.historicalSidebarItems = [];
       this.historicalKeySet.clear();
 
-      this.miniCharts.forEach((c) => c.destroy());
+      this.miniCharts.forEach((miniChart) => miniChart.destroy());
       this.miniCharts.clear();
       this.paramSearchText = '';
-      this._pendingParam = this.route.snapshot.queryParamMap.get('param');
+      this.pendingParamToAutoSelect = this.route.snapshot.queryParamMap.get('param');
       this.loadFlight();
     });
-    this.subs.add(sub);
-    window.addEventListener('historical-hover', (e: any) => {
-      this.hoveredHistoricalId = e.detail;
+
+    this.subscriptions.add(routeParamSubscription);
+
+    window.addEventListener('historical-hover', (event: any) => {
+      this.hoveredHistoricalId = event.detail;
     });
   }
 
   public ngAfterViewInit(): void {
-    window.addEventListener('historical-point-hover', (e: any) => {
-      this.hoveredHistoricalId = e.detail;
+    window.addEventListener('historical-point-hover', (event: any) => {
+      this.hoveredHistoricalId = event.detail;
     });
 
-    window.addEventListener('historical-card-hover', (e: any) => {
-      const targetId: string | null = e.detail;
+    window.addEventListener('historical-card-hover', (event: any) => {
+      const targetHistoricalId: string | null = event.detail;
 
-      for (const item of this.gridItems) {
-        if (!item.chart) continue;
+      for (const gridItem of this.gridItems) {
+        if (!gridItem.chart) continue;
 
-        for (const series of item.chart.series) {
-          if (!(series.options as any).id?.startsWith('history:')) continue;
+        for (const chartSeries of gridItem.chart.series) {
+          if (!(chartSeries.options as any).id?.startsWith('history:')) continue;
 
-          for (const point of series.points) {
-            const pointId = (point.options as any)?.custom?.historicalId;
+          for (const seriesPoint of chartSeries.points) {
+            const pointHistoricalId = (seriesPoint.options as any)?.custom?.historicalId;
 
-            if (targetId && pointId === targetId) {
-              point.setState('hover');
+            if (targetHistoricalId && pointHistoricalId === targetHistoricalId) {
+              seriesPoint.setState('hover');
             } else {
-              point.setState('');
+              seriesPoint.setState('');
             }
           }
         }
@@ -136,9 +141,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public ngOnDestroy(): void {
-    this.subs.unsubscribe();
+    this.subscriptions.unsubscribe();
     this.clearGrid();
-    this.charts.destroyMiniCharts(this.miniCharts);
+    this.chartsService.destroyMiniCharts(this.miniCharts);
     this.related.clear();
   }
 
@@ -146,10 +151,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.gridItems.length === 0) return 0;
     const rowHeight = (this.gridOptions.fixedRowHeight as number) ?? 420;
     const margin = (this.gridOptions.margin as number) ?? 14;
-    const maxRow = Math.max(
-      ...this.gridItems.map((item) => (item.y ?? 0) + (item.rows ?? 1)),
+    const maxRowIndex = Math.max(
+      ...this.gridItems.map((gridItem) => (gridItem.y ?? 0) + (gridItem.rows ?? 1)),
     );
-    return maxRow * rowHeight + (maxRow + 1) * margin;
+    return maxRowIndex * rowHeight + (maxRowIndex + 1) * margin;
   }
 
   public get sortedHistoricalItems(): HistoricalSidebarItem[] {
@@ -178,92 +183,122 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/']);
   }
 
-  public isSelected(param: string): boolean {
-    return this.selected.has(param);
+  public isSelected(paramName: string): boolean {
+    return this.selected.has(paramName);
   }
 
-  public toggleParam(param: string): void {
-    const wasSelected: boolean = this.selected.has(param);
+  public toggleParam(paramName: string): void {
+    const wasSelected: boolean = this.selected.has(paramName);
 
     if (wasSelected) {
-      this.removeGridItem(param);
-      this.selected.delete(param);
+      this.removeGridItem(paramName);
+      this.selected.delete(paramName);
     } else {
-      this.selected.add(param);
-      this.addGridItem(param);
-      this.related.openFor(this.masterIndex, param, this.subs);
+      this.selected.add(paramName);
+      this.addGridItem(paramName);
+      this.related.openFor(this.masterIndex, paramName, this.subscriptions);
     }
 
     this.related.relatedOpen = this.selected.size > 0;
   }
 
-  public onRelatedParamClick(param: string): void {
-    if (this.selected.has(param)) {
-      this.removeGridItem(param);
-      this.selected.delete(param);
+  public onRelatedParamClick(paramName: string): void {
+    if (this.selected.has(paramName)) {
+      this.removeGridItem(paramName);
+      this.selected.delete(paramName);
     } else {
-      this.selected.add(param);
-      this.addGridItem(param);
+      this.selected.add(paramName);
+      this.addGridItem(paramName);
     }
   }
 
   public toggleRelatedList(): void {
-    this.related.toggle(this.masterIndex, this.subs);
+    this.related.toggle(this.masterIndex, this.subscriptions);
   }
 
-  public toggleAnomalies(item: GridChartItem): void {
-    if (!item.chart) return;
-    item.showAnomalies = !item.showAnomalies;
-    const anomalySeries = item.chart.series.find(
-      (seriesItem: any) => seriesItem.options.id === `anomalies:${item.param}`,
+  public toggleAnomalies(gridChartItem: GridChartItem): void {
+    if (!gridChartItem.chart) return;
+    gridChartItem.showAnomalies = !gridChartItem.showAnomalies;
+    const anomaliesSeries = gridChartItem.chart.series.find(
+      (seriesItem: any) => seriesItem.options.id === `anomalies:${gridChartItem.param}`,
     );
-    if (anomalySeries) {
-      item.showAnomalies ? anomalySeries.show() : anomalySeries.hide();
+    if (anomaliesSeries) {
+      gridChartItem.showAnomalies ? anomaliesSeries.show() : anomaliesSeries.hide();
     }
   }
 
-  public toggleHistory(item: GridChartItem): void {
-    if (!item.chart) return;
-    item.showHistory = !item.showHistory;
-    const historySeries = item.chart.series.find(
-      (seriesItem: any) => seriesItem.options.id === `history:${item.param}`,
+  public toggleHistory(gridChartItem: GridChartItem): void {
+    if (!gridChartItem.chart) return;
+    gridChartItem.showHistory = !gridChartItem.showHistory;
+    const historySeries = gridChartItem.chart.series.find(
+      (seriesItem: any) => seriesItem.options.id === `history:${gridChartItem.param}`,
     );
     if (historySeries) {
-      item.showHistory ? historySeries.show() : historySeries.hide();
+      gridChartItem.showHistory ? historySeries.show() : historySeries.hide();
     }
   }
 
-  public onParamSearchChange(value: string): void {
-    this.paramSearchText = value;
+  public onParamSearchChange(searchValue: string): void {
+    this.paramSearchText = searchValue;
   }
 
   public clearParamSearch(): void {
     this.paramSearchText = '';
   }
 
-  private addGridItem(param: string): void {
-    const gridRowIndex = this.gridItems.length;
+  public navigateToHistoricalFlight(sidebarItem: HistoricalSidebarItem): void {
+    this.router.navigate(['/archive', sidebarItem.comparedFlightIndex], {
+      queryParams: { param: sidebarItem.param },
+    });
+  }
+
+  public onHistoricalCardHover(historicalItem: any): void {
+    const historicalId: string = historicalItem.comparedFlightIndex + '_' + historicalItem.time;
+
+    this.hoveredHistoricalId = historicalId;
+
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', { detail: historicalId }),
+    );
+  }
+
+  public onHistoricalCardLeave(): void {
+    this.hoveredHistoricalId = null;
+
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', { detail: null }),
+    );
+  }
+
+  public isParamVisible(paramName: string): boolean {
+    const searchQuery: string = this.paramSearchText.trim().toLowerCase();
+    if (searchQuery.length === 0) return true;
+    return paramName.toLowerCase().includes(searchQuery);
+  }
+
+  private addGridItem(paramName: string): void {
+    const newRowIndex = this.gridItems.length;
 
     const newGridChartItem: GridChartItem = {
-      param,
+      param: paramName,
       cols: 4,
       rows: 1,
       x: 0,
-      y: gridRowIndex,
+      y: newRowIndex,
       chart: undefined,
       showAnomalies: true,
       showHistory: true,
     };
 
     this.gridItems.push(newGridChartItem);
-    this.cdr.detectChanges();
+    this.changeDetectorRef.detectChanges();
 
     setTimeout(() => this.initGridChart(newGridChartItem), 150);
   }
 
-  private removeGridItem(param: string): void {
+  private removeGridItem(paramName: string): void {
     const gridItemIndex: number = this.gridItems.findIndex(
-      (gridItem) => gridItem.param === param,
+      (gridItem) => gridItem.param === paramName,
     );
     if (gridItemIndex === -1) return;
 
@@ -276,7 +311,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gridItems = this.gridItems.filter(
       (_, currentIndex) => currentIndex !== gridItemIndex,
     );
-    this.cdr.detectChanges();
+    this.changeDetectorRef.detectChanges();
   }
 
   private clearGrid(): void {
@@ -289,33 +324,33 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gridItems = [];
   }
 
-  private initGridChart(item: GridChartItem): void {
+  private initGridChart(gridChartItem: GridChartItem): void {
     const gridChartElementRef: ElementRef<HTMLDivElement> | undefined =
-      this.gridChartEls.find(
+      this.gridChartElements.find(
         (elementRef) =>
-          elementRef.nativeElement.dataset['param'] === item.param,
+          elementRef.nativeElement.dataset['param'] === gridChartItem.param,
       );
 
     if (!gridChartElementRef) {
-      setTimeout(() => this.initGridChart(item), 150);
+      setTimeout(() => this.initGridChart(gridChartItem), 150);
       return;
     }
 
-    item.chart = this.charts.createGridChart(
+    gridChartItem.chart = this.chartsService.createGridChart(
       gridChartElementRef.nativeElement,
-      item.param,
+      gridChartItem.param,
       this.flightData,
     );
 
-    const chartInstance = item.chart;
+    const chartInstance = gridChartItem.chart;
     setTimeout(() => (chartInstance as any)?.reflow(), 0);
 
-    this.loadAndShowAnomalies(item.param, chartInstance);
-    this.loadAndShowHistoricalSimilarity(item.param, chartInstance);
+    this.loadAndShowAnomalies(gridChartItem.param, chartInstance);
+    this.loadAndShowHistoricalSimilarity(gridChartItem.param, chartInstance);
   }
 
   private loadFlight(): void {
-    const sub: Subscription = this.archiveService
+    const flightSubscription: Subscription = this.archiveService
       .getFlightFields(this.masterIndex)
       .subscribe({
         next: (flightRows: TelemetrySensorFields[]) => {
@@ -330,39 +365,39 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
           setTimeout(() => {
             this.drawMiniCharts();
-            if (this._pendingParam) {
-              const param = this._pendingParam;
-              this._pendingParam = null;
-              setTimeout(() => this.autoSelectParam(param), 300);
+            if (this.pendingParamToAutoSelect) {
+              const pendingParam = this.pendingParamToAutoSelect;
+              this.pendingParamToAutoSelect = null;
+              setTimeout(() => this.autoSelectParam(pendingParam), 300);
             }
           });
         },
-        error: (err: any) => {
-          console.error('Failed to load flight:', err);
+        error: (error: any) => {
+          console.error('Failed to load flight:', error);
           this.flightData = [];
           this.parameters = [];
         },
       });
 
-    this.subs.add(sub);
+    this.subscriptions.add(flightSubscription);
   }
 
   private drawMiniCharts(): void {
     if (this.flightData.length === 0) return;
     if (this.miniCharts.size > 0) return;
 
-    this.miniChartEls.forEach(
+    this.miniChartElements.forEach(
       (miniChartElementRef: ElementRef<HTMLDivElement>) => {
         const parameterName: string | undefined =
           miniChartElementRef.nativeElement.dataset['param'];
         if (!parameterName) return;
 
-        const dataPoints: [number, number][] = this.charts.buildSeries(
+        const dataPoints: [number, number][] = this.chartsService.buildSeries(
           this.flightData,
           parameterName,
         );
 
-        const miniChartInstance = this.charts.createMiniChart(
+        const miniChartInstance = this.chartsService.createMiniChart(
           miniChartElementRef.nativeElement,
           parameterName,
           dataPoints,
@@ -373,120 +408,84 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadAndShowAnomalies(
-    param: string,
+    paramName: string,
     chart: import('highcharts').Chart,
   ): void {
     const anomaliesSubscription: Subscription = this.archiveService
-      .getFlightPointsParam(this.masterIndex, param)
+      .getFlightPointsParam(this.masterIndex, paramName)
       .subscribe({
         next: (anomalyEpochSecondsList: number[]) => {
           const anomalyPoints: [number, number][] =
-            this.charts.mapAnomalyEpochSecondsToXY(
+            this.chartsService.mapAnomalyEpochSecondsToXY(
               this.flightData,
-              param,
+              paramName,
               anomalyEpochSecondsList,
             );
-          this.charts.addOrReplaceAnomaliesSeries(chart, param, anomalyPoints);
+          this.chartsService.addOrReplaceAnomaliesSeries(chart, paramName, anomalyPoints);
         },
         error: (error: any) =>
-          console.error('Failed to load anomalies for', param, error),
+          console.error('Failed to load anomalies for', paramName, error),
       });
 
-    this.subs.add(anomaliesSubscription);
+    this.subscriptions.add(anomaliesSubscription);
   }
 
   private loadAndShowHistoricalSimilarity(
-    param: string,
+    paramName: string,
     chart: import('highcharts').Chart,
   ): void {
     const historicalSimilaritySubscription: Subscription = this.archiveService
-      .getFlightHistoricalSimilarity(this.masterIndex, param)
+      .getFlightHistoricalSimilarity(this.masterIndex, paramName)
       .subscribe({
         next: (historicalSimilarityPoints: HistoricalSimilarityPoint[]) => {
           const similarityChartPoints: import('highcharts').PointOptionsObject[] =
-            this.charts.mapHistoricalSimilarityToPoints(
+            this.chartsService.mapHistoricalSimilarityToPoints(
               this.flightData,
-              param,
+              paramName,
               historicalSimilarityPoints,
             );
 
-          this.charts.addOrReplaceHistoricalSimilaritySeries(
+          this.chartsService.addOrReplaceHistoricalSimilaritySeries(
             chart,
-            param,
+            paramName,
             similarityChartPoints,
           );
 
           const sidebarItems: HistoricalSidebarItem[] =
             historicalSimilarityPoints.map((historicalSimilarityItem) => {
-              const startIndex: number = Number(
-                historicalSimilarityItem.startIndex,
-              );
-              const endIndex: number = Number(
-                historicalSimilarityItem.endIndex,
-              );
-              const similarityTime: number = Math.round(
-                (startIndex + endIndex) / 2,
-              );
+              const startIndex: number = Number(historicalSimilarityItem.startIndex);
+              const endIndex: number = Number(historicalSimilarityItem.endIndex);
+              const midpointTime: number = Math.round((startIndex + endIndex) / 2);
+
               return {
-                param,
-                comparedFlightIndex:
-                  historicalSimilarityItem.comparedFlightIndex,
+                param: paramName,
+                comparedFlightIndex: historicalSimilarityItem.comparedFlightIndex,
                 label: historicalSimilarityItem.label,
                 score: Number(historicalSimilarityItem.finalScore),
-                time: similarityTime,
+                time: midpointTime,
               };
             });
 
-          for (const item of sidebarItems) {
-            const key: string = `${item.param}_${item.comparedFlightIndex}_${item.time}_${item.label}`;
+          for (const sidebarItem of sidebarItems) {
+            const uniqueKey: string = `${sidebarItem.param}_${sidebarItem.comparedFlightIndex}_${sidebarItem.time}_${sidebarItem.label}`;
 
-            if (!this.historicalKeySet.has(key)) {
-              this.historicalKeySet.add(key);
-              this.historicalSidebarItems.push(item);
+            if (!this.historicalKeySet.has(uniqueKey)) {
+              this.historicalKeySet.add(uniqueKey);
+              this.historicalSidebarItems.push(sidebarItem);
             }
           }
         },
         error: (error: any) =>
-          console.error(
-            'Failed to load historical similarity for',
-            param,
-            error,
-          ),
+          console.error('Failed to load historical similarity for', paramName, error),
       });
 
-    this.subs.add(historicalSimilaritySubscription);
+    this.subscriptions.add(historicalSimilaritySubscription);
   }
-  public navigateToHistoricalFlight(item: HistoricalSidebarItem): void {
-    this.router.navigate(['/archive', item.comparedFlightIndex], {
-      queryParams: { param: item.param },
-    });
-  }
-  private autoSelectParam(param: string): void {
-    if (!this.parameters.includes(param)) return;
-    if (!this.selected.has(param)) {
-      this.toggleParam(param);
+
+  private autoSelectParam(paramName: string): void {
+    if (!this.parameters.includes(paramName)) return;
+    if (!this.selected.has(paramName)) {
+      this.toggleParam(paramName);
     }
   }
-  public onHistoricalCardHover(item: any): void {
-    const id: string = item.comparedFlightIndex + '_' + item.time;
-
-    this.hoveredHistoricalId = id;
-
-    window.dispatchEvent(
-      new CustomEvent('historical-card-hover', { detail: id }),
-    );
-  }
-
-  public onHistoricalCardLeave(): void {
-    this.hoveredHistoricalId = null;
-
-    window.dispatchEvent(
-      new CustomEvent('historical-card-hover', { detail: null }),
-    );
-  }
-  public isParamVisible(param: string): boolean {
-  const searchQuery: string = this.paramSearchText.trim().toLowerCase();
-  if (searchQuery.length === 0) return true;
-  return param.toLowerCase().includes(searchQuery);
-}
 }
