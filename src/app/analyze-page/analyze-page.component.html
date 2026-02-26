@@ -98,7 +98,7 @@
         <button
           class="paramCard"
           *ngFor="let param of parameters"
-          [class.hidden]="!isParamVisible(param)"
+          [class.hidden1]="!isParamVisible(param)"
           [class.selected]="isSelected(param)"
           (click)="toggleParam(param)"
         >

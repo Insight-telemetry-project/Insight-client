@@ -81,29 +81,34 @@ export class AnalyzeChartsService {
       chart.series[0].remove(false);
     }
 
-    const colors = Highcharts.getOptions().colors as string[];
+    const availableColors = Highcharts.getOptions().colors as string[];
 
-    for (let index: number = 0; index < selectedParams.length; index++) {
-      const param: string = selectedParams[index];
+    for (
+      let paramIndex: number = 0;
+      paramIndex < selectedParams.length;
+      paramIndex++
+    ) {
+      const paramName: string = selectedParams[paramIndex];
       const dataPoints: [number, number][] = this.buildSeries(
         flightData,
-        param,
+        paramName,
       );
 
-      const baseColor: string = colors?.[index % colors.length] ?? '#00bfff';
+      const baseColor: string =
+        availableColors?.[paramIndex % availableColors.length] ?? '#00bfff';
 
-      const softTop: string = Highcharts.color(baseColor)
+      const gradientTopColor: string = Highcharts.color(baseColor)
         .setOpacity(0.25)
         .get('rgba') as string;
 
-      const softBottom: string = Highcharts.color(baseColor)
+      const gradientBottomColor: string = Highcharts.color(baseColor)
         .setOpacity(0.02)
         .get('rgba') as string;
 
       chart.addSeries(
         {
           type: 'areaspline',
-          name: param,
+          name: paramName,
           data: dataPoints,
           color: baseColor,
           lineWidth: 1.5,
@@ -111,8 +116,8 @@ export class AnalyzeChartsService {
           fillColor: {
             linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
             stops: [
-              [0, softTop],
-              [1, softBottom],
+              [0, gradientTopColor],
+              [1, gradientBottomColor],
             ],
           },
           shadow: false,
@@ -126,25 +131,25 @@ export class AnalyzeChartsService {
 
   public addOrReplaceAnomaliesSeries(
     chart: Highcharts.Chart,
-    param: string,
-    points: [number, number][],
+    paramName: string,
+    anomalyPoints: [number, number][],
   ): void {
-    const seriesId: string = `anomalies:${param}`;
+    const seriesId: string = `anomalies:${paramName}`;
 
-    const existing: Highcharts.Series | undefined = chart.series.find(
-      (s: Highcharts.Series) => (s.options as any).id === seriesId,
+    const existingSeries: Highcharts.Series | undefined = chart.series.find(
+      (series: Highcharts.Series) => (series.options as any).id === seriesId,
     );
 
-    if (existing) {
-      existing.remove(false);
+    if (existingSeries) {
+      existingSeries.remove(false);
     }
 
     chart.addSeries(
       {
         type: 'scatter',
         id: seriesId as any,
-        name: `${param} anomalies`,
-        data: points,
+        name: `${paramName} anomalies`,
+        data: anomalyPoints,
         color: '#ff2d2d',
         marker: {
           enabled: true,
@@ -168,7 +173,7 @@ export class AnalyzeChartsService {
           useHTML: true,
           pointFormat: `
             <b style="color:#ff2d2d">Anomaly</b><br/>
-            <b>${param}</b>: {point.y}<br/>
+            <b>${paramName}</b>: {point.y}<br/>
             Time: {point.x:%H:%M:%S}
           `,
         },
@@ -179,22 +184,25 @@ export class AnalyzeChartsService {
     chart.redraw();
   }
 
-  public removeAnomaliesSeries(chart: Highcharts.Chart, param: string): void {
-    const seriesId: string = `anomalies:${param}`;
+  public removeAnomaliesSeries(
+    chart: Highcharts.Chart,
+    paramName: string,
+  ): void {
+    const seriesId: string = `anomalies:${paramName}`;
 
-    const existing: Highcharts.Series | undefined = chart.series.find(
-      (s: Highcharts.Series) => (s.options as any).id === seriesId,
+    const existingSeries: Highcharts.Series | undefined = chart.series.find(
+      (series: Highcharts.Series) => (series.options as any).id === seriesId,
     );
 
-    if (existing) {
-      existing.remove(false);
+    if (existingSeries) {
+      existingSeries.remove(false);
       chart.redraw();
     }
   }
 
   public createMiniChart(
     container: HTMLElement,
-    param: string,
+    paramName: string,
     dataPoints: [number, number][],
   ): Highcharts.Chart {
     return Highcharts.chart(container, {
@@ -219,7 +227,7 @@ export class AnalyzeChartsService {
       series: [
         {
           type: 'line',
-          name: param,
+          name: paramName,
           data: dataPoints,
           color: '#8b5cf6',
           turboThreshold: 0,
@@ -241,71 +249,71 @@ export class AnalyzeChartsService {
 
   public buildSeries(
     flightData: TelemetrySensorFields[],
-    param: string,
+    paramName: string,
   ): [number, number][] {
-    const points: [number, number][] = [];
+    const dataPoints: [number, number][] = [];
 
     for (const row of flightData) {
-      const value: number | undefined = row.fields[param];
+      const value: number | undefined = row.fields[paramName];
       if (value === undefined || value === null) continue;
 
-      points.push([row.timestep * 1000, value]);
+      dataPoints.push([row.timestep * 1000, value]);
     }
 
-    return points;
+    return dataPoints;
   }
 
   public mapAnomalyEpochSecondsToXY(
     flightData: TelemetrySensorFields[],
-    param: string,
+    paramName: string,
     anomalyEpochSeconds: number[],
   ): [number, number][] {
-    const timeToValue: Map<number, number> = new Map<number, number>();
+    const timestepToValueMap: Map<number, number> = new Map<number, number>();
 
     for (const row of flightData) {
-      const value: number | undefined = row.fields[param];
+      const value: number | undefined = row.fields[paramName];
       if (value === undefined || value === null) continue;
-      timeToValue.set(row.timestep, value);
+      timestepToValueMap.set(row.timestep, value);
     }
 
-    const points: [number, number][] = [];
+    const anomalyPoints: [number, number][] = [];
 
-    for (const t of anomalyEpochSeconds) {
-      const y: number | undefined = timeToValue.get(t);
-      if (y === undefined) continue;
-      points.push([t * 1000, y]);
+    for (const epochSecond of anomalyEpochSeconds) {
+      const yValue: number | undefined = timestepToValueMap.get(epochSecond);
+      if (yValue === undefined) continue;
+      anomalyPoints.push([epochSecond * 1000, yValue]);
     }
 
-    return points;
+    return anomalyPoints;
   }
 
   public addOrReplaceHistoricalSimilaritySeries(
     chart: Highcharts.Chart,
-    param: string,
+    paramName: string,
     points: Highcharts.PointOptionsObject[],
   ): void {
-    const seriesId: string = `history:${param}`;
+    const seriesId: string = `history:${paramName}`;
 
-    const uniqueMap: Map<string, Highcharts.PointOptionsObject> = new Map<
+    const uniquePointsMap: Map<string, Highcharts.PointOptionsObject> = new Map<
       string,
       Highcharts.PointOptionsObject
     >();
 
     for (const point of points) {
-      const key: string =
+      const uniqueKey: string =
         (point as any)?.custom?.historicalId ?? `${point.x}_${point.y}`;
 
-      if (!uniqueMap.has(key)) {
-        uniqueMap.set(key, point);
+      if (!uniquePointsMap.has(uniqueKey)) {
+        uniquePointsMap.set(uniqueKey, point);
       }
     }
 
     const dedupedPoints: Highcharts.PointOptionsObject[] = Array.from(
-      uniqueMap.values(),
+      uniquePointsMap.values(),
     );
 
     const existingSeries: Highcharts.Series | undefined = chart.series.find(
-      (s) => (s.options as any)?.id === seriesId,
+      (series) => (series.options as any)?.id === seriesId,
     );
 
     if (existingSeries) {
@@ -356,55 +364,59 @@ export class AnalyzeChartsService {
 
   public mapHistoricalSimilarityToPoints(
     flightData: TelemetrySensorFields[],
-    param: string,
-    items: any[],
+    paramName: string,
+    similarityItems: any[],
   ): Highcharts.PointOptionsObject[] {
-    const timeToValue: Map<number, number> = new Map<number, number>();
+    const timestepToValueMap: Map<number, number> = new Map<number, number>();
 
     for (const row of flightData) {
-      const value: number | undefined = row.fields[param];
+      const value: number | undefined = row.fields[paramName];
       if (value === undefined || value === null) continue;
-      timeToValue.set(row.timestep, value);
+      timestepToValueMap.set(row.timestep, value);
     }
 
-    const points: Highcharts.PointOptionsObject[] = [];
+    const mappedPoints: Highcharts.PointOptionsObject[] = [];
 
-    for (const item of items) {
-      const start: number = Number(item.startIndex);
-      const end: number = Number(item.endIndex);
-      const t: number = Math.round((start + end) / 2);
+    for (const similarityItem of similarityItems) {
+      const startIndex: number = Number(similarityItem.startIndex);
+      const endIndex: number = Number(similarityItem.endIndex);
+      const midpointTimestep: number = Math.round((startIndex + endIndex) / 2);
 
-      const y: number | undefined = timeToValue.get(t);
-      if (y === undefined) continue;
+      const yValue: number | undefined =
+        timestepToValueMap.get(midpointTimestep);
+      if (yValue === undefined) continue;
 
-      points.push({
-        x: t * 1000,
-        y,
+      mappedPoints.push({
+        x: midpointTimestep * 1000,
+        y: yValue,
         custom: {
-          info: `Matched flight ${item.comparedFlightIndex}, label ${item.label}, score ${Number(item.finalScore).toFixed(2)}`,
-          historicalId: item.comparedFlightIndex + '_' + t,
+          info: `Matched flight ${similarityItem.comparedFlightIndex}, label ${similarityItem.label}, score ${Number(similarityItem.finalScore).toFixed(2)}`,
+          historicalId:
+            similarityItem.comparedFlightIndex + '_' + midpointTimestep,
         },
       });
     }
 
-    return points;
+    return mappedPoints;
   }
 
   public createGridChart(
     container: HTMLElement,
-    param: string,
+    paramName: string,
     flightData: TelemetrySensorFields[],
   ): Highcharts.Chart {
-    const dataPoints: [number, number][] = this.buildSeries(flightData, param);
+    const dataPoints: [number, number][] = this.buildSeries(
+      flightData,
+      paramName,
+    );
 
-    const colors = Highcharts.getOptions().colors as string[];
-    const baseColor: string = colors?.[0] ?? '#00bfff';
-
-    const softTop: string = Highcharts.color(baseColor)
+    const availableColors = Highcharts.getOptions().colors as string[];
+    const baseColor: string = '#8b5cf6'; 
+    const gradientTopColor: string = Highcharts.color(baseColor)
       .setOpacity(0.25)
       .get('rgba') as string;
 
-    const softBottom: string = Highcharts.color(baseColor)
+    const gradientBottomColor: string = Highcharts.color(baseColor)
       .setOpacity(0.02)
       .get('rgba') as string;
 
@@ -464,7 +476,7 @@ export class AnalyzeChartsService {
       series: [
         {
           type: 'areaspline',
-          name: param,
+          name: paramName,
           data: dataPoints,
           color: baseColor,
           lineWidth: 1.5,
@@ -472,8 +484,8 @@ export class AnalyzeChartsService {
           fillColor: {
             linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
             stops: [
-              [0, softTop],
-              [1, softBottom],
+              [0, gradientTopColor],
+              [1, gradientBottomColor],
             ],
           },
           shadow: false,
