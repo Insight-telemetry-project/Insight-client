@@ -97,7 +97,8 @@
       <div class="paramsGrid">
         <button
           class="paramCard"
-          *ngFor="let param of filteredParameters"
+          *ngFor="let param of parameters"
+          [class.hidden]="!isParamVisible(param)"
           [class.selected]="isSelected(param)"
           (click)="toggleParam(param)"
         >
