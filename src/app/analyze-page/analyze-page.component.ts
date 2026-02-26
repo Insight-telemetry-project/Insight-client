@@ -76,7 +76,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private subs: Subscription = new Subscription();
   private miniCharts: Map<string, import('highcharts').Chart> = new Map();
-
+  private historicalKeySet: Set<string> = new Set<string>();
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
@@ -93,6 +93,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.clearGrid();
       this.related.clear();
       this.historicalSidebarItems = [];
+      this.historicalKeySet.clear();
+
       this.miniCharts.forEach((c) => c.destroy());
       this.miniCharts.clear();
       this.paramSearchText = '';
@@ -435,7 +437,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
               };
             });
 
-          this.historicalSidebarItems.push(...sidebarItems);
+          for (const item of sidebarItems) {
+            const key: string = `${item.param}_${item.comparedFlightIndex}_${item.time}_${item.label}`;
+
+            if (!this.historicalKeySet.has(key)) {
+              this.historicalKeySet.add(key);
+              this.historicalSidebarItems.push(item);
+            }
+          }
         },
         error: (error: any) =>
           console.error(

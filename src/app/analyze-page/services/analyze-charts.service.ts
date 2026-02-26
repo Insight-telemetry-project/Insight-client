@@ -5,73 +5,72 @@ import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
   public createMainChart(container: HTMLElement): Highcharts.Chart {
+    return Highcharts.chart(container, {
+      chart: {
+        backgroundColor: 'transparent',
+        zooming: { type: 'x' },
+        panning: {
+          enabled: true,
+          type: 'x',
+        },
+        resetZoomButton: {
+          theme: {
+            display: 'none',
+          },
+        },
+        events: {
+          load: function () {
+            const chart = this;
 
-  return Highcharts.chart(container, {
-    chart: {
-  backgroundColor: 'transparent',
-  zooming: { type: 'x' },
-  panning: {
-    enabled: true,
-    type: 'x'
-  },
-  resetZoomButton: {
-    theme: {
-      display: 'none'
-    }
-  },
-  events: {
-    load: function () {
-      const chart = this;
-
-      chart.container.ondblclick = function () {
-        chart.xAxis[0].setExtremes(undefined, undefined);
-      };
-    }
+            chart.container.ondblclick = function () {
+              chart.xAxis[0].setExtremes(undefined, undefined);
+            };
+          },
+        },
+      },
+      title: { text: '' },
+      credits: { enabled: false },
+      legend: {
+        enabled: true,
+        itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
+        itemHoverStyle: { color: '#948f8f' },
+      },
+      xAxis: {
+        type: 'datetime',
+        title: { text: 'Time', style: { color: '#ffffff' } },
+        labels: { style: { color: '#cfcfe6' } },
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1,
+      },
+      yAxis: {
+        title: { text: '', style: { color: '#ffffff' } },
+        labels: { style: { color: '#cfcfe6' } },
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1,
+      },
+      tooltip: {
+        shared: false,
+        snap: 80,
+        useHTML: true,
+      },
+      plotOptions: {
+        series: {
+          states: {
+            inactive: {
+              opacity: 1,
+            },
+          },
+        },
+        areaspline: {
+          marker: { enabled: false },
+        },
+        scatter: {
+          stickyTracking: true,
+        },
+      },
+      series: [],
+    });
   }
-},
-    title: { text: '' },
-    credits: { enabled: false },
-    legend: {
-      enabled: true,
-      itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
-      itemHoverStyle: { color: '#948f8f' }
-    },
-    xAxis: {
-      type: 'datetime',
-      title: { text: 'Time', style: { color: '#ffffff' } },
-      labels: { style: { color: '#cfcfe6' } },
-      gridLineColor: 'rgba(255,255,255,0.08)',
-      gridLineWidth: 1
-    },
-    yAxis: {
-      title: { text: '', style: { color: '#ffffff' } },
-      labels: { style: { color: '#cfcfe6' } },
-      gridLineColor: 'rgba(255,255,255,0.08)',
-      gridLineWidth: 1
-    },
-    tooltip: {
-      shared: false,
-      snap: 80,
-      useHTML: true
-    },
-    plotOptions: {
-      series: {
-        states: {
-          inactive: {
-            opacity: 1
-          }
-        }
-      },
-      areaspline: {
-        marker: { enabled: false }
-      },
-      scatter: {
-        stickyTracking: true
-      }
-    },
-    series: []
-  });
-}
 
   public updateMainChartSeries(
     chart: Highcharts.Chart,
@@ -280,93 +279,80 @@ export class AnalyzeChartsService {
     return points;
   }
 
-public addOrReplaceHistoricalSimilaritySeries(
-  chart: Highcharts.Chart,
-  param: string,
-  points: Highcharts.PointOptionsObject[]
-): void {
+  public addOrReplaceHistoricalSimilaritySeries(
+    chart: Highcharts.Chart,
+    param: string,
+    points: Highcharts.PointOptionsObject[],
+  ): void {
+    const seriesId: string = `history:${param}`;
 
-  const seriesId: string = `history:${param}`;
+    const uniqueMap: Map<string, Highcharts.PointOptionsObject> = new Map<
+      string,
+      Highcharts.PointOptionsObject
+    >();
 
-  const existing: Highcharts.Series | undefined =
-    chart.series.find((s: Highcharts.Series) => (s.options as any).id === seriesId);
+    for (const point of points) {
+      const key: string =
+        (point as any)?.custom?.historicalId ?? `${point.x}_${point.y}`;
 
-  if (existing) {
-    existing.remove(false);
-  }
-
-  chart.addSeries(
-    {
-      type: 'scatter',
-      id: seriesId as any,
-      name: `${param} similar past`,
-      data: points,
-      color: '#ffd400',
-      zIndex: 20,
-      enableMouseTracking: true,
-      stickyTracking: true,
-      point: {
-        events: {
-          mouseOver: function () {
-            const point: any = this;
-
-            window.dispatchEvent(
-              new CustomEvent('historical-point-hover', {
-                detail: point.options.custom?.historicalId ?? null
-              })
-            );
-          },
-          mouseOut: function () {
-            window.dispatchEvent(
-              new CustomEvent('historical-point-hover', {
-                detail: null
-              })
-            );
-          }
-        }
-      },
-      tooltip: {
-        shared: false,
-        useHTML: true,
-        pointFormat: `
-        <div style="min-width:220px">
-          <div style="font-weight:700;margin-bottom:6px">
-            Similar historical point
-          </div>
-          <div><b>${param}</b>: {point.y}</div>
-          <div>Time: {point.x:%H:%M:%S}</div>
-          <div style="opacity:0.9;margin-top:6px">
-            {point.custom.info}
-          </div>
-        </div>
-        `
-      },
-      marker: {
-        enabled: true,
-        symbol: 'circle',
-        radius: 6,
-        fillColor: '#ffd400',
-        lineColor: '#000000',
-        lineWidth: 2
-      },
-      states: {
-        hover: {
-          enabled: true,
-          halo: {
-            size: 17,
-            opacity: 0.6,
-            attributes: {
-              fill: '#ffd400'
-            }
-          }
-        }
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, point);
       }
-    } as Highcharts.SeriesOptionsType,
-    false
-  );
+    }
 
-  chart.redraw();
-}
+    const dedupedPoints: Highcharts.PointOptionsObject[] = Array.from(
+      uniqueMap.values(),
+    );
+
+    const existingSeries: Highcharts.Series | undefined = chart.series.find(
+      (s) => (s.options as any)?.id === seriesId,
+    );
+
+    if (existingSeries) {
+      existingSeries.remove(false);
+    }
+
+    chart.addSeries(
+      {
+        id: seriesId,
+        name: 'Historical',
+        type: 'scatter',
+        data: dedupedPoints,
+        zIndex: 7,
+        color: '#facc15',
+        enableMouseTracking: true,
+        marker: {
+          symbol: 'circle',
+          radius: 6,
+          fillColor: '#facc15',
+          lineColor: '#000000',
+          lineWidth: 2,
+          states: {
+            hover: {
+              radius: 8,
+              fillColor: '#fde047',
+              lineColor: '#000000',
+              lineWidth: 3,
+            },
+          },
+        },
+        states: {
+          hover: {
+            halo: {
+              size: 14,
+              opacity: 0.45,
+              attributes: {
+                fill: '#fde047',
+              },
+            },
+          },
+        },
+      },
+      false,
+    );
+
+    chart.redraw();
+  }
 
   public mapHistoricalSimilarityToPoints(
     flightData: TelemetrySensorFields[],
@@ -405,95 +391,94 @@ public addOrReplaceHistoricalSimilaritySeries(
   }
 
   public createGridChart(
-  container: HTMLElement,
-  param: string,
-  flightData: TelemetrySensorFields[]
-): Highcharts.Chart {
+    container: HTMLElement,
+    param: string,
+    flightData: TelemetrySensorFields[],
+  ): Highcharts.Chart {
+    const dataPoints: [number, number][] = this.buildSeries(flightData, param);
 
-  const dataPoints: [number, number][] =
-    this.buildSeries(flightData, param);
+    const colors = Highcharts.getOptions().colors as string[];
+    const baseColor: string = colors?.[0] ?? '#00bfff';
 
-  const colors = Highcharts.getOptions().colors as string[];
-  const baseColor: string =
-    colors?.[0] ?? '#00bfff';
+    const softTop: string = Highcharts.color(baseColor)
+      .setOpacity(0.25)
+      .get('rgba') as string;
 
-  const softTop: string =
-    Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+    const softBottom: string = Highcharts.color(baseColor)
+      .setOpacity(0.02)
+      .get('rgba') as string;
 
-  const softBottom: string =
-    Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
-
-  return Highcharts.chart(container, {
-    chart: {
-      backgroundColor: 'transparent',
-      zooming: { type: 'x' },
-      panning: {
-        enabled: true,
-        type: 'x'
-      },
-      events: {
-        load: function () {
-          const chart = this;
-
-          chart.container.ondblclick = function () {
-            chart.xAxis[0].setExtremes(undefined, undefined);
-          };
-        }
-      }
-    },
-    title: { text: '' },
-    credits: { enabled: false },
-    legend: { enabled: false },
-    xAxis: {
-      type: 'datetime',
-      gridLineColor: 'rgba(255,255,255,0.08)',
-      gridLineWidth: 1,
-      labels: { style: { color: '#cfcfe6' } }
-    },
-    yAxis: {
-      title: { text: '' },
-      gridLineColor: 'rgba(255,255,255,0.08)',
-      gridLineWidth: 1,
-      labels: { style: { color: '#cfcfe6' } }
-    },
-    tooltip: {
-      shared: false,
-      snap: 80,
-      useHTML: true
-    },
-    plotOptions: {
-      series: {
-        states: {
-          inactive: {
-            opacity: 1
-          }
-        }
-      },
-      areaspline: {
-        marker: { enabled: false }
-      },
-      scatter: {
-        stickyTracking: true
-      }
-    },
-    series: [
-      {
-        type: 'areaspline',
-        name: param,
-        data: dataPoints,
-        color: baseColor,
-        lineWidth: 1.5,
-        marker: { enabled: false },
-        fillColor: {
-          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-          stops: [
-            [0, softTop],
-            [1, softBottom]
-          ]
+    return Highcharts.chart(container, {
+      chart: {
+        backgroundColor: 'transparent',
+        zooming: { type: 'x' },
+        panning: {
+          enabled: true,
+          type: 'x',
         },
-        shadow: false
-      } as Highcharts.SeriesOptionsType
-    ]
-  });
-}
+        events: {
+          load: function () {
+            const chart = this;
+
+            chart.container.ondblclick = function () {
+              chart.xAxis[0].setExtremes(undefined, undefined);
+            };
+          },
+        },
+      },
+      title: { text: '' },
+      credits: { enabled: false },
+      legend: { enabled: false },
+      xAxis: {
+        type: 'datetime',
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1,
+        labels: { style: { color: '#cfcfe6' } },
+      },
+      yAxis: {
+        title: { text: '' },
+        gridLineColor: 'rgba(255,255,255,0.08)',
+        gridLineWidth: 1,
+        labels: { style: { color: '#cfcfe6' } },
+      },
+      tooltip: {
+        shared: false,
+        snap: 80,
+        useHTML: true,
+      },
+      plotOptions: {
+        series: {
+          states: {
+            inactive: {
+              opacity: 1,
+            },
+          },
+        },
+        areaspline: {
+          marker: { enabled: false },
+        },
+        scatter: {
+          stickyTracking: true,
+        },
+      },
+      series: [
+        {
+          type: 'areaspline',
+          name: param,
+          data: dataPoints,
+          color: baseColor,
+          lineWidth: 1.5,
+          marker: { enabled: false },
+          fillColor: {
+            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+            stops: [
+              [0, softTop],
+              [1, softBottom],
+            ],
+          },
+          shadow: false,
+        } as Highcharts.SeriesOptionsType,
+      ],
+    });
+  }
 }
