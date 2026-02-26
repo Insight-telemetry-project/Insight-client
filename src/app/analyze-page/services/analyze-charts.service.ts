@@ -21,7 +21,6 @@ export class AnalyzeChartsService {
         events: {
           load: function () {
             const chart = this;
-
             chart.container.ondblclick = function () {
               chart.xAxis[0].setExtremes(undefined, undefined);
             };
@@ -83,27 +82,12 @@ export class AnalyzeChartsService {
 
     const availableColors = Highcharts.getOptions().colors as string[];
 
-    for (
-      let paramIndex: number = 0;
-      paramIndex < selectedParams.length;
-      paramIndex++
-    ) {
+    for (let paramIndex: number = 0; paramIndex < selectedParams.length; paramIndex++) {
       const paramName: string = selectedParams[paramIndex];
-      const dataPoints: [number, number][] = this.buildSeries(
-        flightData,
-        paramName,
-      );
-
-      const baseColor: string =
-        availableColors?.[paramIndex % availableColors.length] ?? '#00bfff';
-
-      const gradientTopColor: string = Highcharts.color(baseColor)
-        .setOpacity(0.25)
-        .get('rgba') as string;
-
-      const gradientBottomColor: string = Highcharts.color(baseColor)
-        .setOpacity(0.02)
-        .get('rgba') as string;
+      const dataPoints: [number, number][] = this.buildSeries(flightData, paramName);
+      const baseColor: string = availableColors?.[paramIndex % availableColors.length] ?? '#00bfff';
+      const gradientTopColor: string = Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+      const gradientBottomColor: string = Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
 
       chart.addSeries(
         {
@@ -184,16 +168,11 @@ export class AnalyzeChartsService {
     chart.redraw();
   }
 
-  public removeAnomaliesSeries(
-    chart: Highcharts.Chart,
-    paramName: string,
-  ): void {
+  public removeAnomaliesSeries(chart: Highcharts.Chart, paramName: string): void {
     const seriesId: string = `anomalies:${paramName}`;
-
     const existingSeries: Highcharts.Series | undefined = chart.series.find(
       (series: Highcharts.Series) => (series.options as any).id === seriesId,
     );
-
     if (existingSeries) {
       existingSeries.remove(false);
       chart.redraw();
@@ -256,7 +235,6 @@ export class AnalyzeChartsService {
     for (const row of flightData) {
       const value: number | undefined = row.fields[paramName];
       if (value === undefined || value === null) continue;
-
       dataPoints.push([row.timestep * 1000, value]);
     }
 
@@ -302,7 +280,6 @@ export class AnalyzeChartsService {
     for (const point of points) {
       const uniqueKey: string =
         (point as any)?.custom?.historicalId ?? `${point.x}_${point.y}`;
-
       if (!uniquePointsMap.has(uniqueKey)) {
         uniquePointsMap.set(uniqueKey, point);
       }
@@ -382,8 +359,7 @@ export class AnalyzeChartsService {
       const endIndex: number = Number(similarityItem.endIndex);
       const midpointTimestep: number = Math.round((startIndex + endIndex) / 2);
 
-      const yValue: number | undefined =
-        timestepToValueMap.get(midpointTimestep);
+      const yValue: number | undefined = timestepToValueMap.get(midpointTimestep);
       if (yValue === undefined) continue;
 
       mappedPoints.push({
@@ -391,8 +367,7 @@ export class AnalyzeChartsService {
         y: yValue,
         custom: {
           info: `Matched flight ${similarityItem.comparedFlightIndex}, label ${similarityItem.label}, score ${Number(similarityItem.finalScore).toFixed(2)}`,
-          historicalId:
-            similarityItem.comparedFlightIndex + '_' + midpointTimestep,
+          historicalId: similarityItem.comparedFlightIndex + '_' + midpointTimestep,
         },
       });
     }
@@ -405,20 +380,10 @@ export class AnalyzeChartsService {
     paramName: string,
     flightData: TelemetrySensorFields[],
   ): Highcharts.Chart {
-    const dataPoints: [number, number][] = this.buildSeries(
-      flightData,
-      paramName,
-    );
-
-    const availableColors = Highcharts.getOptions().colors as string[];
-    const baseColor: string = '#8b5cf6'; 
-    const gradientTopColor: string = Highcharts.color(baseColor)
-      .setOpacity(0.25)
-      .get('rgba') as string;
-
-    const gradientBottomColor: string = Highcharts.color(baseColor)
-      .setOpacity(0.02)
-      .get('rgba') as string;
+    const dataPoints: [number, number][] = this.buildSeries(flightData, paramName);
+    const baseColor: string = '#8b5cf6';
+    const gradientTopColor: string = Highcharts.color(baseColor).setOpacity(0.25).get('rgba') as string;
+    const gradientBottomColor: string = Highcharts.color(baseColor).setOpacity(0.02).get('rgba') as string;
 
     return Highcharts.chart(container, {
       chart: {
@@ -431,7 +396,6 @@ export class AnalyzeChartsService {
         events: {
           load: function () {
             const chart = this;
-
             chart.container.ondblclick = function () {
               chart.xAxis[0].setExtremes(undefined, undefined);
             };
