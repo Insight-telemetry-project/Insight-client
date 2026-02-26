@@ -484,4 +484,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       new CustomEvent('historical-card-hover', { detail: null }),
     );
   }
+  public isParamVisible(param: string): boolean {
+  const searchQuery: string = this.paramSearchText.trim().toLowerCase();
+  if (searchQuery.length === 0) return true;
+  return param.toLowerCase().includes(searchQuery);
+}
 }
