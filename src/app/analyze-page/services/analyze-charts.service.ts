@@ -211,13 +211,21 @@ export class AnalyzeChartsService {
       xAxis: { type: 'datetime', visible: false },
       yAxis: { title: { text: '' }, visible: false },
       tooltip: { enabled: false },
+
       plotOptions: {
         series: {
           animation: false,
           marker: { enabled: false },
           lineWidth: 1,
+          enableMouseTracking: false, 
+          states: {
+            hover: {
+              enabled: false,
+            },
+          },
         },
       },
+
       series: [
         {
           type: 'line',
