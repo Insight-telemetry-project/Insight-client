@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { TelemetrySensorFields } from '../common/interfaces/telemetry-sensor-fields.interface';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { HistoricalSimilarityPoint } from '../common/interfaces/historical-similarity-point.interface';
+import { FlightPoints } from '../common/interfaces/flight-points';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +46,12 @@ export class FlightArchiveService {
 
   return this.http.get<HistoricalSimilarityPoint[]>(
     `${this.baseUrl}/get-flight-historical-similarity/${masterIndex}/${encodedParameter}`
+  );
+}
+
+public getAllSpecialPointsForFlight(masterIndex: number): Observable<FlightPoints> {
+  return this.http.get<FlightPoints>(
+    `${this.baseUrl}/get-all-special-points-for-flight/${masterIndex}`
   );
 }
 

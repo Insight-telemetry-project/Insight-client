@@ -1,89 +1,112 @@
 <div class="page">
-
   <header class="header">
-    <div>
-      <h1>🛩️ Flight Telemetry Monitor</h1>
-      <p>Real-time telemetry tracking</p>
+    <div class="headerLeft">
+      <h1 class="title">Flights Overview</h1>
+      <p class="subtitle">Telemetry parameters and anomalies</p>
     </div>
   </header>
 
   <div class="flightsContainer">
-
-    <div
-      class="flightCard"
-      *ngFor="let flight of flights"
-    >
-
-      <!-- Header -->
-      <div class="cardHeader"
-           (click)="toggleFlight(flight.flightNumber)">
-
+    <div class="flightCard" *ngFor="let flight of flights">
+      <div class="cardHeader" (click)="toggleFlight(flight.flightNumber)">
         <div class="left">
-
           <div class="icon">✈️</div>
 
-          <div>
-            <h3>FL-{{ flight.flightNumber }}</h3>
-            <span>{{ flight.flightLenght }} seconds</span>
-          </div>
+          <div class="flightInfo">
+            <h3 class="flightNumber">
+              {{ flight.flightNumber }}
+            </h3>
 
+            <span class="duration">
+              {{ getDurationText(flight.flightLenght) }}
+            </span>
+          </div>
         </div>
 
         <div class="right">
-
-          <div class="anomalyBubble"
-               [ngStyle]="{
-                 borderColor: getAnomalyColor(getTotalAnomalies(flight.flightNumber)),
-                 color: getAnomalyColor(getTotalAnomalies(flight.flightNumber))
-               }">
-            <span>Anomalies</span>
+          <div class="anomalyTotal">
             <strong>
-              {{ getTotalAnomalies(flight.flightNumber) }}
+              {{ getTotalAnomalies(flight.flightNumber) }} unusual points
             </strong>
           </div>
 
-          <div class="chevron"
-               [class.rotated]="isExpanded(flight.flightNumber)">
-            ⌃
+          <div
+            class="chevron"
+            [class.rotated]="isExpanded(flight.flightNumber)"
+          >
+            ⌄
           </div>
-
         </div>
-
       </div>
 
-      <!-- Expand Section -->
-      <div class="expand"
-           [class.open]="isExpanded(flight.flightNumber)">
+      <div class="expand" [class.open]="isExpanded(flight.flightNumber)">
+        <div class="paramsToolbar">
+          <div class="search">
+            <span class="searchIcon">⌕</span>
 
-        <div class="paramsGrid">
+            <input
+              class="searchInput"
+              type="text"
+              placeholder="Filter parameters..."
+              [value]="searchTerm"
+              (input)="onSearchChange(($any($event.target)).value)"
+            />
 
-          <div class="paramCard"
-               *ngFor="let param of parametersMap.get(flight.flightNumber)">
-
-            <div class="paramHeader">
-              <h4>{{ param.name }}</h4>
-
-              <span class="badge"
-                    [ngStyle]="{
-                      background: getAnomalyColor(param.anomalies)+'20',
-                      color: getAnomalyColor(param.anomalies)
-                    }">
-                {{ param.anomalies }} anomal.
-              </span>
-            </div>
-
-            <div class="history">
-              📈 {{ param.historicalPoints }} historical points
-            </div>
-
+            <button
+              class="clearBtn"
+              type="button"
+              *ngIf="searchTerm.length > 0"
+              (click)="clearSearch()"
+            >
+              Clear
+            </button>
           </div>
 
+          <div class="sortPill">
+            <button
+              type="button"
+              [class.active]="sortBy === 'anomalies'"
+              (click)="setSort('anomalies')"
+            >
+              Unusual
+            </button>
+
+            <button
+              type="button"
+              [class.active]="sortBy === 'historical'"
+              (click)="setSort('historical')"
+            >
+              Historical
+            </button>
+          </div>
         </div>
 
+        <div class="paramsGrid">
+          <div
+            class="paramCard"
+            *ngFor="let param of getVisibleParameters(flight.flightNumber)"
+            (click)="openParameter(flight.flightNumber, param.name)"
+
+          >
+            <div class="paramRow">
+              <div class="paramName">
+                {{ param.name }}
+              </div>
+
+              <div class="badgesColumn">
+                <span class="anomalyBadge">
+                  {{ param.anomalies }} unusual points
+                </span>
+
+                <span class="historyBadge">
+                  {{ param.historicalPoints }} historical points
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
-
   </div>
-
 </div>

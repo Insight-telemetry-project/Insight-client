@@ -3,7 +3,9 @@ import { FlightArchiveService } from '../services/flight-archive.service';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { TelemetrySensorFields } from '../common/interfaces/telemetry-sensor-fields.interface';
 import { forkJoin } from 'rxjs';
-
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
 interface ParameterOverview {
   name: string;
   anomalies: number;
@@ -13,22 +15,37 @@ interface ParameterOverview {
 @Component({
   selector: 'app-flights-overview',
   templateUrl: './flights-overview.component.html',
-  styleUrls: ['./flights-overview.component.scss']
+  styleUrls: ['./flights-overview.component.scss'],
 })
 export class FlightsOverviewComponent implements OnInit {
-
   public flights: FlightSummary[] = [];
   public expandedFlight: number | null = null;
   public parametersMap: Map<number, ParameterOverview[]> = new Map();
 
-  constructor(private readonly archive: FlightArchiveService) {}
+  public rawAnomaliesMap: Map<number, Record<string, number[]>> = new Map<
+    number,
+    Record<string, number[]>
+  >();
+
+  public searchTerm: string = '';
+  public sortBy: 'anomalies' | 'historical' = 'historical';
+
+  constructor(
+    private readonly archive: FlightArchiveService,
+    private readonly router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.archive.getAllFlights().subscribe(f => this.flights = f ?? []);
+    this.archive.getAllFlights().subscribe((flights) => {
+      this.flights = flights ?? [];
+
+      this.flights.forEach((flight) => {
+        this.loadAnomaliesForFlight(flight.flightNumber);
+      });
+    });
   }
 
-  toggleFlight(masterIndex: number): void {
-
+  public toggleFlight(masterIndex: number): void {
     if (this.expandedFlight === masterIndex) {
       this.expandedFlight = null;
       return;
@@ -36,46 +53,137 @@ export class FlightsOverviewComponent implements OnInit {
 
     this.expandedFlight = masterIndex;
 
-    if (this.parametersMap.has(masterIndex)) return;
+    if (this.parametersMap.has(masterIndex)) {
+      return;
+    }
 
-    this.archive.getFlightFields(masterIndex).subscribe(snapshots => {
+    this.archive
+      .getAllSpecialPointsForFlight(masterIndex)
+      .subscribe((response) => {
+        if (!response) {
+          this.parametersMap.set(masterIndex, []);
+          return;
+        }
 
-      if (!snapshots || snapshots.length === 0) {
-        this.parametersMap.set(masterIndex, []);
-        return;
-      }
+        this.rawAnomaliesMap.set(masterIndex, response.anomalies);
 
-      const paramNames = Object.keys(snapshots[0].fields);
-      const historicalPoints = snapshots.length;
-
-      const calls = paramNames.map(p =>
-        this.archive.getFlightHistoricalSimilarity(masterIndex, p)
-      );
-
-      forkJoin(calls).subscribe(results => {
-
-        const overview: ParameterOverview[] = paramNames.map((name, i) => ({
-          name,
-          anomalies: results[i].length,
-          historicalPoints
+        const overview: ParameterOverview[] = Object.keys(
+          response.anomalies,
+        ).map((parameterName) => ({
+          name: parameterName,
+          anomalies: response.anomalies[parameterName]?.length ?? 0,
+          historicalPoints:
+            response.historicalSimilarity[parameterName]?.length ?? 0,
         }));
 
         this.parametersMap.set(masterIndex, overview);
       });
-    });
   }
 
-  isExpanded(id: number): boolean {
+  public isExpanded(id: number): boolean {
     return this.expandedFlight === id;
   }
 
-  getTotalAnomalies(id: number): number {
-    return this.parametersMap.get(id)?.reduce((s, p) => s + p.anomalies, 0) ?? 0;
+  public getTotalAnomalies(id: number): number {
+    const anomalies: Record<string, number[]> | undefined =
+      this.rawAnomaliesMap.get(id);
+
+    if (!anomalies) {
+      return 0;
+    }
+
+    const values: number[][] = Object.values(anomalies) as number[][];
+
+    const total: number = values.reduce((sum: number, arr: number[]) => {
+      return sum + arr.length;
+    }, 0);
+
+    return total;
   }
 
-  getAnomalyColor(count: number): string {
-    if (count === 0) return '#22c55e';
-    if (count <= 2) return '#f59e0b';
-    return '#ef4444';
+  public getDurationText(totalSeconds: number): string {
+    const secondsInDay: number = 86400;
+    const secondsInHour: number = 3600;
+    const secondsInMinute: number = 60;
+
+    const days: number = Math.floor(totalSeconds / secondsInDay);
+    const remainingAfterDays: number = totalSeconds % secondsInDay;
+
+    const hours: number = Math.floor(remainingAfterDays / secondsInHour);
+    const remainingAfterHours: number = remainingAfterDays % secondsInHour;
+
+    const minutes: number = Math.floor(remainingAfterHours / secondsInMinute);
+    const seconds: number = remainingAfterHours % secondsInMinute;
+
+    const parts: string[] = [];
+
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0 || days > 0) parts.push(`${hours}h`);
+    if (minutes > 0 || hours > 0 || days > 0) parts.push(`${minutes}m`);
+    parts.push(`${seconds}s`);
+
+    return parts.join(' ');
   }
+  private loadAnomaliesForFlight(masterIndex: number): void {
+    if (this.parametersMap.has(masterIndex)) return;
+
+    this.archive
+      .getAllSpecialPointsForFlight(masterIndex)
+      .subscribe((response) => {
+        if (!response) {
+          this.parametersMap.set(masterIndex, []);
+          return;
+        }
+
+        this.rawAnomaliesMap.set(masterIndex, response.anomalies);
+
+        const overview: ParameterOverview[] = Object.keys(
+          response.anomalies,
+        ).map((parameterName) => ({
+          name: parameterName,
+          anomalies: response.anomalies[parameterName]?.length ?? 0,
+          historicalPoints:
+            response.historicalSimilarity[parameterName]?.length ?? 0,
+        }));
+
+        this.parametersMap.set(masterIndex, overview);
+      });
+  }
+  public getVisibleParameters(masterIndex: number): ParameterOverview[] {
+
+  const data: ParameterOverview[] =
+    this.parametersMap.get(masterIndex) ?? [];
+
+  const filtered: ParameterOverview[] =
+    data.filter(p =>
+      p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+
+  const sorted: ParameterOverview[] =
+    filtered.sort((a, b) => {
+      if (this.sortBy === 'historical') {
+        return b.historicalPoints - a.historicalPoints;
+      }
+      return b.anomalies - a.anomalies;
+    });
+
+  return sorted;
+}
+public onSearchChange(value: string): void {
+  this.searchTerm = value;
+}
+
+public clearSearch(): void {
+  this.searchTerm = '';
+}
+
+public setSort(type: 'anomalies' | 'historical'): void {
+  this.sortBy = type;
+}
+public openParameter(masterIndex: number, paramName: string): void {
+  this.router.navigate(
+    ['/archive', masterIndex],
+    { queryParams: { param: paramName } }
+  );
+}
 }

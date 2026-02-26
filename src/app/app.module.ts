@@ -12,7 +12,7 @@ import { FileDropOverlayComponent } from './main-page/components/file-drop-overl
 import { AnalyzePageComponent } from './analyze-page/analyze-page.component';
 import { GridsterModule } from 'angular-gridster2';
 import { FlightsOverviewComponent } from './flights-overview/flights-overview.component';
-
+import { FormsModule } from '@angular/forms';
 @NgModule({
   declarations: [
     AppComponent,
@@ -27,7 +27,8 @@ import { FlightsOverviewComponent } from './flights-overview/flights-overview.co
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    GridsterModule
+    GridsterModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
