@@ -32,8 +32,12 @@ import { GridChartItem } from '../common/interfaces/grid-chart-item.interface';
   styleUrls: ['./analyze-page.component.scss'],
 })
 export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChildren('miniChart') public miniChartElements!: QueryList<ElementRef<HTMLDivElement>>;
-  @ViewChildren('gridChartEl') public gridChartElements!: QueryList<ElementRef<HTMLDivElement>>;
+  @ViewChildren('miniChart') public miniChartElements!: QueryList<
+    ElementRef<HTMLDivElement>
+  >;
+  @ViewChildren('gridChartEl') public gridChartElements!: QueryList<
+    ElementRef<HTMLDivElement>
+  >;
 
   public masterIndex: number = 0;
   public flightData: TelemetrySensorFields[] = [];
@@ -93,13 +97,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const rowHeight = (this.gridOptions.fixedRowHeight as number) ?? 420;
     const margin = (this.gridOptions.margin as number) ?? 14;
     const maxRowIndex = Math.max(
-      ...this.gridItems.map((gridItem) => (gridItem.y ?? 0) + (gridItem.rows ?? 1)),
+      ...this.gridItems.map(
+        (gridItem) => (gridItem.y ?? 0) + (gridItem.rows ?? 1),
+      ),
     );
     return maxRowIndex * rowHeight + (maxRowIndex + 1) * margin;
   }
 
   public get sortedHistoricalItems(): HistoricalSidebarItem[] {
-    const sidebarItemsCopy: HistoricalSidebarItem[] = [...this.historicalSidebarItems];
+    const sidebarItemsCopy: HistoricalSidebarItem[] = [
+      ...this.historicalSidebarItems,
+    ];
     if (this.historicalSortBy === 'time') {
       return sidebarItemsCopy.sort(
         (firstItem, secondItem) => firstItem.time - secondItem.time,
@@ -119,19 +127,22 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    const routeParamSubscription: Subscription = this.route.paramMap.subscribe((paramMap) => {
-      this.masterIndex = Number(paramMap.get('masterIndex'));
-      this.selected.clear();
-      this.clearGrid();
-      this.related.clear();
-      this.historicalSimilarityService.reset();
+    const routeParamSubscription: Subscription = this.route.paramMap.subscribe(
+      (paramMap) => {
+        this.masterIndex = Number(paramMap.get('masterIndex'));
+        this.selected.clear();
+        this.clearGrid();
+        this.related.clear();
+        this.historicalSimilarityService.reset();
 
-      this.miniCharts.forEach((miniChart) => miniChart.destroy());
-      this.miniCharts.clear();
-      this.paramSearchText = '';
-      this.pendingParamToAutoSelect = this.route.snapshot.queryParamMap.get('param');
-      this.loadFlight();
-    });
+        this.miniCharts.forEach((miniChart) => miniChart.destroy());
+        this.miniCharts.clear();
+        this.paramSearchText = '';
+        this.pendingParamToAutoSelect =
+          this.route.snapshot.queryParamMap.get('param');
+        this.loadFlight();
+      },
+    );
 
     this.subscriptions.add(routeParamSubscription);
 
@@ -152,12 +163,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!gridItem.chart) continue;
 
         for (const chartSeries of gridItem.chart.series) {
-          if (!(chartSeries.options as any).id?.startsWith('history:')) continue;
+          if (!(chartSeries.options as any).id?.startsWith('history:'))
+            continue;
 
           for (const seriesPoint of chartSeries.points) {
-            const pointHistoricalId = (seriesPoint.options as any)?.custom?.historicalId;
+            const pointHistoricalId = (seriesPoint.options as any)?.custom
+              ?.historicalId;
 
-            if (targetHistoricalId && pointHistoricalId === targetHistoricalId) {
+            if (
+              targetHistoricalId &&
+              pointHistoricalId === targetHistoricalId
+            ) {
               seriesPoint.setState('hover');
             } else {
               seriesPoint.setState('');
@@ -216,10 +232,13 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!gridChartItem.chart) return;
     gridChartItem.showAnomalies = !gridChartItem.showAnomalies;
     const anomaliesSeries = gridChartItem.chart.series.find(
-      (seriesItem: any) => seriesItem.options.id === `anomalies:${gridChartItem.param}`,
+      (seriesItem: any) =>
+        seriesItem.options.id === `anomalies:${gridChartItem.param}`,
     );
     if (anomaliesSeries) {
-      gridChartItem.showAnomalies ? anomaliesSeries.show() : anomaliesSeries.hide();
+      gridChartItem.showAnomalies
+        ? anomaliesSeries.show()
+        : anomaliesSeries.hide();
     }
   }
 
@@ -227,7 +246,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!gridChartItem.chart) return;
     gridChartItem.showHistory = !gridChartItem.showHistory;
     const historySeries = gridChartItem.chart.series.find(
-      (seriesItem: any) => seriesItem.options.id === `history:${gridChartItem.param}`,
+      (seriesItem: any) =>
+        seriesItem.options.id === `history:${gridChartItem.param}`,
     );
     if (historySeries) {
       gridChartItem.showHistory ? historySeries.show() : historySeries.hide();
@@ -249,14 +269,19 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onHistoricalCardHover(historicalItem: any): void {
-    const historicalId: string = historicalItem.comparedFlightIndex + '_' + historicalItem.time;
+    const historicalId: string =
+      historicalItem.comparedFlightIndex + '_' + historicalItem.time;
     this.hoveredHistoricalId = historicalId;
-    window.dispatchEvent(new CustomEvent('historical-card-hover', { detail: historicalId }));
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', { detail: historicalId }),
+    );
   }
 
   public onHistoricalCardLeave(): void {
     this.hoveredHistoricalId = null;
-    window.dispatchEvent(new CustomEvent('historical-card-hover', { detail: null }));
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', { detail: null }),
+    );
   }
 
   public isParamVisible(paramName: string): boolean {
@@ -280,7 +305,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gridItems.push(newGridChartItem);
     this.changeDetectorRef.detectChanges();
 
-    setTimeout(() => this.initGridChart(newGridChartItem), 150);
+    // setTimeout(() => this.initGridChart(newGridChartItem), 150);
+    Promise.resolve().then(() => this.initGridChart(newGridChartItem));
   }
 
   private removeGridItem(paramName: string): void {
@@ -356,7 +382,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (flightRows: TelemetrySensorFields[]) => {
           this.flightData = (flightRows ?? [])
             .slice()
-            .sort((firstRow, secondRow) => firstRow.timestep - secondRow.timestep);
+            .sort(
+              (firstRow, secondRow) => firstRow.timestep - secondRow.timestep,
+            );
 
           this.parameters = Object.keys(this.flightData[0]?.fields ?? {});
 
@@ -383,23 +411,25 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.flightData.length === 0) return;
     if (this.miniCharts.size > 0) return;
 
-    this.miniChartElements.forEach((miniChartElementRef: ElementRef<HTMLDivElement>) => {
-      const parameterName: string | undefined =
-        miniChartElementRef.nativeElement.dataset['param'];
-      if (!parameterName) return;
+    this.miniChartElements.forEach(
+      (miniChartElementRef: ElementRef<HTMLDivElement>) => {
+        const parameterName: string | undefined =
+          miniChartElementRef.nativeElement.dataset['param'];
+        if (!parameterName) return;
 
-      const dataPoints: [number, number][] = this.chartsService.buildSeries(
-        this.flightData,
-        parameterName,
-      );
+        const dataPoints: [number, number][] = this.chartsService.buildSeries(
+          this.flightData,
+          parameterName,
+        );
 
-      const miniChartInstance = this.chartsService.createMiniChart(
-        miniChartElementRef.nativeElement,
-        parameterName,
-        dataPoints,
-      );
-      this.miniCharts.set(parameterName, miniChartInstance);
-    });
+        const miniChartInstance = this.chartsService.createMiniChart(
+          miniChartElementRef.nativeElement,
+          parameterName,
+          dataPoints,
+        );
+        this.miniCharts.set(parameterName, miniChartInstance);
+      },
+    );
   }
 
   private autoSelectParam(paramName: string): void {
