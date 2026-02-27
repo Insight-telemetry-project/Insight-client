@@ -1,5 +1,8 @@
 <div class="page">
   <header class="header">
+    <button class="addFlightBtn" type="button" (click)="openUploadModal()">
+      + Add Flight
+    </button>
     <div class="headerLeft">
       <h1 class="title">Flights Overview</h1>
       <p class="subtitle">Telemetry parameters and anomalies</p>
@@ -9,49 +12,35 @@
   <div class="flightsContainer">
     <div class="flightCard" *ngFor="let flight of flights">
       <div class="cardHeader" (click)="toggleFlight(flight.flightNumber)">
-        <div class="left">
-          <div class="icon">✈️</div>
 
+        <div class="left" (click)="$event.stopPropagation(); openParameter(flight.flightNumber, '')">
+          <img class="icon" src="assets/images/uav.png" />
           <div class="flightInfo">
-            <h3 class="flightNumber">
-              {{ flight.flightNumber }}
-            </h3>
-
-            <span class="duration">
-              {{ getDurationText(flight.flightLenght) }}
-            </span>
+            <h3 class="flightNumber">{{ flight.flightNumber }}</h3>
+            <span class="duration">{{ getDurationText(flight.flightLenght) }}</span>
           </div>
         </div>
 
         <div class="right">
           <div class="anomalyTotal">
-            <strong>
-              {{ getTotalAnomalies(flight.flightNumber) }} unusual points
-            </strong>
+            <strong>{{ getTotalAnomalies(flight.flightNumber) }} unusual points</strong>
           </div>
-
-          <div
-            class="chevron"
-            [class.rotated]="isExpanded(flight.flightNumber)"
-          >
-            ⌄
-          </div>
+          <div class="chevron" [class.rotated]="isExpanded(flight.flightNumber)">⌄</div>
         </div>
+
       </div>
 
       <div class="expand" [class.open]="isExpanded(flight.flightNumber)">
         <div class="paramsToolbar">
           <div class="search">
             <span class="searchIcon">⌕</span>
-
             <input
               class="searchInput"
               type="text"
               placeholder="Filter parameters..."
               [value]="searchTerm"
-              (input)="onSearchChange(($any($event.target)).value)"
+              (input)="onSearchChange($any($event.target).value)"
             />
-
             <button
               class="clearBtn"
               type="button"
@@ -70,7 +59,6 @@
             >
               Unusual
             </button>
-
             <button
               type="button"
               [class.active]="sortBy === 'historical'"
@@ -86,27 +74,64 @@
             class="paramCard"
             *ngFor="let param of getVisibleParameters(flight.flightNumber)"
             (click)="openParameter(flight.flightNumber, param.name)"
-
           >
             <div class="paramRow">
-              <div class="paramName">
-                {{ param.name }}
-              </div>
-
+              <div class="paramName">{{ param.name }}</div>
               <div class="badgesColumn">
-                <span class="anomalyBadge">
-                  {{ param.anomalies }} unusual points
-                </span>
-
-                <span class="historyBadge">
-                  {{ param.historicalPoints }} historical points
-                </span>
+                <span class="anomalyBadge">{{ param.anomalies }} unusual points</span>
+                <span class="historyBadge">{{ param.historicalPoints }} historical points</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
     </div>
+  </div>
+</div>
+
+<div class="uploadOverlay" [class.active]="isUploadModalOpen">
+  <div class="uploadModal">
+    <div class="uploadHeader">
+      <div class="uploadTitle">Upload PCAP File</div>
+      <button class="closeBtn" (click)="closeUploadModal()">✕</button>
+    </div>
+
+    <div
+      class="dropZone"
+      [class.dragActive]="isDropActive"
+      (click)="onAddFlight()"
+    >
+      <img class="dropIcon" src="assets/images/file.png" />
+      <div class="dropText">Drag & drop PCAP here</div>
+      <div class="dropSubText">or click to browse</div>
+    </div>
+
+    <div class="filePreview" *ngIf="selectedFile">
+      <div class="fileItem">
+        <span class="fileName">{{ selectedFile.name }}</span>
+        <span class="fileSize">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
+        <button class="removeBtn" (click)="removeSelectedFile()">✕</button>
+      </div>
+    </div>
+
+    <button
+      class="uploadBtn"
+      [disabled]="!selectedFile || isUploading"
+      (click)="uploadSelectedFile()"
+    >
+      <span *ngIf="!isUploading">Upload File</span>
+      <span *ngIf="isUploading" class="loadingContent">
+        <span class="spinner"></span>
+        Loading...
+      </span>
+    </button>
+
+    <input
+      #fileInput
+      type="file"
+      accept=".pcap,.pcapng"
+      class="hiddenFileInput"
+      (change)="onFilePicked($event)"
+    />
   </div>
 </div>

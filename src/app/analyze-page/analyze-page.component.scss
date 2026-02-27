@@ -1,61 +1,43 @@
-.archivePage {
-  padding: 24px;
-}
+// ─── Layout ───────────────────────────────────────────────────────────────────
 
-.archiveHeader {
+.layout {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-
-  .title {
-    font-size: 32px;
-    margin: 0;
-  }
-
-  .subtitle {
-    margin: 0;
-    opacity: 0.75;
-  }
-}
-
-.paramsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 250px);
-  gap: 14px;
-  justify-content: start;
-}
-
-.paramCard {
-  text-align: left;
-  border-radius: 22px;
-  padding: 12px 12px 10px 12px;
-  border: 1px solid rgba(190, 120, 255, 0.12);
-  background: rgba(10, 7, 18, 0.12);
-  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.22);
-  cursor: pointer;
-  max-width: 250px;
-  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    border-color: rgba(220, 170, 255, 0.32);
-    background: rgba(176, 96, 255, 0.08);
-  }
-
-  &.selected {
-    outline: none;
-    border-color: rgba(220, 170, 255, 0.55);
-    background: rgba(176, 96, 255, 0.18);
-  }
-}
-
-.paramTitle {
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.miniChart {
   width: 100%;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
+  &.sidebar-open {
+    padding-right: 280px;
+  }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+.header {
+  position: sticky;
+  top: 0;
+  height: 60px;
+  padding: 16px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(10, 7, 18, 0.92), rgba(10, 7, 18, 0.65));
+  border-bottom: 1px solid rgba(190, 120, 255, 0.15);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  color: rgba(220, 190, 255, 0.95);
 }
 
 .back-btn {
@@ -63,11 +45,7 @@
   height: 36px;
   border-radius: 16px;
   border: 1px solid rgba(190, 120, 255, 0.22);
-  background: linear-gradient(
-    180deg,
-    rgba(176, 96, 255, 0.16),
-    rgba(90, 40, 170, 0.12)
-  );
+  background: linear-gradient(180deg, rgba(176, 96, 255, 0.16), rgba(90, 40, 170, 0.12));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
   color: #fff;
   cursor: pointer;
@@ -79,13 +57,11 @@
   &:hover {
     transform: translateY(-1px);
     border-color: rgba(220, 170, 255, 0.5);
-    background: linear-gradient(
-      180deg,
-      rgba(176, 96, 255, 0.22),
-      rgba(90, 40, 170, 0.14)
-    );
+    background: linear-gradient(180deg, rgba(176, 96, 255, 0.22), rgba(90, 40, 170, 0.14));
   }
 }
+
+// ─── Toolbar / Search ─────────────────────────────────────────────────────────
 
 .paramsToolbar {
   flex-shrink: 0;
@@ -106,11 +82,7 @@
   padding: 12px 14px;
   border-radius: 18px;
   border: 1px solid rgba(190, 120, 255, 0.20);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(176, 96, 255, 0.10)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(176, 96, 255, 0.10));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(10px);
 }
@@ -167,234 +139,7 @@
   opacity: 0.75;
 }
 
-.layout {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  min-height: 100vh;
-}
-
-.content {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding-top: 60px;
-}
-
-.sidebar {
-  width: 0;
-  flex-shrink: 0;
-  transition: width 260ms ease;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(30, 15, 60, 0.98),
-    rgba(15, 8, 35, 1)
-  );
-  border-left: 1px solid rgba(190, 120, 255, 0.25);
-  overflow: hidden;
-  height: 100vh;
-  z-index: 200;
-}
-
-.sidebar.open {
-  width: 280px;
-}
-
-.content.sidebar-open {
-  padding-right: 280px;
-}
-
-.sidebarInner {
-  padding: 16px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebarContent {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-right: 4px;
-}
-
-.sidebarHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 10px;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.sidebarItem {
-  text-align: left;
-  border-radius: 12px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease;
-
-  &:hover {
-    border-color: rgba(220, 170, 255, 0.35);
-    background: rgba(176, 96, 255, 0.18);
-  }
-
-  &.selected {
-    border-color: rgba(220, 170, 255, 0.55);
-    background: rgba(176, 96, 255, 0.25);
-  }
-}
-
-.sidebarToggle {
-  position: fixed;
-  top: 90px;
-  right: 24px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(176, 96, 255, 0.9);
-  color: white;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  transition: right 260ms ease, background 200ms ease, box-shadow 200ms ease;
-  z-index: 500;
-
-  &:disabled {
-    background: rgba(100, 100, 120, 0.5);
-    color: rgba(255, 255, 255, 0.4);
-    cursor: not-allowed;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
-}
-
-.sidebar.open ~ .sidebarToggle {
-  right: 284px;
-}
-
-.sidebarModeSwitch {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.modeBtn {
-  flex: 1;
-  padding: 8px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(190, 120, 255, 0.25);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  cursor: pointer;
-  transition: all 150ms ease;
-  font-size: 13px;
-
-  &:hover {
-    border-color: rgba(220, 170, 255, 0.45);
-    background: rgba(176, 96, 255, 0.15);
-  }
-
-  &.active {
-    background: rgba(176, 96, 255, 0.35);
-    border-color: rgba(220, 170, 255, 0.7);
-    font-weight: 600;
-  }
-}
-
-.historicalSortSwitch {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.sortBtn {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(190, 120, 255, 0.25);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 140ms ease;
-
-  &:hover {
-    background: rgba(176, 96, 255, 0.15);
-  }
-
-  &.active {
-    border-color: rgba(220, 170, 255, 0.6);
-    background: rgba(176, 96, 255, 0.25);
-  }
-}
-
-.historicalCard {
-  border-radius: 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(190, 120, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  transition: all 140ms ease;
-
-  &:hover {
-    border-color: rgba(220, 170, 255, 0.6);
-    background: rgba(176, 96, 255, 0.18);
-  }
-}
-
-.histRow {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.histLabel {
-  opacity: 0.6;
-  font-size: 11px;
-}
-
-.histValue {
-  font-weight: 600;
-  color: rgba(220, 190, 255, 0.95);
-}
-
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  padding: 16px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, rgba(10, 7, 18, 0.8), rgba(10, 7, 18, 0.4));
-  border-bottom: 1px solid rgba(190, 120, 255, 0.15);
-  z-index: 100;
-  backdrop-filter: blur(8px);
-}
-
-.title {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0;
-  color: rgba(220, 190, 255, 0.95);
-}
+// ─── Params Section ───────────────────────────────────────────────────────────
 
 .paramsSection {
   flex-shrink: 0;
@@ -406,6 +151,52 @@
   opacity: 0.6;
   font-size: 13px;
 }
+
+.paramsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 250px);
+  gap: 14px;
+  justify-content: start;
+}
+
+.paramCard {
+  text-align: left;
+  border-radius: 22px;
+  padding: 12px 12px 10px 12px;
+  border: 1px solid rgba(190, 120, 255, 0.12);
+  background: rgba(10, 7, 18, 0.12);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  max-width: 250px;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(220, 170, 255, 0.32);
+    background: rgba(176, 96, 255, 0.08);
+  }
+
+  &.selected {
+    outline: none;
+    border-color: rgba(220, 170, 255, 0.55);
+    background: rgba(176, 96, 255, 0.18);
+  }
+}
+
+.paramTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.miniChart {
+  width: 100%;
+}
+
+.hidden1 {
+  display: none;
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
 
 .emptyState {
   padding: 16px 24px 0 40px;
@@ -434,6 +225,8 @@
   opacity: 0.55;
   font-size: 14px;
 }
+
+// ─── Grid Section ─────────────────────────────────────────────────────────────
 
 .gridSection {
   flex-shrink: 0;
@@ -476,11 +269,7 @@
   flex-direction: column;
   border-radius: 22px;
   border: 1px solid rgba(190, 120, 255, 0.14);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(176, 96, 255, 0.08)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(176, 96, 255, 0.08));
   box-shadow: 0 18px 70px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(12px);
   overflow: hidden;
@@ -494,6 +283,13 @@
   padding: 10px 16px 8px 16px;
   flex-shrink: 0;
   border-bottom: 1px solid rgba(190, 120, 255, 0.10);
+}
+
+.gridChartTitle {
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(220, 190, 255, 0.95);
+  letter-spacing: 0.02em;
 }
 
 .gridChartActions {
@@ -548,13 +344,6 @@
   }
 }
 
-.gridChartTitle {
-  font-weight: 700;
-  font-size: 14px;
-  color: rgba(220, 190, 255, 0.95);
-  letter-spacing: 0.02em;
-}
-
 .gridChartClose {
   width: 26px;
   height: 26px;
@@ -591,6 +380,128 @@
     }
   }
 }
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, rgba(30, 15, 60, 0.98), rgba(15, 8, 35, 1));
+  border-left: 1px solid rgba(190, 120, 255, 0.25);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarInner {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.sidebarContent {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.sidebarModeSwitch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(190, 120, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  cursor: pointer;
+  transition: all 150ms ease;
+  font-size: 13px;
+
+  &:hover {
+    border-color: rgba(220, 170, 255, 0.45);
+    background: rgba(176, 96, 255, 0.15);
+  }
+
+  &.active {
+    background: rgba(176, 96, 255, 0.35);
+    border-color: rgba(220, 170, 255, 0.7);
+    font-weight: 600;
+  }
+}
+
+.sidebarItem {
+  text-align: left;
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+
+  &:hover {
+    border-color: rgba(220, 170, 255, 0.35);
+    background: rgba(176, 96, 255, 0.18);
+  }
+
+  &.selected {
+    border-color: rgba(220, 170, 255, 0.55);
+    background: rgba(176, 96, 255, 0.25);
+  }
+}
+
+// ─── Historical ───────────────────────────────────────────────────────────────
+
+.historicalSortSwitch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sortBtn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(190, 120, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 140ms ease;
+
+  &:hover {
+    background: rgba(176, 96, 255, 0.15);
+  }
+
+  &.active {
+    border-color: rgba(220, 170, 255, 0.6);
+    background: rgba(176, 96, 255, 0.25);
+  }
+}
+
 .historicalCard {
   border-radius: 14px;
   padding: 10px 12px;
@@ -602,16 +513,25 @@
   font-size: 12px;
   transition: all 140ms ease;
 
-  &:hover {
-    border-color: rgba(220, 170, 255, 0.6);
-    background: rgba(176, 96, 255, 0.18);
-  }
-
+  &:hover,
   &.hovered {
     border-color: rgba(220, 170, 255, 0.6);
     background: rgba(176, 96, 255, 0.18);
   }
 }
-.hidden1 {
-  display: none;
+
+.histRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.histLabel {
+  opacity: 0.6;
+  font-size: 11px;
+}
+
+.histValue {
+  font-weight: 600;
+  color: rgba(220, 190, 255, 0.95);
 }

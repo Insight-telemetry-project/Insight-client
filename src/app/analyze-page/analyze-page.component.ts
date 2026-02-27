@@ -211,7 +211,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.related.openFor(this.masterIndex, paramName, this.subscriptions);
     }
 
-    this.related.relatedOpen = this.selected.size > 0;
   }
 
   public onRelatedParamClick(paramName: string): void {
@@ -305,7 +304,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gridItems.push(newGridChartItem);
     this.changeDetectorRef.detectChanges();
 
-    // setTimeout(() => this.initGridChart(newGridChartItem), 150);
     Promise.resolve().then(() => this.initGridChart(newGridChartItem));
   }
 
