@@ -5,7 +5,9 @@ import { AnalyzePageComponent } from './analyze-page/analyze-page.component';
 import { FlightsOverviewComponent } from './flights-overview/flights-overview.component';
 
 const routes: Routes = [
-  { path: '', component: MainPageComponent },
+  // { path: '', component: MainPageComponent },
+    { path: '', component: FlightsOverviewComponent },
+
   { path: 'archive/:masterIndex', component: AnalyzePageComponent },
   {
     path: 'flights-overview',

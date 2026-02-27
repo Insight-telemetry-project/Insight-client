@@ -1,5 +1,5 @@
 <div class="layout">
-  <div class="content" [class.sidebar-open]="related.relatedOpen">
+  <div class="content">
     <header class="header">
       <h1 class="title">Flight {{ masterIndex }}</h1>
       <button class="back-btn" type="button" (click)="goBack()">←</button>
@@ -61,7 +61,9 @@
     <section class="emptyState" *ngIf="gridItems.length === 0">
       <div class="emptyStateInner">
         <span class="emptyIcon">📈</span>
-        <p class="emptyText">Click a parameter below to add it to the grid</p>
+        <p class="emptyText">
+          Click a parameter below to add it to the grid
+        </p>
       </div>
     </section>
 
@@ -92,7 +94,9 @@
     </section>
 
     <section class="paramsSection">
-      <p class="subtitle">Click a parameter to add/remove it to the grid</p>
+      <p class="subtitle">
+        Click a parameter to add/remove it to the grid
+      </p>
 
       <div class="paramsGrid">
         <button
@@ -103,23 +107,18 @@
           (click)="toggleParam(param)"
         >
           <div class="paramTitle">{{ param }}</div>
-          <div class="miniChart" #miniChart [attr.data-param]="param"></div>
+          <div
+            class="miniChart"
+            #miniChart
+            [attr.data-param]="param"
+          ></div>
         </button>
       </div>
     </section>
   </div>
 
-  <button
-    class="sidebarToggle"
-    type="button"
-    [disabled]="selected.size === 0"
-    (click)="related.relatedOpen = !related.relatedOpen"
-  >
-    {{ related.relatedOpen ? "❯" : "❮" }}
-  </button>
-
-  <aside class="sidebar" [class.open]="related.relatedOpen">
-    <div class="sidebarInner" *ngIf="related.relatedOpen">
+  <aside class="sidebar">
+    <div class="sidebarInner">
       <div class="sidebarModeSwitch">
         <button
           class="modeBtn"
@@ -181,7 +180,8 @@
             class="historicalCard"
             *ngFor="let item of sortedHistoricalItems"
             [class.hovered]="
-              hoveredHistoricalId === item.comparedFlightIndex + '_' + item.time
+              hoveredHistoricalId ===
+              item.comparedFlightIndex + '_' + item.time
             "
             (mouseenter)="onHistoricalCardHover(item)"
             (mouseleave)="onHistoricalCardLeave()"
@@ -189,19 +189,23 @@
           >
             <div class="histRow">
               <span class="histLabel">Flight</span>
-              <span class="histValue">{{ item.comparedFlightIndex }}</span>
+              <span class="histValue">
+                {{ item.comparedFlightIndex }}
+              </span>
             </div>
 
             <div class="histRow">
               <span class="histLabel">Score</span>
-              <span class="histValue">{{ item.score | number: "1.2-2" }}</span>
+              <span class="histValue">
+                {{ item.score | number: "1.2-2" }}
+              </span>
             </div>
 
             <div class="histRow">
               <span class="histLabel">Time</span>
-              <span class="histValue">{{
-                item.time * 1000 | date: "HH:mm:ss"
-              }}</span>
+              <span class="histValue">
+                {{ item.time * 1000 | date: "HH:mm:ss" }}
+              </span>
             </div>
           </div>
         </ng-container>
