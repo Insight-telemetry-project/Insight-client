@@ -9,6 +9,7 @@ import { FlightArchiveService } from '../services/flight-archive.service';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { Router } from '@angular/router';
 import { TelemetryDeviceService } from '../services/telemetry-device.services';
+import Swal from 'sweetalert2';
 
 interface ParameterOverview {
   name: string;
@@ -66,10 +67,10 @@ export class FlightsOverviewComponent implements OnInit {
   }
 
   public closeUploadModal(): void {
-  if (this.isUploading) return;
-  this.isUploadModalOpen = false;
-  this.isDropActive = false;
-}
+    if (this.isUploading) return;
+    this.isUploadModalOpen = false;
+    this.isDropActive = false;
+  }
 
   public onAddFlight(): void {
     const inputElement: HTMLInputElement | null =
@@ -83,9 +84,7 @@ export class FlightsOverviewComponent implements OnInit {
 
   public onFilePicked(event: Event): void {
     const inputElement: HTMLInputElement = event.target as HTMLInputElement;
-
     const file: File | null = inputElement.files?.item(0) ?? null;
-
     if (!file) return;
 
     const fileName: string = file.name.toLowerCase();
@@ -135,7 +134,6 @@ export class FlightsOverviewComponent implements OnInit {
     this.isDropActive = false;
 
     const file: File | null = event.dataTransfer?.files?.item(0) ?? null;
-
     if (!file) return;
 
     const fileName: string = file.name.toLowerCase();
@@ -149,30 +147,8 @@ export class FlightsOverviewComponent implements OnInit {
 
   private isDraggingFiles(event: DragEvent): boolean {
     const types: readonly string[] | undefined = event.dataTransfer?.types;
-
     if (!types) return false;
-
     return Array.from(types).includes('Files');
-  }
-
-  private handlePcapFile(file: File): void {
-    const fileName: string = file.name.toLowerCase();
-
-    const isAllowed: boolean =
-      fileName.endsWith('.pcap') || fileName.endsWith('.pcapng');
-
-    if (!isAllowed) return;
-
-    this.telemetryDeviceService.uploadPcap(file).subscribe({
-      next: () => {
-        this.parametersMap.clear();
-        this.rawAnomaliesMap.clear();
-        this.expandedFlight = null;
-        this.loadFlights();
-        this.closeUploadModal();
-      },
-      error: () => {},
-    });
   }
 
   public toggleFlight(masterIndex: number): void {
@@ -264,6 +240,70 @@ export class FlightsOverviewComponent implements OnInit {
     }
   }
 
+  public deleteFlight(flightNumber: number): void {
+    Swal.fire({
+      title: 'Delete flight?',
+      text: `Flight #${flightNumber} will be permanently removed.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel',
+      background: '#120d22',
+      color: 'rgba(255, 255, 255, 0.88)',
+      confirmButtonColor: '#7c3aed',
+      cancelButtonColor: 'rgba(60, 30, 100, 0.6)',
+      customClass: {
+        popup: 'swal-dark-popup',
+        confirmButton: 'swal-confirm-btn',
+        cancelButton: 'swal-cancel-btn',
+      },
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      this.archiveService.deleteFlight(flightNumber).subscribe({
+        next: () => {
+          this.flights = this.flights.filter(
+            (flight: FlightSummary) => flight.flightNumber !== flightNumber,
+          );
+
+          this.parametersMap.delete(flightNumber);
+          this.rawAnomaliesMap.delete(flightNumber);
+
+          if (this.expandedFlight === flightNumber) {
+            this.expandedFlight = null;
+          }
+
+          Swal.fire({
+            title: 'Deleted!',
+            text: `Flight #${flightNumber} has been removed.`,
+            icon: 'success',
+            background: '#120d22',
+            color: 'rgba(255, 255, 255, 0.88)',
+            confirmButtonColor: '#7c3aed',
+            customClass: {
+              popup: 'swal-dark-popup',
+              confirmButton: 'swal-confirm-btn',
+            },
+          });
+        },
+        error: () => {
+          Swal.fire({
+            title: 'Error',
+            text: 'Failed to delete the flight. Please try again.',
+            icon: 'error',
+            background: '#120d22',
+            color: 'rgba(255, 255, 255, 0.88)',
+            confirmButtonColor: '#7c3aed',
+            customClass: {
+              popup: 'swal-dark-popup',
+              confirmButton: 'swal-confirm-btn',
+            },
+          });
+        },
+      });
+    });
+  }
+
   private loadAnomaliesForFlight(masterIndex: number): void {
     if (this.parametersMap.has(masterIndex)) return;
 
@@ -289,6 +329,7 @@ export class FlightsOverviewComponent implements OnInit {
         this.parametersMap.set(masterIndex, list);
       });
   }
+
   public getDurationText(totalSeconds: number): string {
     const secondsInDay: number = 86400;
     const secondsInHour: number = 3600;
@@ -312,19 +353,17 @@ export class FlightsOverviewComponent implements OnInit {
 
     return parts.join(' ');
   }
+
   public uploadSelectedFile(): void {
-  if (!this.selectedFile || this.isUploading) return;
+    if (!this.selectedFile || this.isUploading) return;
 
-  this.isUploading = true;
+    this.isUploading = true;
 
-  this.telemetryDeviceService
-    .uploadPcap(this.selectedFile)
-    .subscribe({
+    this.telemetryDeviceService.uploadPcap(this.selectedFile).subscribe({
       next: () => {
         this.parametersMap.clear();
         this.rawAnomaliesMap.clear();
         this.expandedFlight = null;
-
         this.loadFlights();
         this.selectedFile = null;
         this.isUploading = false;
@@ -332,11 +371,11 @@ export class FlightsOverviewComponent implements OnInit {
       },
       error: () => {
         this.isUploading = false;
-      }
+      },
     });
-}
-public removeSelectedFile(): void {
-  this.selectedFile = null;
-}
+  }
 
+  public removeSelectedFile(): void {
+    this.selectedFile = null;
+  }
 }
