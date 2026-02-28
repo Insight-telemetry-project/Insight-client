@@ -1,12 +1,13 @@
 <div class="page">
   <header class="header">
-    <button class="addFlightBtn" type="button" (click)="openUploadModal()">
-      + Add Flight
-    </button>
     <div class="headerLeft">
       <h1 class="title">Flights Overview</h1>
       <p class="subtitle">Telemetry parameters and anomalies</p>
     </div>
+    <button class="addFlightBtn" type="button" (click)="openUploadModal()">
+      <span class="plusBadge">+</span>
+      <span class="addText">Add Flight</span>
+    </button>
   </header>
 
   <div class="flightsContainer">
@@ -25,6 +26,14 @@
           <div class="anomalyTotal">
             <strong>{{ getTotalAnomalies(flight.flightNumber) }} unusual points</strong>
           </div>
+          <button
+            class="deleteBtn"
+            type="button"
+            (click)="$event.stopPropagation(); deleteFlight(flight.flightNumber)"
+            title="Delete flight"
+          >
+            <span class="deleteBtnIcon">🗑</span>
+          </button>
           <div class="chevron" [class.rotated]="isExpanded(flight.flightNumber)">⌄</div>
         </div>
 
@@ -89,42 +98,53 @@
   </div>
 </div>
 
-<div class="uploadOverlay" [class.active]="isUploadModalOpen">
-  <div class="uploadModal">
+<!-- Upload Modal -->
+<div class="uploadOverlay" [class.active]="isUploadModalOpen" (click)="closeUploadModal()">
+  <div class="uploadModal" (click)="$event.stopPropagation()">
     <div class="uploadHeader">
       <div class="uploadTitle">Upload PCAP File</div>
       <button class="closeBtn" (click)="closeUploadModal()">✕</button>
     </div>
 
-    <div
-      class="dropZone"
-      [class.dragActive]="isDropActive"
-      (click)="onAddFlight()"
-    >
-      <img class="dropIcon" src="assets/images/file.png" />
-      <div class="dropText">Drag & drop PCAP here</div>
-      <div class="dropSubText">or click to browse</div>
-    </div>
+    <div class="uploadBody">
+      <div
+        class="dropZone"
+        [class.dragActive]="isDropActive"
+        (click)="onAddFlight()"
+      >
+        <img class="dropIcon" src="assets/images/file.png" />
+        <div class="dropText">Drag & drop PCAP here</div>
+        <div class="dropSubText">or click to browse · .pcap / .pcapng</div>
+      </div>
 
-    <div class="filePreview" *ngIf="selectedFile">
-      <div class="fileItem">
-        <span class="fileName">{{ selectedFile.name }}</span>
-        <span class="fileSize">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
-        <button class="removeBtn" (click)="removeSelectedFile()">✕</button>
+      <div class="filePreview" *ngIf="selectedFile">
+        <div class="fileItem">
+          <div class="fileItemLeft">
+            <span class="fileIconSmall">📄</span>
+            <div class="fileDetails">
+              <span class="fileName">{{ selectedFile.name }}</span>
+              <span class="fileSize">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
+            </div>
+          </div>
+          <button class="removeBtn" (click)="removeSelectedFile()">✕</button>
+        </div>
       </div>
     </div>
 
-    <button
-      class="uploadBtn"
-      [disabled]="!selectedFile || isUploading"
-      (click)="uploadSelectedFile()"
-    >
-      <span *ngIf="!isUploading">Upload File</span>
-      <span *ngIf="isUploading" class="loadingContent">
-        <span class="spinner"></span>
-        Loading...
-      </span>
-    </button>
+    <div class="uploadActions">
+      <button class="cancelBtn" (click)="closeUploadModal()" [disabled]="isUploading">Cancel</button>
+      <button
+        class="uploadBtn"
+        [disabled]="!selectedFile || isUploading"
+        (click)="uploadSelectedFile()"
+      >
+        <span *ngIf="!isUploading">Upload File</span>
+        <span *ngIf="isUploading" class="loadingContent">
+          <span class="spinner"></span>
+          Uploading...
+        </span>
+      </button>
+    </div>
 
     <input
       #fileInput
