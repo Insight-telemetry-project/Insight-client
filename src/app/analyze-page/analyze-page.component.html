@@ -138,12 +138,14 @@
       </div>
 
       <div class="sidebarHeader">
-        {{
-          sidebarMode === "related"
-            ? "Related: " + related.relatedForParam
-            : "Historical Similar Points"
-        }}
-      </div>
+  {{
+    sidebarMode === "related"
+      ? (related.relatedForParam
+          ? "Related: " + related.relatedForParam
+          : "Select a parameter to see related parameters")
+      : "Historical Similar Points"
+  }}
+</div>
 
       <div class="sidebarContent">
         <ng-container *ngIf="sidebarMode === 'related'">
