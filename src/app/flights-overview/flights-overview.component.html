@@ -1,14 +1,26 @@
 <div class="page">
   <header class="header">
-    <div class="headerLeft">
-      <h1 class="title">Flights Overview</h1>
-      <p class="subtitle">Telemetry parameters and anomalies</p>
-    </div>
+
+  <div class="headerLeft">
+    <h1 class="title">Flights Overview</h1>
+    <p class="subtitle">Telemetry parameters and anomalies</p>
+  </div>
+
+  <div class="headerActions">
+
+    <button class="addFlightBtn" type="button" (click)="openExportModal()">
+  <span class="plusBadge">⬇</span>
+  <span class="addText">Export</span>
+</button>
+
     <button class="addFlightBtn" type="button" (click)="openUploadModal()">
       <span class="plusBadge">+</span>
       <span class="addText">Add Flight</span>
     </button>
-  </header>
+
+  </div>
+
+</header>
 
   <div class="flightsContainer">
     <div class="flightCard" *ngFor="let flight of flights">
@@ -98,7 +110,6 @@
   </div>
 </div>
 
-<!-- Upload Modal -->
 <div class="uploadOverlay" [class.active]="isUploadModalOpen" (click)="closeUploadModal()">
   <div class="uploadModal" (click)="$event.stopPropagation()">
     <div class="uploadHeader">
@@ -114,7 +125,7 @@
       >
         <img class="dropIcon" src="assets/images/file.png" />
         <div class="dropText">Drag & drop PCAP here</div>
-        <div class="dropSubText">or click to browse · .pcap / .pcapng</div>
+        <div class="dropSubText">or click to browse · .pcap </div>
       </div>
 
       <div class="filePreview" *ngIf="selectedFile">
@@ -154,4 +165,96 @@
       (change)="onFilePicked($event)"
     />
   </div>
+</div>
+<!-- EXPORT MODAL -->
+
+<div class="exportOverlay" [class.active]="isExportModalOpen" (click)="closeExportModal()">
+
+  <div class="exportModal" (click)="$event.stopPropagation()">
+
+    <div class="exportHeader">
+      <div class="exportTitle">Export Flights</div>
+      <button class="closeBtn" (click)="closeExportModal()">✕</button>
+    </div>
+
+    <div class="exportBody">
+
+      <div class="selectionTitle">Select flights</div>
+
+      <div class="flightList">
+
+        <label class="flightRow" *ngFor="let flight of flights">
+
+          <input
+            type="checkbox"
+            [checked]="selectedFlights.includes(flight.flightNumber)"
+            (change)="toggleFlightSelection(flight.flightNumber)"
+          />
+
+          <span class="flightName">
+            {{ flight.flightNumber }}
+          </span>
+
+        </label>
+
+      </div>
+
+      <div class="selectionTitle">Export format</div>
+
+      <div class="formatOptions">
+
+        <label class="formatOption">
+          <input
+            type="radio"
+            name="format"
+            value="json"
+            (change)="setExportFormat('json')"
+            [checked]="exportFormat==='json'"
+          />
+          JSON
+        </label>
+
+        <label class="formatOption">
+          <input
+            type="radio"
+            name="format"
+            value="csv"
+            (change)="setExportFormat('csv')"
+            [checked]="exportFormat==='csv'"
+          />
+          CSV
+        </label>
+
+        <label class="formatOption">
+          <input
+            type="radio"
+            name="format"
+            value="pcap"
+            (change)="setExportFormat('pcap')"
+            [checked]="exportFormat==='pcap'"
+          />
+          PCAP
+        </label>
+
+      </div>
+
+    </div>
+
+    <div class="exportActions">
+
+      <button class="cancelBtn" (click)="closeExportModal()">
+        Cancel
+      </button>
+
+      <button
+        class="exportConfirmBtn"
+        [disabled]="selectedFlights.length === 0"
+      >
+        Export
+      </button>
+
+    </div>
+
+  </div>
+
 </div>
