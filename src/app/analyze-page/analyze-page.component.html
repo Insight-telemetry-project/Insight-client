@@ -115,7 +115,7 @@
         <button
           class="modeBtn"
           [class.active]="sidebarMode === 'related'"
-          (click)="sidebarMode = 'related'"
+          (click)="setSidebarMode('related')"
         >
           Related
         </button>
@@ -123,7 +123,7 @@
         <button
           class="modeBtn"
           [class.active]="sidebarMode === 'historical'"
-          (click)="sidebarMode = 'historical'"
+          (click)="setSidebarMode('historical')"
         >
           Historical
         </button>
