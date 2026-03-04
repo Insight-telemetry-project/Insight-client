@@ -61,9 +61,7 @@
     <section class="emptyState" *ngIf="gridItems.length === 0">
       <div class="emptyStateInner">
         <span class="emptyIcon">📈</span>
-        <p class="emptyText">
-          Click a parameter below to add it to the grid
-        </p>
+        <p class="emptyText">Click a parameter below to add it to the grid</p>
       </div>
     </section>
 
@@ -94,9 +92,7 @@
     </section>
 
     <section class="paramsSection">
-      <p class="subtitle">
-        Click a parameter to add/remove it to the grid
-      </p>
+      <p class="subtitle">Click a parameter to add/remove it to the grid</p>
 
       <div class="paramsGrid">
         <button
@@ -107,11 +103,7 @@
           (click)="toggleParam(param)"
         >
           <div class="paramTitle">{{ param }}</div>
-          <div
-            class="miniChart"
-            #miniChart
-            [attr.data-param]="param"
-          ></div>
+          <div class="miniChart" #miniChart [attr.data-param]="param"></div>
         </button>
       </div>
     </section>
@@ -138,14 +130,14 @@
       </div>
 
       <div class="sidebarHeader">
-  {{
-    sidebarMode === "related"
-      ? (related.relatedForParam
-          ? "Related: " + related.relatedForParam
-          : "Select a parameter to see related parameters")
-      : "Historical Similar Points"
-  }}
-</div>
+        {{
+          sidebarMode === "related"
+            ? related.relatedForParam
+              ? "Related: " + related.relatedForParam
+              : "Select a parameter to see related parameters"
+            : "Historical Similar Points"
+        }}
+      </div>
 
       <div class="sidebarContent">
         <ng-container *ngIf="sidebarMode === 'related'">
@@ -181,33 +173,44 @@
           <div
             class="historicalCard"
             *ngFor="let item of sortedHistoricalItems"
+            [attr.data-id]="item.comparedFlightIndex + '_' + item.time"
             [class.hovered]="
-              hoveredHistoricalId ===
-              item.comparedFlightIndex + '_' + item.time
+              hoveredHistoricalId === item.comparedFlightIndex + '_' + item.time
             "
             (mouseenter)="onHistoricalCardHover(item)"
             (mouseleave)="onHistoricalCardLeave()"
             (click)="navigateToHistoricalFlight(item)"
           >
-            <div class="histRow">
-              <span class="histLabel">Flight</span>
-              <span class="histValue">
-                {{ item.comparedFlightIndex }}
-              </span>
-            </div>
+            <div class="histContent">
+              <div class="histInfo">
+                <div class="histRow">
+                  <span class="histLabel">Flight</span>
+                  <span class="histValue">
+                    {{ item.comparedFlightIndex }}
+                  </span>
+                </div>
 
-            <div class="histRow">
-              <span class="histLabel">Score</span>
-              <span class="histValue">
-                {{ item.score | number: "1.2-2" }}
-              </span>
-            </div>
+                <div class="histRow">
+                  <span class="histLabel">Score</span>
+                  <span class="histValue">
+                    {{ item.score | number: "1.2-2" }}
+                  </span>
+                </div>
 
-            <div class="histRow">
-              <span class="histLabel">Time</span>
-              <span class="histValue">
-                {{ item.time * 1000 | date: "HH:mm:ss" }}
-              </span>
+                <div class="histRow">
+                  <span class="histLabel">Time</span>
+                  <span class="histValue">
+                    {{ item.time * 1000 | date: "HH:mm:ss" }}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                class="historicalMiniChart"
+                #historicalMiniChart
+                [attr.data-flight]="item.comparedFlightIndex"
+                [attr.data-param]="item.param"
+              ></div>
             </div>
           </div>
         </ng-container>
