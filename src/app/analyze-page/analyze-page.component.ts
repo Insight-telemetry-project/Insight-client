@@ -51,7 +51,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public hoveredHistoricalId: string | null = null;
-private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
+  private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
 
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
@@ -223,7 +223,45 @@ private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
       this.selected.delete(paramName);
 
       if (this.sidebarParam === paramName) {
-        this.sidebarParam = null;
+        const remainingParams = Array.from(this.selected);
+
+        if (remainingParams.length > 0) {
+          const lastParam = remainingParams[remainingParams.length - 1];
+          this.sidebarParam = lastParam;
+
+          this.related.clear();
+          this.historicalSimilarityService.reset();
+
+          if (this.sidebarMode === 'related') {
+            this.related.openFor(
+              this.masterIndex,
+              lastParam,
+              this.subscriptions,
+            );
+          }
+
+          if (this.sidebarMode === 'historical') {
+            const gridItem = this.gridItems.find((g) => g.param === lastParam);
+
+            if (gridItem && gridItem.chart) {
+              this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+                this.masterIndex,
+                lastParam,
+                this.flightData,
+                gridItem.chart,
+                this.subscriptions,
+              );
+            }
+
+            setTimeout(() => {
+              this.drawHistoricalMiniCharts();
+            });
+          }
+        } else {
+          this.sidebarParam = null;
+          this.related.clear();
+          this.historicalSimilarityService.reset();
+        }
       }
 
       return;
@@ -234,8 +272,31 @@ private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
 
     this.addGridItem(paramName);
 
+    this.related.clear();
+    this.historicalSimilarityService.reset();
+
     if (this.sidebarMode === 'related') {
       this.related.openFor(this.masterIndex, paramName, this.subscriptions);
+    }
+
+    if (this.sidebarMode === 'historical') {
+      const gridItem = this.gridItems.find(g => g.param === paramName);
+
+if (gridItem && gridItem.chart) {
+
+  this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+    this.masterIndex,
+    paramName,
+    this.flightData,
+    gridItem.chart,
+    this.subscriptions
+  );
+
+}
+
+      setTimeout(() => {
+        this.drawHistoricalMiniCharts();
+      });
     }
   }
 
@@ -243,6 +304,14 @@ private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
     if (this.selected.has(paramName)) {
       this.removeGridItem(paramName);
       this.selected.delete(paramName);
+
+      if (this.sidebarParam === paramName) {
+        this.sidebarParam = null;
+
+        this.related.clear();
+        this.historicalSimilarityService.reset();
+      }
+
       return;
     }
 
@@ -250,6 +319,9 @@ private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
     this.sidebarParam = paramName;
 
     this.addGridItem(paramName);
+
+    this.related.clear();
+    this.historicalSimilarityService.reset();
 
     if (this.sidebarMode === 'related') {
       this.related.openFor(this.masterIndex, paramName, this.subscriptions);
@@ -471,89 +543,81 @@ private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
   }
 
   private drawHistoricalMiniCharts(): void {
+    if (!this.historicalMiniChartElements) return;
 
-  if (!this.historicalMiniChartElements) return;
+    this.historicalMiniChartElements.forEach(
+      (elementRef: ElementRef<HTMLDivElement>) => {
+        const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
+        const paramName = elementRef.nativeElement.dataset['param'];
 
-  this.historicalMiniChartElements.forEach(
-    (elementRef: ElementRef<HTMLDivElement>) => {
+        if (!flightIndexAttr || !paramName) return;
 
-      const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
-      const paramName = elementRef.nativeElement.dataset['param'];
+        const flightIndex = Number(flightIndexAttr);
+        const chartId = flightIndex + '_' + paramName;
 
-      if (!flightIndexAttr || !paramName) return;
+        const cachedFlight = this.flightCache.get(flightIndex);
 
-      const flightIndex = Number(flightIndexAttr);
-      const chartId = flightIndex + '_' + paramName;
-
-      const cachedFlight = this.flightCache.get(flightIndex);
-
-      if (cachedFlight) {
-
-        const dataPoints = this.chartsService.buildSeries(
-          cachedFlight,
-          paramName
-        );
-
-        const chart = this.chartsService.createMiniChart(
-          elementRef.nativeElement,
-          paramName,
-          dataPoints
-        );
-
-        this.historicalMiniCharts.set(chartId, chart);
-
-        return;
-      }
-
-      const sub = this.archiveService
-        .getFlightFields(flightIndex)
-        .subscribe((rows: TelemetrySensorFields[]) => {
-
-          const sortedRows = (rows ?? [])
-            .slice()
-            .sort((a, b) => a.timestep - b.timestep);
-
-          this.flightCache.set(flightIndex, sortedRows);
-
+        if (cachedFlight) {
           const dataPoints = this.chartsService.buildSeries(
-            sortedRows,
-            paramName
+            cachedFlight,
+            paramName,
           );
 
           const chart = this.chartsService.createMiniChart(
             elementRef.nativeElement,
             paramName,
-            dataPoints
+            dataPoints,
           );
 
           this.historicalMiniCharts.set(chartId, chart);
 
-        });
+          return;
+        }
 
-      this.subscriptions.add(sub);
+        const sub = this.archiveService
+          .getFlightFields(flightIndex)
+          .subscribe((rows: TelemetrySensorFields[]) => {
+            const sortedRows = (rows ?? [])
+              .slice()
+              .sort((a, b) => a.timestep - b.timestep);
 
-    }
-  );
-}
-  public setSidebarMode(mode: 'related' | 'historical'): void {
+            this.flightCache.set(flightIndex, sortedRows);
 
-  this.sidebarMode = mode;
+            const dataPoints = this.chartsService.buildSeries(
+              sortedRows,
+              paramName,
+            );
 
-  if (!this.sidebarParam) return;
+            const chart = this.chartsService.createMiniChart(
+              elementRef.nativeElement,
+              paramName,
+              dataPoints,
+            );
 
-  if (mode === 'related') {
-    this.related.openFor(
-      this.masterIndex,
-      this.sidebarParam,
-      this.subscriptions
+            this.historicalMiniCharts.set(chartId, chart);
+          });
+
+        this.subscriptions.add(sub);
+      },
     );
   }
+  public setSidebarMode(mode: 'related' | 'historical'): void {
+    this.sidebarMode = mode;
 
-  if (mode === 'historical') {
-    setTimeout(() => {
-      this.drawHistoricalMiniCharts();
-    });
+    if (!this.sidebarParam) return;
+
+    if (mode === 'related') {
+      this.related.openFor(
+        this.masterIndex,
+        this.sidebarParam,
+        this.subscriptions,
+      );
+    }
+
+    if (mode === 'historical') {
+      setTimeout(() => {
+        this.drawHistoricalMiniCharts();
+      });
+    }
   }
-
-}
 }
