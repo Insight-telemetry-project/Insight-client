@@ -51,6 +51,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public hoveredHistoricalId: string | null = null;
+private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
 
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
@@ -470,56 +471,89 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawHistoricalMiniCharts(): void {
-    if (!this.historicalMiniChartElements) return;
 
-    this.historicalMiniChartElements.forEach(
-      (elementRef: ElementRef<HTMLDivElement>) => {
-        const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
-        const paramName = elementRef.nativeElement.dataset['param'];
+  if (!this.historicalMiniChartElements) return;
 
-        if (!flightIndexAttr || !paramName) return;
+  this.historicalMiniChartElements.forEach(
+    (elementRef: ElementRef<HTMLDivElement>) => {
 
-        const flightIndex = Number(flightIndexAttr);
-        const chartId = flightIndex + '_' + paramName;
+      const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
+      const paramName = elementRef.nativeElement.dataset['param'];
 
-        if (this.historicalMiniCharts.has(chartId)) return;
+      if (!flightIndexAttr || !paramName) return;
 
-        const sub = this.archiveService
-          .getFlightFields(flightIndex)
-          .subscribe((rows: TelemetrySensorFields[]) => {
-            const sortedRows = (rows ?? [])
-              .slice()
-              .sort((a, b) => a.timestep - b.timestep);
+      const flightIndex = Number(flightIndexAttr);
+      const chartId = flightIndex + '_' + paramName;
 
-            const dataPoints = this.chartsService.buildSeries(
-              sortedRows,
-              paramName,
-            );
+      const cachedFlight = this.flightCache.get(flightIndex);
 
-            const chart = this.chartsService.createMiniChart(
-              elementRef.nativeElement,
-              paramName,
-              dataPoints,
-            );
+      if (cachedFlight) {
 
-            this.historicalMiniCharts.set(chartId, chart);
-          });
+        const dataPoints = this.chartsService.buildSeries(
+          cachedFlight,
+          paramName
+        );
 
-        this.subscriptions.add(sub);
-      },
+        const chart = this.chartsService.createMiniChart(
+          elementRef.nativeElement,
+          paramName,
+          dataPoints
+        );
+
+        this.historicalMiniCharts.set(chartId, chart);
+
+        return;
+      }
+
+      const sub = this.archiveService
+        .getFlightFields(flightIndex)
+        .subscribe((rows: TelemetrySensorFields[]) => {
+
+          const sortedRows = (rows ?? [])
+            .slice()
+            .sort((a, b) => a.timestep - b.timestep);
+
+          this.flightCache.set(flightIndex, sortedRows);
+
+          const dataPoints = this.chartsService.buildSeries(
+            sortedRows,
+            paramName
+          );
+
+          const chart = this.chartsService.createMiniChart(
+            elementRef.nativeElement,
+            paramName,
+            dataPoints
+          );
+
+          this.historicalMiniCharts.set(chartId, chart);
+
+        });
+
+      this.subscriptions.add(sub);
+
+    }
+  );
+}
+  public setSidebarMode(mode: 'related' | 'historical'): void {
+
+  this.sidebarMode = mode;
+
+  if (!this.sidebarParam) return;
+
+  if (mode === 'related') {
+    this.related.openFor(
+      this.masterIndex,
+      this.sidebarParam,
+      this.subscriptions
     );
   }
-  public setSidebarMode(mode: 'related' | 'historical'): void {
-    this.sidebarMode = mode;
 
-    if (!this.sidebarParam) return;
-
-    if (mode === 'related') {
-      this.related.openFor(
-        this.masterIndex,
-        this.sidebarParam,
-        this.subscriptions,
-      );
-    }
+  if (mode === 'historical') {
+    setTimeout(() => {
+      this.drawHistoricalMiniCharts();
+    });
   }
+
+}
 }
