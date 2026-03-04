@@ -37,6 +37,11 @@ export class FlightsOverviewComponent implements OnInit {
 
   public isUploadModalOpen: boolean = false;
   public isDropActive: boolean = false;
+isExportModalOpen: boolean = false;
+
+selectedFlights: number[] = [];
+
+exportFormat: string = "json";
 
   public constructor(
     private readonly archiveService: FlightArchiveService,
@@ -61,7 +66,29 @@ export class FlightsOverviewComponent implements OnInit {
       },
     });
   }
+openExportModal(): void {
+  this.isExportModalOpen = true;
+}
 
+closeExportModal(): void {
+  this.isExportModalOpen = false;
+}
+
+toggleFlightSelection(flightNumber: number): void {
+
+  const index: number = this.selectedFlights.indexOf(flightNumber);
+
+  if (index > -1) {
+    this.selectedFlights.splice(index, 1);
+  } else {
+    this.selectedFlights.push(flightNumber);
+  }
+
+}
+
+setExportFormat(format: string): void {
+  this.exportFormat = format;
+}
   public openUploadModal(): void {
     this.isUploadModalOpen = true;
   }
