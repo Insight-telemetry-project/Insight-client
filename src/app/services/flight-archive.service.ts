@@ -55,4 +55,11 @@ public getAllSpecialPointsForFlight(masterIndex: number): Observable<FlightPoint
   );
 }
 
+public exportFlight(masterIndex: number, format: string): Observable<Blob> {
+  return this.http.get(
+    `${this.baseUrl}/export/${masterIndex}/${format}`,
+    { responseType: 'blob' }
+  );
+}
+
 }
