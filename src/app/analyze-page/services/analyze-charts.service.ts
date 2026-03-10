@@ -109,6 +109,8 @@ export class AnalyzeChartsService {
           color: baseColor,
           lineWidth: 1.5,
           marker: { enabled: false },
+          threshold: null,
+          softThreshold: false,
           fillColor: {
             linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
             stops: [
@@ -217,7 +219,7 @@ export class AnalyzeChartsService {
           animation: false,
           marker: { enabled: false },
           lineWidth: 1,
-          enableMouseTracking: false, 
+          enableMouseTracking: false,
           states: {
             hover: {
               enabled: false,
@@ -504,6 +506,8 @@ export class AnalyzeChartsService {
           color: baseColor,
           lineWidth: 1.5,
           marker: { enabled: false },
+          threshold: null,
+          softThreshold: false,
           fillColor: {
             linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
             stops: [

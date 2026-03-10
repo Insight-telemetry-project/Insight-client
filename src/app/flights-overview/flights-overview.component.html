@@ -249,6 +249,7 @@
       <button
         class="exportConfirmBtn"
         [disabled]="selectedFlights.length === 0"
+        (click)="exportFlights()"
       >
         Export
       </button>

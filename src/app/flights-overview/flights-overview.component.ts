@@ -405,4 +405,27 @@ setExportFormat(format: string): void {
   public removeSelectedFile(): void {
     this.selectedFile = null;
   }
+  public exportFlights(): void {
+
+  for (const flightNumber of this.selectedFlights) {
+
+    this.archiveService
+      .exportFlight(flightNumber, this.exportFormat)
+      .subscribe((fileBlob: Blob) => {
+
+        const url: string = window.URL.createObjectURL(fileBlob);
+
+        const link: HTMLAnchorElement = document.createElement('a');
+
+        link.href = url;
+        link.download = `flight_${flightNumber}.zip`;
+
+        link.click();
+
+        window.URL.revokeObjectURL(url);
+      });
+  }
+
+  this.closeExportModal();
+}
 }
