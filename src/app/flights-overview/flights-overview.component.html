@@ -1,54 +1,90 @@
 <div class="page">
   <header class="header">
+    <div class="headerLeft">
+      <h1 class="title">Flights Overview</h1>
+      <p class="subtitle">Telemetry parameters and anomalies</p>
+    </div>
 
-  <div class="headerLeft">
-    <h1 class="title">Flights Overview</h1>
-    <p class="subtitle">Telemetry parameters and anomalies</p>
-  </div>
+    <div class="headerActions">
+      <button class="addFlightBtn" type="button" (click)="openExportModal()">
+        <span class="plusBadge">⬇</span>
+        <span class="addText">Export</span>
+      </button>
 
-  <div class="headerActions">
-
-    <button class="addFlightBtn" type="button" (click)="openExportModal()">
-  <span class="plusBadge">⬇</span>
-  <span class="addText">Export</span>
-</button>
-
-    <button class="addFlightBtn" type="button" (click)="openUploadModal()">
-      <span class="plusBadge">+</span>
-      <span class="addText">Add Flight</span>
-    </button>
-
-  </div>
-
-</header>
+      <button class="addFlightBtn" type="button" (click)="openUploadModal()">
+        <span class="plusBadge">+</span>
+        <span class="addText">Add Flight</span>
+      </button>
+    </div>
+  </header>
 
   <div class="flightsContainer">
     <div class="flightCard" *ngFor="let flight of flights">
-      <div class="cardHeader" (click)="toggleFlight(flight.flightNumber)">
+      <div
+  class="analysisPreparing"
+  *ngIf="preparingMap.has(flight.flightNumber) && !progressMap.has(flight.flightNumber)"
+>
+  <span class="spinner"></span>
+  preparing analysis...
+</div>
+      <div
+        class="analysisProgress"
+        *ngIf="progressMap.has(flight.flightNumber)"
+      >
+        <div class="analysisText">
+          analyzing {{ progressMap.get(flight.flightNumber)?.completed }}
+          /
+          {{ progressMap.get(flight.flightNumber)?.total }}
+        </div>
 
-        <div class="left" (click)="$event.stopPropagation(); openParameter(flight.flightNumber, '')">
+        <div class="analysisBar">
+          <div
+            class="analysisFill"
+            [style.width.%]="getProgressPercent(flight.flightNumber)"
+          ></div>
+        </div>
+      </div>
+
+      <div class="cardHeader" (click)="toggleFlight(flight.flightNumber)">
+        <div
+          class="left"
+          (click)="
+            $event.stopPropagation(); openParameter(flight.flightNumber, '')
+          "
+        >
           <img class="icon" src="assets/images/uav.png" />
           <div class="flightInfo">
             <h3 class="flightNumber">{{ flight.flightNumber }}</h3>
-            <span class="duration">{{ getDurationText(flight.flightLenght) }}</span>
+            <span class="duration">{{
+              getDurationText(flight.flightLenght)
+            }}</span>
           </div>
         </div>
 
         <div class="right">
           <div class="anomalyTotal">
-            <strong>{{ getTotalAnomalies(flight.flightNumber) }} unusual points</strong>
+            <strong
+              >{{ getTotalAnomalies(flight.flightNumber) }} unusual
+              points</strong
+            >
           </div>
           <button
             class="deleteBtn"
             type="button"
-            (click)="$event.stopPropagation(); deleteFlight(flight.flightNumber)"
+            (click)="
+              $event.stopPropagation(); deleteFlight(flight.flightNumber)
+            "
             title="Delete flight"
           >
             <span class="deleteBtnIcon">🗑</span>
           </button>
-          <div class="chevron" [class.rotated]="isExpanded(flight.flightNumber)">⌄</div>
+          <div
+            class="chevron"
+            [class.rotated]="isExpanded(flight.flightNumber)"
+          >
+            ⌄
+          </div>
         </div>
-
       </div>
 
       <div class="expand" [class.open]="isExpanded(flight.flightNumber)">
@@ -99,8 +135,12 @@
             <div class="paramRow">
               <div class="paramName">{{ param.name }}</div>
               <div class="badgesColumn">
-                <span class="anomalyBadge">{{ param.anomalies }} unusual points</span>
-                <span class="historyBadge">{{ param.historicalPoints }} historical points</span>
+                <span class="anomalyBadge"
+                  >{{ param.anomalies }} unusual points</span
+                >
+                <span class="historyBadge"
+                  >{{ param.historicalPoints }} historical points</span
+                >
               </div>
             </div>
           </div>
@@ -110,7 +150,11 @@
   </div>
 </div>
 
-<div class="uploadOverlay" [class.active]="isUploadModalOpen" (click)="closeUploadModal()">
+<div
+  class="uploadOverlay"
+  [class.active]="isUploadModalOpen"
+  (click)="closeUploadModal()"
+>
   <div class="uploadModal" (click)="$event.stopPropagation()">
     <div class="uploadHeader">
       <div class="uploadTitle">Upload PCAP File</div>
@@ -125,7 +169,7 @@
       >
         <img class="dropIcon" src="assets/images/file.png" />
         <div class="dropText">Drag & drop PCAP here</div>
-        <div class="dropSubText">or click to browse · .pcap </div>
+        <div class="dropSubText">or click to browse · .pcap</div>
       </div>
 
       <div class="filePreview" *ngIf="selectedFile">
@@ -134,7 +178,9 @@
             <span class="fileIconSmall">📄</span>
             <div class="fileDetails">
               <span class="fileName">{{ selectedFile.name }}</span>
-              <span class="fileSize">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
+              <span class="fileSize"
+                >{{ (selectedFile.size / 1024).toFixed(1) }} KB</span
+              >
             </div>
           </div>
           <button class="removeBtn" (click)="removeSelectedFile()">✕</button>
@@ -143,7 +189,13 @@
     </div>
 
     <div class="uploadActions">
-      <button class="cancelBtn" (click)="closeUploadModal()" [disabled]="isUploading">Cancel</button>
+      <button
+        class="cancelBtn"
+        (click)="closeUploadModal()"
+        [disabled]="isUploading"
+      >
+        Cancel
+      </button>
       <button
         class="uploadBtn"
         [disabled]="!selectedFile || isUploading"
@@ -168,23 +220,22 @@
 </div>
 <!-- EXPORT MODAL -->
 
-<div class="exportOverlay" [class.active]="isExportModalOpen" (click)="closeExportModal()">
-
+<div
+  class="exportOverlay"
+  [class.active]="isExportModalOpen"
+  (click)="closeExportModal()"
+>
   <div class="exportModal" (click)="$event.stopPropagation()">
-
     <div class="exportHeader">
       <div class="exportTitle">Export Flights</div>
       <button class="closeBtn" (click)="closeExportModal()">✕</button>
     </div>
 
     <div class="exportBody">
-
       <div class="selectionTitle">Select flights</div>
 
       <div class="flightList">
-
         <label class="flightRow" *ngFor="let flight of flights">
-
           <input
             type="checkbox"
             [checked]="selectedFlights.includes(flight.flightNumber)"
@@ -194,22 +245,19 @@
           <span class="flightName">
             {{ flight.flightNumber }}
           </span>
-
         </label>
-
       </div>
 
       <div class="selectionTitle">Export format</div>
 
       <div class="formatOptions">
-
         <label class="formatOption">
           <input
             type="radio"
             name="format"
             value="json"
             (change)="setExportFormat('json')"
-            [checked]="exportFormat==='json'"
+            [checked]="exportFormat === 'json'"
           />
           JSON
         </label>
@@ -220,7 +268,7 @@
             name="format"
             value="csv"
             (change)="setExportFormat('csv')"
-            [checked]="exportFormat==='csv'"
+            [checked]="exportFormat === 'csv'"
           />
           CSV
         </label>
@@ -231,20 +279,15 @@
             name="format"
             value="pcap"
             (change)="setExportFormat('pcap')"
-            [checked]="exportFormat==='pcap'"
+            [checked]="exportFormat === 'pcap'"
           />
           PCAP
         </label>
-
       </div>
-
     </div>
 
     <div class="exportActions">
-
-      <button class="cancelBtn" (click)="closeExportModal()">
-        Cancel
-      </button>
+      <button class="cancelBtn" (click)="closeExportModal()">Cancel</button>
 
       <button
         class="exportConfirmBtn"
@@ -253,9 +296,6 @@
       >
         Export
       </button>
-
     </div>
-
   </div>
-
 </div>

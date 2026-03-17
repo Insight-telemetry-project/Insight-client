@@ -193,7 +193,7 @@
                 <div class="histRow">
                   <span class="histLabel">Score</span>
                   <span class="histValue">
-                    {{ item.score | number: "1.2-2" }}
+                    {{ (item.score * 100) | number:'1.0-0' }}%
                   </span>
                 </div>
 
