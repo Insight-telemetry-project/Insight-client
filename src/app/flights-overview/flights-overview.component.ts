@@ -10,6 +10,7 @@ import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { Router } from '@angular/router';
 import { TelemetryDeviceService } from '../services/telemetry-device.services';
 import Swal from 'sweetalert2';
+import { AnalysisProgressService } from '../services/analysis-progress.service';
 
 interface ParameterOverview {
   name: string;
@@ -31,28 +32,56 @@ export class FlightsOverviewComponent implements OnInit {
   public expandedFlight: number | null = null;
   public parametersMap: Map<number, ParameterOverview[]> = new Map();
   public rawAnomaliesMap: Map<number, Record<string, number[]>> = new Map();
-
+  public progressMap: Map<number, { completed: number; total: number }> =
+    new Map();
   public searchTerm: string = '';
   public sortBy: 'anomalies' | 'historical' = 'historical';
 
+  public preparingMap: Map<number, boolean> = new Map();
   public isUploadModalOpen: boolean = false;
   public isDropActive: boolean = false;
-isExportModalOpen: boolean = false;
+  isExportModalOpen: boolean = false;
 
-selectedFlights: number[] = [];
+  selectedFlights: number[] = [];
 
-exportFormat: string = "json";
+  exportFormat: string = 'json';
 
   public constructor(
     private readonly archiveService: FlightArchiveService,
     private readonly telemetryDeviceService: TelemetryDeviceService,
     private readonly router: Router,
+    private readonly progressService: AnalysisProgressService,
   ) {}
 
   public ngOnInit(): void {
-    this.loadFlights();
-  }
 
+  this.loadFlights();
+
+  this.progressService.progress$.subscribe((progress) => {
+
+    this.preparingMap.delete(progress.flightId);
+
+    this.progressMap.set(progress.flightId, {
+      completed: progress.completedParameters,
+      total: progress.totalParameters,
+    });
+
+    if (progress.completedParameters === progress.totalParameters) {
+
+      this.progressMap.delete(progress.flightId);
+
+      this.refreshFlightData(progress.flightId);
+
+      this.progressService.disconnect();
+    }
+
+  });
+
+}
+
+    ngOnDestroy(): void {
+    this.progressService.disconnect();
+  }
   private loadFlights(): void {
     this.archiveService.getAllFlights().subscribe({
       next: (flights: FlightSummary[]) => {
@@ -66,29 +95,27 @@ exportFormat: string = "json";
       },
     });
   }
-openExportModal(): void {
-  this.isExportModalOpen = true;
-}
-
-closeExportModal(): void {
-  this.isExportModalOpen = false;
-}
-
-toggleFlightSelection(flightNumber: number): void {
-
-  const index: number = this.selectedFlights.indexOf(flightNumber);
-
-  if (index > -1) {
-    this.selectedFlights.splice(index, 1);
-  } else {
-    this.selectedFlights.push(flightNumber);
+  openExportModal(): void {
+    this.isExportModalOpen = true;
   }
 
-}
+  closeExportModal(): void {
+    this.isExportModalOpen = false;
+  }
 
-setExportFormat(format: string): void {
-  this.exportFormat = format;
-}
+  toggleFlightSelection(flightNumber: number): void {
+    const index: number = this.selectedFlights.indexOf(flightNumber);
+
+    if (index > -1) {
+      this.selectedFlights.splice(index, 1);
+    } else {
+      this.selectedFlights.push(flightNumber);
+    }
+  }
+
+  setExportFormat(format: string): void {
+    this.exportFormat = format;
+  }
   public openUploadModal(): void {
     this.isUploadModalOpen = true;
   }
@@ -391,7 +418,21 @@ setExportFormat(format: string): void {
         this.parametersMap.clear();
         this.rawAnomaliesMap.clear();
         this.expandedFlight = null;
-        this.loadFlights();
+
+        this.archiveService
+          .getAllFlights()
+          .subscribe((flights: FlightSummary[]) => {
+            this.flights = flights;
+
+            const lastFlight = flights[flights.length - 1];
+
+            if (lastFlight) {
+              this.preparingMap.set(lastFlight.flightNumber, true);
+
+              this.progressService.connect(lastFlight.flightNumber);
+            }
+          });
+
         this.selectedFile = null;
         this.isUploading = false;
         this.closeUploadModal();
@@ -406,26 +447,54 @@ setExportFormat(format: string): void {
     this.selectedFile = null;
   }
   public exportFlights(): void {
+    for (const flightNumber of this.selectedFlights) {
+      this.archiveService
+        .exportFlight(flightNumber, this.exportFormat)
+        .subscribe((fileBlob: Blob) => {
+          const url: string = window.URL.createObjectURL(fileBlob);
 
-  for (const flightNumber of this.selectedFlights) {
+          const link: HTMLAnchorElement = document.createElement('a');
 
-    this.archiveService
-      .exportFlight(flightNumber, this.exportFormat)
-      .subscribe((fileBlob: Blob) => {
+          link.href = url;
+          link.download = `flight_${flightNumber}.zip`;
 
-        const url: string = window.URL.createObjectURL(fileBlob);
+          link.click();
 
-        const link: HTMLAnchorElement = document.createElement('a');
+          window.URL.revokeObjectURL(url);
+        });
+    }
 
-        link.href = url;
-        link.download = `flight_${flightNumber}.zip`;
-
-        link.click();
-
-        window.URL.revokeObjectURL(url);
-      });
+    this.closeExportModal();
   }
 
-  this.closeExportModal();
+  public getProgressPercent(flightNumber: number): number {
+    const progress = this.progressMap.get(flightNumber);
+
+    if (!progress) return 0;
+
+    return Math.floor((progress.completed / progress.total) * 100);
+  }
+  private refreshFlightData(flightId: number): void {
+
+  this.archiveService
+    .getAllSpecialPointsForFlight(flightId)
+    .subscribe((response) => {
+
+      if (!response) return;
+
+      this.rawAnomaliesMap.set(flightId, response.anomalies);
+
+      const list: ParameterOverview[] =
+        Object.keys(response.anomalies).map((parameterName: string) => ({
+          name: parameterName,
+          anomalies: response.anomalies[parameterName]?.length ?? 0,
+          historicalPoints:
+            response.historicalSimilarity[parameterName]?.length ?? 0,
+        }));
+
+      this.parametersMap.set(flightId, list);
+
+    });
+
 }
 }
