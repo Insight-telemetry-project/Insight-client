@@ -17,16 +17,52 @@
       </button>
     </div>
   </header>
+  <div class="flightsToolbar">
+    <div class="search">
+      <span class="searchIcon">⌕</span>
+      <input
+        class="searchInput"
+        type="text"
+        placeholder="Search flight..."
+        [(ngModel)]="flightSearchTerm"
+      />
+    </div>
 
-  <div class="flightsContainer">
-    <div class="flightCard" *ngFor="let flight of flights">
+    <div class="sortPill">
+      <button
+        [class.active]="flightSortBy === 'number'"
+        (click)="flightSortBy = 'number'"
+      >
+        Flight
+      </button>
+
+      <button
+        [class.active]="flightSortBy === 'anomalies'"
+        (click)="flightSortBy = 'anomalies'"
+      >
+        Unusual
+      </button>
+
+      <button
+        [class.active]="flightSortBy === 'historical'"
+        (click)="flightSortBy = 'historical'"
+      >
+        Historical
+      </button>
+    </div>
+  </div>
+  <div class="flightsContainer" *ngIf="flights.length > 0; else noFlights">
+    <div class="flightCard" *ngFor="let flight of getVisibleFlights()">
       <div
-  class="analysisPreparing"
-  *ngIf="preparingMap.has(flight.flightNumber) && !progressMap.has(flight.flightNumber)"
->
-  <span class="spinner"></span>
-  preparing analysis...
-</div>
+        class="analysisPreparing"
+        *ngIf="
+          preparingMap.has(flight.flightNumber) &&
+          !progressMap.has(flight.flightNumber)
+        "
+      >
+        <span class="spinner"></span>
+        preparing analysis...
+      </div>
       <div
         class="analysisProgress"
         *ngIf="progressMap.has(flight.flightNumber)"
@@ -62,11 +98,18 @@
         </div>
 
         <div class="right">
-          <div class="anomalyTotal">
-            <strong
-              >{{ getTotalAnomalies(flight.flightNumber) }} unusual
-              points</strong
-            >
+          <div class="totals">
+            <div class="anomalyTotal">
+              <strong>
+                {{ getTotalAnomalies(flight.flightNumber) }} unusual points
+              </strong>
+            </div>
+
+            <div class="historicalTotal">
+              <strong>
+                {{ getTotalHistorical(flight.flightNumber) }} historical points
+              </strong>
+            </div>
           </div>
           <button
             class="deleteBtn"
@@ -148,6 +191,15 @@
       </div>
     </div>
   </div>
+  <ng-template #noFlights>
+    <div class="noFlights">
+      <div class="noFlightsIcon">✈</div>
+      <div class="noFlightsTitle">No flights yet</div>
+      <div class="noFlightsText">
+        Upload your first flight to start analysis
+      </div>
+    </div>
+  </ng-template>
 </div>
 
 <div

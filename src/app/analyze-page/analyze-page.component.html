@@ -141,6 +141,16 @@
 
       <div class="sidebarContent">
         <ng-container *ngIf="sidebarMode === 'related'">
+          <div
+            class="sidebarEmpty"
+            *ngIf="
+              !related.relatedLoading && related.relatedParams.length === 0
+            "
+          >
+            <div class="sidebarEmptyTitle">No strong relations</div>
+            <div class="sidebarEmptyText">Try another parameter</div>
+          </div>
+
           <button
             class="sidebarItem"
             *ngFor="let p of related.relatedParams"
@@ -193,7 +203,7 @@
                 <div class="histRow">
                   <span class="histLabel">Score</span>
                   <span class="histValue">
-                    {{ (item.score * 100) | number:'1.0-0' }}%
+                    {{ item.score * 100 | number: "1.0-0" }}%
                   </span>
                 </div>
 
