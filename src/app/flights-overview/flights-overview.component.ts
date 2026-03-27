@@ -407,7 +407,31 @@ export class FlightsOverviewComponent implements OnInit {
 
   public uploadSelectedFile(): void {
     if (!this.selectedFile || this.isUploading) return;
+    const fileName: string = this.selectedFile.name;
+    const extractedFlightNumber: number | null =
+      this.extractFlightNumberFromFileName(fileName);
 
+    if (extractedFlightNumber !== null) {
+      const exists: boolean = this.isFlightAlreadyExists(extractedFlightNumber);
+
+      if (exists) {
+        Swal.fire({
+          title: 'Flight already exists',
+          text: `Flight #${extractedFlightNumber} already exists in the system.`,
+          icon: 'warning',
+          background: '#120d22',
+          color: 'rgba(255, 255, 255, 0.88)',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#7c3aed',
+          customClass: {
+            popup: 'swal-dark-popup',
+            confirmButton: 'swal-confirm-btn',
+          },
+        });
+
+        return;
+      }
+    }
     this.isUploading = true;
 
     this.telemetryDeviceService.uploadPcap(this.selectedFile).subscribe({
@@ -563,6 +587,23 @@ export class FlightsOverviewComponent implements OnInit {
     return params.reduce(
       (sum: number, p: ParameterOverview) => sum + p.historicalPoints,
       0,
+    );
+  }
+  private isNumeric(value: string): boolean {
+    return /^\d+$/.test(value);
+  }
+  private extractFlightNumberFromFileName(fileName: string): number | null {
+    const nameWithoutExtension: string = fileName.split('.')[0];
+
+    if (!this.isNumeric(nameWithoutExtension)) {
+      return null;
+    }
+
+    return Number(nameWithoutExtension);
+  }
+  private isFlightAlreadyExists(flightNumber: number): boolean {
+    return this.flights.some(
+      (flight: FlightSummary) => flight.flightNumber === flightNumber,
     );
   }
 }
