@@ -68,9 +68,7 @@
         *ngIf="progressMap.has(flight.flightNumber)"
       >
         <div class="analysisText">
-          analyzing {{ progressMap.get(flight.flightNumber)?.completed }}
-          /
-          {{ progressMap.get(flight.flightNumber)?.total }}
+          {{ getFlightAnalysisStatusText(flight.flightNumber) }}
         </div>
 
         <div class="analysisBar">

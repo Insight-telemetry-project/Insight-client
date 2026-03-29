@@ -25,7 +25,6 @@ interface ParameterOverview {
 })
 export class FlightsOverviewComponent implements OnInit {
   @ViewChild('fileInput') public fileInput!: ElementRef<HTMLInputElement>;
-
   public isUploading: boolean = false;
   public selectedFile: File | null = null;
   public flights: FlightSummary[] = [];
@@ -42,7 +41,7 @@ export class FlightsOverviewComponent implements OnInit {
   public isUploadModalOpen: boolean = false;
   public isDropActive: boolean = false;
   isExportModalOpen: boolean = false;
-
+  public flightAnalysisStageMap: Map<number, string> = new Map();
   selectedFlights: number[] = [];
 
   exportFormat: string = 'json';
@@ -55,26 +54,31 @@ export class FlightsOverviewComponent implements OnInit {
   ) {}
 
   public ngOnInit(): void {
-    this.loadFlights();
+  this.loadFlights();
 
-    this.progressService.progress$.subscribe((progress) => {
-      this.preparingMap.delete(progress.flightId);
+  this.progressService.progress$.subscribe((progress) => {
+    this.preparingMap.delete(progress.flightId);
 
-      this.progressMap.set(progress.flightId, {
-        completed: progress.completedParameters,
-        total: progress.totalParameters,
-      });
-
-      if (progress.completedParameters === progress.totalParameters) {
-        this.progressMap.delete(progress.flightId);
-
-        this.refreshFlightData(progress.flightId);
-        this.refreshAllFlightsData();
-
-        this.progressService.leaveFlight(progress.flightId);
-      }
+    this.progressMap.set(progress.flightId, {
+      completed: progress.completedParameters,
+      total: progress.totalParameters,
     });
-  }
+  });
+
+  this.progressService.analysisStage$.subscribe((data) => {
+    this.flightAnalysisStageMap.set(data.flightId, data.stage);
+  });
+
+  this.progressService.analysisFinished$.subscribe((flightId: number) => {
+    this.flightAnalysisStageMap.set(flightId, 'finished');
+    this.progressMap.delete(flightId);
+
+    this.refreshFlightData(flightId);
+    this.refreshAllFlightsData();
+
+    this.progressService.leaveFlight(flightId);
+  });
+}
 
   ngOnDestroy(): void {
     this.progressService.disconnect();
@@ -463,11 +467,6 @@ export class FlightsOverviewComponent implements OnInit {
               this.preparingMap.set(flight.flightNumber, true);
               this.progressService.connect(flight.flightNumber);
             });
-            if (newFlights.length > 0) {
-              setTimeout(() => {
-                this.refreshAllFlightsData();
-              }, 5000);
-            }
           });
 
         this.selectedFile = null;
@@ -479,7 +478,6 @@ export class FlightsOverviewComponent implements OnInit {
       },
     });
   }
-
   public removeSelectedFile(): void {
     this.selectedFile = null;
   }
@@ -606,4 +604,26 @@ export class FlightsOverviewComponent implements OnInit {
       (flight: FlightSummary) => flight.flightNumber === flightNumber,
     );
   }
+  public getFlightAnalysisStatusText(flightId: number): string {
+  const stage = this.flightAnalysisStageMap.get(flightId);
+  const progress = this.progressMap.get(flightId);
+
+  if (stage === 'historical') {
+    return 'Searching historical points...';
+  }
+
+  if (stage === 'causality') {
+    return 'Analyzing flight causality...';
+  }
+
+  if (progress) {
+    return `Analyzing ${progress.completed}/${progress.total}`;
+  }
+
+  if (stage === 'finished') {
+    return 'Analysis completed';
+  }
+
+  return '';
+}
 }
