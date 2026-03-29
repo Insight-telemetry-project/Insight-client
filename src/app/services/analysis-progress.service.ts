@@ -18,7 +18,16 @@ export class AnalysisProgressService {
   private progressSubject = new Subject<AnalysisProgress>();
   public progress$ = this.progressSubject.asObservable();
 
+  private analysisFinishedSubject = new Subject<number>();
+  public analysisFinished$ = this.analysisFinishedSubject.asObservable();
+
   private joinedFlights = new Set<number>();
+
+  private analysisStageSubject = new Subject<{
+    flightId: number;
+    stage: string;
+  }>();
+  public analysisStage$ = this.analysisStageSubject.asObservable();
 
   public async connect(flightId: number): Promise<void> {
     if (!this.connection) {
@@ -32,6 +41,17 @@ export class AnalysisProgressService {
       this.connection.on('analysis-progress', (progress: AnalysisProgress) => {
         console.log('progress arrived', progress);
         this.progressSubject.next(progress);
+      });
+
+      this.connection.on('analysis-finished', (data: any) => {
+        this.analysisFinishedSubject.next(data.flightId);
+      });
+
+      this.connection.on('analysis-stage', (data: any) => {
+        this.analysisStageSubject.next({
+          flightId: data.flightId,
+          stage: data.stage,
+        });
       });
     }
 
