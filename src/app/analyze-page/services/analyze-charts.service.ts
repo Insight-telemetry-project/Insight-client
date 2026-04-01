@@ -407,21 +407,36 @@ export class AnalyzeChartsService {
     const mappedPoints: Highcharts.PointOptionsObject[] = [];
 
     for (const similarityItem of similarityItems) {
-      const startIndex: number = Number(similarityItem.startIndex);
-      const endIndex: number = Number(similarityItem.endIndex);
-      const midpointTimestep: number = Math.round((startIndex + endIndex) / 2);
+      const startEpoch: number = Number(similarityItem.startEpoch);
+      const endEpoch: number = Number(similarityItem.endEpoch);
+      const midpointEpoch: number = Math.round((startEpoch + endEpoch) / 2);
 
-      const yValue: number | undefined =
-        timestepToValueMap.get(midpointTimestep);
-      if (yValue === undefined) continue;
+let closestTime = midpointEpoch;
+let minDiff = Number.MAX_VALUE;
+
+for (const t of timestepToValueMap.keys()) {
+  const diff = Math.abs(t - midpointEpoch);
+  if (diff < minDiff) {
+    minDiff = diff;
+    closestTime = t;
+  }
+}
+
+const yValue = timestepToValueMap.get(closestTime);
+
+
 
       mappedPoints.push({
-        x: midpointTimestep * 1000,
+        x: closestTime * 1000,
         y: yValue,
         custom: {
           info: `Matched flight ${similarityItem.comparedFlightIndex}, label ${similarityItem.label}, score ${Number(similarityItem.finalScore).toFixed(2)}`,
           historicalId:
-            similarityItem.comparedFlightIndex + '_' + midpointTimestep,
+            similarityItem.comparedFlightIndex +
+            '_' +
+            similarityItem.startEpoch +
+            '_' +
+            similarityItem.endEpoch,
         },
       });
     }
@@ -520,4 +535,32 @@ export class AnalyzeChartsService {
       ],
     });
   }
+  splitAnomaliesByHistorical(
+    anomalyTimes: number[],
+    historicalWindows: { start: number; end: number }[],
+  ) {
+    const red: number[] = [];
+    const yellow: number[] = [];
+
+    for (const t of anomalyTimes) {
+      console.log('checking anomaly:', t);
+      for (const window of historicalWindows) {
+        console.log('against window:', window.start, window.end);
+      }
+      let isHistorical = false;
+
+      for (const window of historicalWindows) {
+        if (t >= window.start && t <= window.end) {
+          isHistorical = true;
+          break;
+        }
+      }
+
+      if (isHistorical) yellow.push(t);
+      else red.push(t);
+    }
+
+    return { red, yellow };
+  }
+  
 }

@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { FlightArchiveService } from '../../services/flight-archive.service';
+import * as Highcharts from 'highcharts';
 import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-fields.interface';
-import { HistoricalSimilarityPoint } from '../../common/interfaces/historical-similarity-point.interface';
 import { HistoricalSidebarItem } from '../../common/interfaces/historical-sidebar-item.interface';
 import { AnalyzeChartsService } from './analyze-charts.service';
 
@@ -13,7 +11,6 @@ export class HistoricalSimilarityService {
   private historicalKeySet: Set<string> = new Set<string>();
 
   public constructor(
-    private readonly archiveService: FlightArchiveService,
     private readonly chartsService: AnalyzeChartsService,
   ) {}
 
@@ -23,60 +20,53 @@ export class HistoricalSimilarityService {
   }
 
   public loadAndShowHistoricalSimilarity(
-    masterIndex: number,
-    paramName: string,
+    parameterName: string,
     flightData: TelemetrySensorFields[],
-    chart: import('highcharts').Chart,
-    subscriptions: Subscription,
+    flightMeta: any,
+    chart: Highcharts.Chart,
   ): void {
-    const historicalSubscription: Subscription = this.archiveService
-      .getFlightHistoricalSimilarity(masterIndex, paramName)
-      .subscribe({
-        next: (historicalSimilarityPoints: HistoricalSimilarityPoint[]) => {
-          const similarityChartPoints: import('highcharts').PointOptionsObject[] =
-            this.chartsService.mapHistoricalSimilarityToPoints(
-              flightData,
-              paramName,
-              historicalSimilarityPoints,
-            );
 
-          this.chartsService.addOrReplaceHistoricalSimilaritySeries(
-            chart,
-            paramName,
-            similarityChartPoints,
-          );
+    const historicalSimilarityPoints =
+      flightMeta?.historicalSimilarity?.[parameterName] ?? [];
 
-          this.appendSidebarItems(paramName, historicalSimilarityPoints);
-        },
-        error: (error: any) =>
-          console.error('Failed to load historical similarity for', paramName, error),
-      });
+    const similarityChartPoints =
+      this.chartsService.mapHistoricalSimilarityToPoints(
+        flightData,
+        parameterName,
+        historicalSimilarityPoints,
+      );
 
-    subscriptions.add(historicalSubscription);
+    this.chartsService.addOrReplaceHistoricalSimilaritySeries(
+      chart,
+      parameterName,
+      similarityChartPoints,
+    );
+
+    this.appendSidebarItems(parameterName, historicalSimilarityPoints);
   }
 
   private appendSidebarItems(
-    paramName: string,
-    historicalSimilarityPoints: HistoricalSimilarityPoint[],
+    parameterName: string,
+    historicalSimilarityPoints: any[],
   ): void {
-    const newSidebarItems: HistoricalSidebarItem[] = historicalSimilarityPoints.map(
-      (similarityPoint: HistoricalSimilarityPoint) => {
-        const startIndex: number = Number(similarityPoint.startIndex);
-        const endIndex: number = Number(similarityPoint.endIndex);
-        const midpointTime: number = Math.round((startIndex + endIndex) / 2);
+
+    const newSidebarItems: HistoricalSidebarItem[] =
+      historicalSimilarityPoints.map((similarityPoint: any) => {
+
+        const midpointTime: number = Number(similarityPoint.anomalyTime);
 
         return {
-          param: paramName,
+          param: parameterName,
           comparedFlightIndex: similarityPoint.comparedFlightIndex,
           label: similarityPoint.label,
           score: Number(similarityPoint.finalScore),
           time: midpointTime,
         };
-      },
-    );
+      });
 
     for (const sidebarItem of newSidebarItems) {
-      const uniqueKey: string = `${sidebarItem.param}_${sidebarItem.comparedFlightIndex}_${sidebarItem.time}_${sidebarItem.label}`;
+      const uniqueKey: string =
+        `${sidebarItem.param}_${sidebarItem.comparedFlightIndex}_${sidebarItem.time}_${sidebarItem.label}`;
 
       if (!this.historicalKeySet.has(uniqueKey)) {
         this.historicalKeySet.add(uniqueKey);
