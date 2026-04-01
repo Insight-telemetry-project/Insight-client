@@ -407,36 +407,29 @@ export class AnalyzeChartsService {
     const mappedPoints: Highcharts.PointOptionsObject[] = [];
 
     for (const similarityItem of similarityItems) {
-      const startEpoch: number = Number(similarityItem.startEpoch);
-      const endEpoch: number = Number(similarityItem.endEpoch);
-      const midpointEpoch: number = Math.round((startEpoch + endEpoch) / 2);
+      const anomalyTime: number = Number(similarityItem.anomalyTime);
 
-let closestTime = midpointEpoch;
-let minDiff = Number.MAX_VALUE;
+      let closestTime = anomalyTime;
+      let minDiff = Number.MAX_VALUE;
 
-for (const t of timestepToValueMap.keys()) {
-  const diff = Math.abs(t - midpointEpoch);
-  if (diff < minDiff) {
-    minDiff = diff;
-    closestTime = t;
-  }
-}
+      for (const t of timestepToValueMap.keys()) {
+        const diff = Math.abs(t - anomalyTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestTime = t;
+        }
+      }
 
-const yValue = timestepToValueMap.get(closestTime);
+      const yValue = timestepToValueMap.get(closestTime);
 
-
+      const historicalId =
+        similarityItem.comparedFlightIndex + '_' + anomalyTime;
 
       mappedPoints.push({
         x: closestTime * 1000,
         y: yValue,
         custom: {
-          info: `Matched flight ${similarityItem.comparedFlightIndex}, label ${similarityItem.label}, score ${Number(similarityItem.finalScore).toFixed(2)}`,
-          historicalId:
-            similarityItem.comparedFlightIndex +
-            '_' +
-            similarityItem.startEpoch +
-            '_' +
-            similarityItem.endEpoch,
+          historicalId: historicalId,
         },
       });
     }
@@ -562,5 +555,4 @@ const yValue = timestepToValueMap.get(closestTime);
 
     return { red, yellow };
   }
-  
 }
