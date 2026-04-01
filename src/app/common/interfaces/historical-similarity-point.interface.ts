@@ -1,8 +1,9 @@
 export interface HistoricalSimilarityPoint {
   recordId: string;
   comparedFlightIndex: number;
-  startIndex: number;
-  endIndex: number;
+  startEpoch: number;
+  endEpoch: number;
   label: string;
   finalScore: number;
+  anomalyTime: number;
 }

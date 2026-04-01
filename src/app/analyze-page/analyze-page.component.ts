@@ -47,7 +47,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public parameters: string[] = [];
   public selected: Set<string> = new Set<string>();
   public paramSearchText: string = '';
-
+  public flightMeta: any;
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public hoveredHistoricalId: string | null = null;
@@ -245,11 +245,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
             if (gridItem && gridItem.chart) {
               this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-                this.masterIndex,
                 lastParam,
                 this.flightData,
+                this.flightMeta,
                 gridItem.chart,
-                this.subscriptions,
               );
             }
 
@@ -280,19 +279,16 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.sidebarMode === 'historical') {
-      const gridItem = this.gridItems.find(grid => grid.param === paramName);
+      const gridItem = this.gridItems.find((grid) => grid.param === paramName);
 
-if (gridItem && gridItem.chart) {
-
-  this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-    this.masterIndex,
-    paramName,
-    this.flightData,
-    gridItem.chart,
-    this.subscriptions
-  );
-
-}
+      if (gridItem && gridItem.chart) {
+        this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+          paramName,
+          this.flightData,
+          this.flightMeta,
+          gridItem.chart,
+        );
+      }
 
       setTimeout(() => {
         this.drawHistoricalMiniCharts();
@@ -462,23 +458,28 @@ if (gridItem && gridItem.chart) {
     setTimeout(() => (chartInstance as any)?.reflow(), 0);
 
     this.anomaliesService.loadAndShowAnomalies(
-      this.masterIndex,
       gridChartItem.param,
       this.flightData,
+      this.flightMeta,
       chartInstance,
-      this.subscriptions,
     );
 
     this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-      this.masterIndex,
       gridChartItem.param,
       this.flightData,
+      this.flightMeta,
       chartInstance,
-      this.subscriptions,
     );
   }
 
   private loadFlight(): void {
+    const metaSub = this.archiveService
+      .getFlight(this.masterIndex)
+      .subscribe((flightMeta) => {
+        this.flightMeta = flightMeta;
+      });
+
+    this.subscriptions.add(metaSub);
     const flightSubscription: Subscription = this.archiveService
       .getFlightFields(this.masterIndex)
       .subscribe({
@@ -620,4 +621,5 @@ if (gridItem && gridItem.chart) {
       });
     }
   }
+  
 }
