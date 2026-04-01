@@ -621,5 +621,4 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
-  
 }
