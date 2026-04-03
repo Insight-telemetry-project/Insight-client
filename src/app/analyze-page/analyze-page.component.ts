@@ -548,69 +548,43 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.historicalMiniChartElements.forEach(
       (elementRef: ElementRef<HTMLDivElement>) => {
-        const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
         const paramName = elementRef.nativeElement.dataset['param'];
         const timeAttr = elementRef.nativeElement.dataset['time'];
+        const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
         const startEpochAttr = elementRef.nativeElement.dataset['start'];
         const endEpochAttr = elementRef.nativeElement.dataset['end'];
 
-        if (!flightIndexAttr || !paramName) return;
+        if (!paramName || !flightIndexAttr) return;
 
-        const flightIndex = Number(flightIndexAttr);
         const startEpoch = startEpochAttr ? Number(startEpochAttr) : null;
         const endEpoch = endEpochAttr ? Number(endEpochAttr) : null;
-        const chartId = flightIndex + '_' + paramName + '_' + timeAttr;
+        const chartId = flightIndexAttr + '_' + paramName + '_' + timeAttr;
 
-        const drawChart = (allRows: TelemetrySensorFields[]) => {
-          let rowsToDisplay = allRows;
+        let rowsToDisplay = this.flightData;
 
-          if (startEpoch !== null && endEpoch !== null) {
-            const windowSize = endEpoch - startEpoch;
-            const padding = windowSize * 0.15;
-            rowsToDisplay = allRows.filter(
-              (row) =>
-                row.timestep >= startEpoch - padding &&
-                row.timestep <= endEpoch + padding,
-            );
-          }
-
-          const dataPoints = this.chartsService.buildSeries(
-            rowsToDisplay,
-            paramName,
+        if (startEpoch !== null && endEpoch !== null) {
+          const padding = (endEpoch - startEpoch) * 0.15;
+          rowsToDisplay = this.flightData.filter(
+            (row) =>
+              row.timestep >= startEpoch - padding &&
+              row.timestep <= endEpoch + padding,
           );
-
-          const chart = this.chartsService.createMiniChart(
-            elementRef.nativeElement,
-            paramName,
-            dataPoints,
-          );
-
-          this.historicalMiniCharts.set(chartId, chart);
-        };
-
-        const cachedFlight = this.flightCache.get(flightIndex);
-        if (cachedFlight) {
-          drawChart(cachedFlight);
-          return;
         }
 
-        const subscription = this.archiveService
-          .getFlightFields(flightIndex)
-          .subscribe((rows: TelemetrySensorFields[]) => {
-            const sortedRows = (rows ?? [])
-              .slice()
-              .sort(
-                (firstRow, secondRow) => firstRow.timestep - secondRow.timestep,
-              );
-
-            this.flightCache.set(flightIndex, sortedRows);
-            drawChart(sortedRows);
-          });
-
-        this.subscriptions.add(subscription);
+        const dataPoints = this.chartsService.buildSeries(
+          rowsToDisplay,
+          paramName,
+        );
+        const chart = this.chartsService.createMiniChart(
+          elementRef.nativeElement,
+          paramName,
+          dataPoints,
+        );
+        this.historicalMiniCharts.set(chartId, chart);
       },
     );
   }
+
   public setSidebarMode(mode: 'related' | 'historical'): void {
     this.sidebarMode = mode;
 

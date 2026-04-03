@@ -30,44 +30,7 @@ export class AnomaliesService {
     anomalyTime: Number(point.anomalyTime),
   }));
 
-  console.log("------------- DEBUG HISTORICAL MATCHING -------------");
-  console.log("Total anomalies:", anomalyTimes.length);
-  console.log("Total historical records:", historicalSimilarityPoints.length);
-
-  // כמה anomalies באמת מופיעות בהיסטורי
-  const anomaliesThatAreHistorical = new Set<number>();
-
-  for (const historicalPoint of historicalSimilarityPoints) {
-    anomaliesThatAreHistorical.add(Number(historicalPoint.anomalyTime));
-  }
-
-  console.log("Unique anomalies that are historical:", anomaliesThatAreHistorical.size);
-
-  console.log("AnomalyTimes:", anomalyTimes);
-  console.log("Historical anomalyTimes:",
-    historicalSimilarityPoints.map((p: any) => Number(p.anomalyTime))
-  );
-
-  // בדיקת התאמה לפי חלונות
-  for (const anomalyTime of anomalyTimes) {
-    let matched = false;
-
-    for (const window of historicalWindows) {
-      if (anomalyTime >= window.start && anomalyTime <= window.end) {
-        matched = true;
-        console.log("MATCH:", anomalyTime, "inside", window.start, "-", window.end);
-        break;
-      }
-    }
-
-    if (!matched) {
-      console.log("NO MATCH:", anomalyTime);
-    }
-  }
-
-  console.log("------------------------------------------------------");
-
-  // מיפוי כל האנומליות לנקודות XY
+  
   const allAnomalyPoints =
     this.chartsService.mapAnomalyEpochSecondsToXY(
       flightData,
@@ -98,9 +61,7 @@ export class AnomaliesService {
     }
   }
 
-  console.log("RED POINTS:", redPoints.length);
-  console.log("YELLOW POINTS:", yellowPoints.length);
-
+  
   this.chartsService.addOrReplaceAnomaliesSeries(
     chart,
     parameterName,
