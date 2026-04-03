@@ -4,72 +4,73 @@ import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-
 
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
-  public createMainChart(container: HTMLElement): Highcharts.Chart {
-    return Highcharts.chart(container, {
-      chart: {
-        backgroundColor: 'transparent',
-        zooming: { type: 'x' },
-        panning: {
-          enabled: true,
-          type: 'x',
-        },
-        resetZoomButton: {
-          theme: {
-            display: 'none',
-          },
-        },
-        events: {
-          load: function () {
-            const chart = this;
-            chart.container.ondblclick = function () {
-              chart.xAxis[0].setExtremes(undefined, undefined);
-            };
-          },
-        },
-      },
-      title: { text: '' },
-      credits: { enabled: false },
-      legend: {
-        enabled: true,
-        itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
-        itemHoverStyle: { color: '#948f8f' },
-      },
-      xAxis: {
-        type: 'datetime',
-        title: { text: 'Time', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } },
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-      },
-      yAxis: {
-        title: { text: '', style: { color: '#ffffff' } },
-        labels: { style: { color: '#cfcfe6' } },
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-      },
-      tooltip: {
-        shared: false,
-        snap: 80,
-        useHTML: true,
-      },
-      plotOptions: {
-        series: {
-          states: {
-            inactive: {
-              opacity: 1,
-            },
-          },
-        },
-        areaspline: {
-          marker: { enabled: false },
-        },
-        scatter: {
-          stickyTracking: true,
-        },
-      },
-      series: [],
-    });
-  }
+  // public createMainChart(container: HTMLElement): Highcharts.Chart {
+  //   return Highcharts.chart(container, {
+  //     chart: {
+  //       backgroundColor: 'transparent',
+  //       zooming: { type: 'x' },
+  //       panning: {
+  //         enabled: true,
+  //         type: 'x',
+  //       },
+        
+  //       resetZoomButton: {
+  //         theme: {
+  //           display: 'none',
+  //         },
+  //       },
+  //       events: {
+  //         load: function () {
+  //           const chart = this;
+  //           chart.container.ondblclick = function () {
+  //             chart.xAxis[0].setExtremes(undefined, undefined);
+  //           };
+  //         },
+  //       },
+  //     },
+  //     title: { text: '' },
+  //     credits: { enabled: false },
+  //     legend: {
+  //       enabled: true,
+  //       itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
+  //       itemHoverStyle: { color: '#948f8f' },
+  //     },
+  //     xAxis: {
+  //       type: 'datetime',
+  //       title: { text: 'Time', style: { color: '#ffffff' } },
+  //       labels: { style: { color: '#cfcfe6' } },
+  //       gridLineColor: 'rgba(255,255,255,0.08)',
+  //       gridLineWidth: 1,
+  //     },
+  //     yAxis: {
+  //       title: { text: '', style: { color: '#ffffff' } },
+  //       labels: { style: { color: '#cfcfe6' } },
+  //       gridLineColor: 'rgba(255,255,255,0.08)',
+  //       gridLineWidth: 1,
+  //     },
+  //     tooltip: {
+  //       shared: false,
+  //       snap: 80,
+  //       useHTML: true,
+  //     },
+  //     plotOptions: {
+  //       series: {
+  //         states: {
+  //           inactive: {
+  //             opacity: 1,
+  //           },
+  //         },
+  //       },
+  //       areaspline: {
+  //         marker: { enabled: false },
+  //       },
+  //       scatter: {
+  //         stickyTracking: true,
+  //       },
+  //     },
+  //     series: [],
+  //   });
+  // }
 
   public updateMainChartSeries(
     chart: Highcharts.Chart,
@@ -462,6 +463,8 @@ export class AnalyzeChartsService {
           enabled: true,
           type: 'x',
         },
+          panKey: 'ctrl',
+
         events: {
           load: function () {
             const chart = this;

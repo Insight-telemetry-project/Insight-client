@@ -4,4 +4,6 @@ export interface HistoricalSidebarItem {
   label: string;
   score: number;
   time: number;
+startEpoch: number;
+  endEpoch: number;
 }
