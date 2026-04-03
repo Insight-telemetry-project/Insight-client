@@ -25,6 +25,10 @@ export class HistoricalSimilarityService {
   ): void {
     const historicalSimilarityPoints =
       flightMeta?.historicalSimilarity?.[parameterName] ?? [];
+    console.log(
+      '[HistoricalSimilarity] raw points:',
+      JSON.stringify(historicalSimilarityPoints.slice(0, 2)),
+    );
 
     const similarityChartPoints =
       this.chartsService.mapHistoricalSimilarityToPoints(

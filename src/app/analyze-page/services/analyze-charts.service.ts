@@ -13,7 +13,7 @@ export class AnalyzeChartsService {
   //         enabled: true,
   //         type: 'x',
   //       },
-        
+
   //       resetZoomButton: {
   //         theme: {
   //           display: 'none',
@@ -463,7 +463,7 @@ export class AnalyzeChartsService {
           enabled: true,
           type: 'x',
         },
-          panKey: 'ctrl',
+        panKey: 'ctrl',
 
         events: {
           load: function () {
@@ -539,10 +539,6 @@ export class AnalyzeChartsService {
     const yellow: number[] = [];
 
     for (const t of anomalyTimes) {
-      console.log('checking anomaly:', t);
-      for (const window of historicalWindows) {
-        console.log('against window:', window.start, window.end);
-      }
       let isHistorical = false;
 
       for (const window of historicalWindows) {
