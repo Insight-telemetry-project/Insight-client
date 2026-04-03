@@ -10,9 +10,7 @@ export class HistoricalSimilarityService {
 
   private historicalKeySet: Set<string> = new Set<string>();
 
-  public constructor(
-    private readonly chartsService: AnalyzeChartsService,
-  ) {}
+  public constructor(private readonly chartsService: AnalyzeChartsService) {}
 
   public reset(): void {
     this.sidebarItems = [];
@@ -25,7 +23,6 @@ export class HistoricalSimilarityService {
     flightMeta: any,
     chart: Highcharts.Chart,
   ): void {
-
     const historicalSimilarityPoints =
       flightMeta?.historicalSimilarity?.[parameterName] ?? [];
 
@@ -49,10 +46,8 @@ export class HistoricalSimilarityService {
     parameterName: string,
     historicalSimilarityPoints: any[],
   ): void {
-
     const newSidebarItems: HistoricalSidebarItem[] =
       historicalSimilarityPoints.map((similarityPoint: any) => {
-
         const midpointTime: number = Number(similarityPoint.anomalyTime);
 
         return {
@@ -61,12 +56,13 @@ export class HistoricalSimilarityService {
           label: similarityPoint.label,
           score: Number(similarityPoint.finalScore),
           time: midpointTime,
+          startEpoch: Number(similarityPoint.startEpoch),
+          endEpoch: Number(similarityPoint.endEpoch),
         };
       });
 
     for (const sidebarItem of newSidebarItems) {
-      const uniqueKey: string =
-        `${sidebarItem.param}_${sidebarItem.comparedFlightIndex}_${sidebarItem.time}_${sidebarItem.label}`;
+      const uniqueKey: string = `${sidebarItem.param}_${sidebarItem.comparedFlightIndex}_${sidebarItem.time}_${sidebarItem.label}`;
 
       if (!this.historicalKeySet.has(uniqueKey)) {
         this.historicalKeySet.add(uniqueKey);

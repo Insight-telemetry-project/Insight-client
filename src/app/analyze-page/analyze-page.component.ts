@@ -550,17 +550,32 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       (elementRef: ElementRef<HTMLDivElement>) => {
         const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
         const paramName = elementRef.nativeElement.dataset['param'];
+        const timeAttr = elementRef.nativeElement.dataset['time'];
+        const startEpochAttr = elementRef.nativeElement.dataset['start'];
+        const endEpochAttr = elementRef.nativeElement.dataset['end'];
 
         if (!flightIndexAttr || !paramName) return;
 
         const flightIndex = Number(flightIndexAttr);
-        const chartId = flightIndex + '_' + paramName;
+        const startEpoch = startEpochAttr ? Number(startEpochAttr) : null;
+        const endEpoch = endEpochAttr ? Number(endEpochAttr) : null;
+        const chartId = flightIndex + '_' + paramName + '_' + timeAttr;
 
-        const cachedFlight = this.flightCache.get(flightIndex);
+        const drawChart = (allRows: TelemetrySensorFields[]) => {
+          let rowsToDisplay = allRows;
 
-        if (cachedFlight) {
+          if (startEpoch !== null && endEpoch !== null) {
+            const windowSize = endEpoch - startEpoch;
+            const padding = windowSize * 0.15;
+            rowsToDisplay = allRows.filter(
+              (row) =>
+                row.timestep >= startEpoch - padding &&
+                row.timestep <= endEpoch + padding,
+            );
+          }
+
           const dataPoints = this.chartsService.buildSeries(
-            cachedFlight,
+            rowsToDisplay,
             paramName,
           );
 
@@ -571,34 +586,28 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           );
 
           this.historicalMiniCharts.set(chartId, chart);
+        };
 
+        const cachedFlight = this.flightCache.get(flightIndex);
+        if (cachedFlight) {
+          drawChart(cachedFlight);
           return;
         }
 
-        const sub = this.archiveService
+        const subscription = this.archiveService
           .getFlightFields(flightIndex)
           .subscribe((rows: TelemetrySensorFields[]) => {
             const sortedRows = (rows ?? [])
               .slice()
-              .sort((a, b) => a.timestep - b.timestep);
+              .sort(
+                (firstRow, secondRow) => firstRow.timestep - secondRow.timestep,
+              );
 
             this.flightCache.set(flightIndex, sortedRows);
-
-            const dataPoints = this.chartsService.buildSeries(
-              sortedRows,
-              paramName,
-            );
-
-            const chart = this.chartsService.createMiniChart(
-              elementRef.nativeElement,
-              paramName,
-              dataPoints,
-            );
-
-            this.historicalMiniCharts.set(chartId, chart);
+            drawChart(sortedRows);
           });
 
-        this.subscriptions.add(sub);
+        this.subscriptions.add(subscription);
       },
     );
   }
