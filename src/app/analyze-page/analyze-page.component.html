@@ -25,18 +25,22 @@
                   type="button"
                   [class.hidden]="!item.showAnomalies"
                   (click)="toggleAnomalies(item)"
-                  title="Toggle anomalies"
                 >
-                  ● Anomalies
+                  ● Anomalies ({{
+                    getSpecialPointsCountForParameter(item.param).anomalyCount
+                  }})
                 </button>
+
                 <button
                   class="gridChartToggleBtn historyBtn"
                   type="button"
                   [class.hidden]="!item.showHistory"
                   (click)="toggleHistory(item)"
-                  title="Toggle historical points"
                 >
-                  ● Historical
+                  ● Historical ({{
+                    getSpecialPointsCountForParameter(item.param)
+                      .historicalCount
+                  }})
                 </button>
                 <button
                   class="gridChartClose"
