@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as Highcharts from 'highcharts';
 import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-fields.interface';
-
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
   // public createMainChart(container: HTMLElement): Highcharts.Chart {
@@ -393,50 +392,66 @@ export class AnalyzeChartsService {
   }
 
   public mapHistoricalSimilarityToPoints(
-    flightData: TelemetrySensorFields[],
-    paramName: string,
-    similarityItems: any[],
-  ): Highcharts.PointOptionsObject[] {
-    const timestepToValueMap: Map<number, number> = new Map<number, number>();
+  flightData: TelemetrySensorFields[],
+  paramName: string,
+  similarityItems: any[],
+): Highcharts.PointOptionsObject[] {
 
-    for (const row of flightData) {
-      const value: number | undefined = row.fields[paramName];
-      if (value === undefined || value === null) continue;
-      timestepToValueMap.set(row.timestep, value);
-    }
+  const times: number[] = [];
+  const values: number[] = [];
 
-    const mappedPoints: Highcharts.PointOptionsObject[] = [];
+  for (const row of flightData) {
+    const value = row.fields[paramName];
+    if (value === undefined || value === null) continue;
 
-    for (const similarityItem of similarityItems) {
-      const anomalyTime: number = Number(similarityItem.anomalyTime);
-
-      let closestTime = anomalyTime;
-      let minDiff = Number.MAX_VALUE;
-
-      for (const t of timestepToValueMap.keys()) {
-        const diff = Math.abs(t - anomalyTime);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestTime = t;
-        }
-      }
-
-      const yValue = timestepToValueMap.get(closestTime);
-
-      const historicalId =
-        similarityItem.comparedFlightIndex + '_' + anomalyTime;
-
-      mappedPoints.push({
-        x: closestTime * 1000,
-        y: yValue,
-        custom: {
-          historicalId: historicalId,
-        },
-      });
-    }
-
-    return mappedPoints;
+    times.push(row.timestep);
+    values.push(value);
   }
+
+  const findClosestIndex = (target: number): number => {
+    let left = 0;
+    let right = times.length - 1;
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+
+      if (times[mid] === target) return mid;
+
+      if (times[mid] < target) left = mid + 1;
+      else right = mid - 1;
+    }
+
+    if (left >= times.length) return times.length - 1;
+    if (right < 0) return 0;
+
+    return Math.abs(times[left] - target) < Math.abs(times[right] - target)
+      ? left
+      : right;
+  };
+
+  const mappedPoints: Highcharts.PointOptionsObject[] = [];
+
+  for (const similarityItem of similarityItems) {
+    const anomalyTime = Number(similarityItem.anomalyTime);
+
+    const index = findClosestIndex(anomalyTime);
+    const closestTime = times[index];
+    const yValue = values[index];
+
+    const historicalId =
+      similarityItem.comparedFlightIndex + '_' + anomalyTime;
+
+    mappedPoints.push({
+      x: closestTime * 1000,
+      y: yValue,
+      custom: {
+        historicalId: historicalId,
+      },
+    });
+  }
+
+  return mappedPoints;
+}
 
   public createGridChart(
     container: HTMLElement,
@@ -456,6 +471,10 @@ export class AnalyzeChartsService {
       .get('rgba') as string;
 
     return Highcharts.chart(container, {
+      boost: {
+        useGPUTranslations: true,
+        usePreallocated: true,
+      },
       chart: {
         backgroundColor: 'transparent',
         zooming: { type: 'x' },
@@ -514,6 +533,8 @@ export class AnalyzeChartsService {
           type: 'areaspline',
           name: paramName,
           data: dataPoints,
+          boostThreshold: 1,
+          turboThreshold: 0,
           color: baseColor,
           lineWidth: 1.5,
           marker: { enabled: false },
