@@ -1,75 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import * as Highcharts from 'highcharts';
 import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-fields.interface';
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
-  // public createMainChart(container: HTMLElement): Highcharts.Chart {
-  //   return Highcharts.chart(container, {
-  //     chart: {
-  //       backgroundColor: 'transparent',
-  //       zooming: { type: 'x' },
-  //       panning: {
-  //         enabled: true,
-  //         type: 'x',
-  //       },
-
-  //       resetZoomButton: {
-  //         theme: {
-  //           display: 'none',
-  //         },
-  //       },
-  //       events: {
-  //         load: function () {
-  //           const chart = this;
-  //           chart.container.ondblclick = function () {
-  //             chart.xAxis[0].setExtremes(undefined, undefined);
-  //           };
-  //         },
-  //       },
-  //     },
-  //     title: { text: '' },
-  //     credits: { enabled: false },
-  //     legend: {
-  //       enabled: true,
-  //       itemStyle: { color: '#ffffff', fontSize: '12px', fontWeight: '400' },
-  //       itemHoverStyle: { color: '#948f8f' },
-  //     },
-  //     xAxis: {
-  //       type: 'datetime',
-  //       title: { text: 'Time', style: { color: '#ffffff' } },
-  //       labels: { style: { color: '#cfcfe6' } },
-  //       gridLineColor: 'rgba(255,255,255,0.08)',
-  //       gridLineWidth: 1,
-  //     },
-  //     yAxis: {
-  //       title: { text: '', style: { color: '#ffffff' } },
-  //       labels: { style: { color: '#cfcfe6' } },
-  //       gridLineColor: 'rgba(255,255,255,0.08)',
-  //       gridLineWidth: 1,
-  //     },
-  //     tooltip: {
-  //       shared: false,
-  //       snap: 80,
-  //       useHTML: true,
-  //     },
-  //     plotOptions: {
-  //       series: {
-  //         states: {
-  //           inactive: {
-  //             opacity: 1,
-  //           },
-  //         },
-  //       },
-  //       areaspline: {
-  //         marker: { enabled: false },
-  //       },
-  //       scatter: {
-  //         stickyTracking: true,
-  //       },
-  //     },
-  //     series: [],
-  //   });
-  // }
+  constructor(private ngZone: NgZone) {
+    (window as any).ngZoneRef = this.ngZone;
+  }
 
   public updateMainChartSeries(
     chart: Highcharts.Chart,
@@ -336,23 +272,37 @@ export class AnalyzeChartsService {
         point: {
           events: {
             mouseOver: function () {
+              if (!this || this.y === undefined) return;
+
               const historicalId: string | undefined = (this.options as any)
                 ?.custom?.historicalId;
 
-              if (historicalId) {
-                window.dispatchEvent(
-                  new CustomEvent('historical-point-hover', {
-                    detail: historicalId,
-                  }),
-                );
+              if (!historicalId) return;
+
+              const zone = (window as any).ngZoneRef;
+
+              if (zone) {
+                zone.run(() => {
+                  window.dispatchEvent(
+                    new CustomEvent('historical-point-hover', {
+                      detail: historicalId,
+                    }),
+                  );
+                });
               }
             },
             mouseOut: function () {
-              window.dispatchEvent(
-                new CustomEvent('historical-point-hover', {
-                  detail: null,
-                }),
-              );
+              const zone = (window as any).ngZoneRef;
+
+              if (zone) {
+                zone.run(() => {
+                  window.dispatchEvent(
+                    new CustomEvent('historical-point-hover', {
+                      detail: null,
+                    }),
+                  );
+                });
+              }
             },
           },
         },
@@ -392,76 +342,81 @@ export class AnalyzeChartsService {
   }
 
   public mapHistoricalSimilarityToPoints(
-  flightData: TelemetrySensorFields[],
-  paramName: string,
-  similarityItems: any[],
-): Highcharts.PointOptionsObject[] {
+    flightData: TelemetrySensorFields[],
+    paramName: string,
+    similarityItems: any[],
+  ): Highcharts.PointOptionsObject[] {
+    const times: number[] = [];
+    const values: number[] = [];
 
-  const times: number[] = [];
-  const values: number[] = [];
+    for (const row of flightData) {
+      const value = row.fields[paramName];
+      if (value === undefined || value === null) continue;
 
-  for (const row of flightData) {
-    const value = row.fields[paramName];
-    if (value === undefined || value === null) continue;
-
-    times.push(row.timestep);
-    values.push(value);
-  }
-
-  const findClosestIndex = (target: number): number => {
-    let left = 0;
-    let right = times.length - 1;
-
-    while (left <= right) {
-      const mid = Math.floor((left + right) / 2);
-
-      if (times[mid] === target) return mid;
-
-      if (times[mid] < target) left = mid + 1;
-      else right = mid - 1;
+      times.push(row.timestep);
+      values.push(value);
     }
 
-    if (left >= times.length) return times.length - 1;
-    if (right < 0) return 0;
+    const findClosestIndex = (target: number): number => {
+      let left = 0;
+      let right = times.length - 1;
 
-    return Math.abs(times[left] - target) < Math.abs(times[right] - target)
-      ? left
-      : right;
-  };
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
 
-  const mappedPoints: Highcharts.PointOptionsObject[] = [];
+        if (times[mid] === target) return mid;
 
-  for (const similarityItem of similarityItems) {
-    const anomalyTime = Number(similarityItem.anomalyTime);
+        if (times[mid] < target) left = mid + 1;
+        else right = mid - 1;
+      }
 
-    const index = findClosestIndex(anomalyTime);
-    const closestTime = times[index];
-    const yValue = values[index];
+      if (left >= times.length) return times.length - 1;
+      if (right < 0) return 0;
 
-    const historicalId =
-      similarityItem.comparedFlightIndex + '_' + anomalyTime;
+      return Math.abs(times[left] - target) < Math.abs(times[right] - target)
+        ? left
+        : right;
+    };
 
-    mappedPoints.push({
-      x: closestTime * 1000,
-      y: yValue,
-      custom: {
-        historicalId: historicalId,
-      },
-    });
+    const mappedPoints: Highcharts.PointOptionsObject[] = [];
+
+    for (const similarityItem of similarityItems) {
+      const anomalyTime = Number(similarityItem.anomalyTime);
+
+      const index = findClosestIndex(anomalyTime);
+      const closestTime = times[index];
+      const yValue = values[index];
+
+      const historicalId =
+        similarityItem.comparedFlightIndex + '_' + anomalyTime;
+
+      mappedPoints.push({
+        x: closestTime * 1000,
+        y: yValue,
+        custom: {
+          historicalId: historicalId,
+        },
+      });
+    }
+
+    return mappedPoints;
   }
-
-  return mappedPoints;
-}
 
   public createGridChart(
     container: HTMLElement,
     paramName: string,
     flightData: TelemetrySensorFields[],
   ): Highcharts.Chart {
-    const dataPoints: [number, number][] = this.buildSeries(
+    const fullData: [number, number][] = this.buildSeries(
       flightData,
       paramName,
     );
+
+    const downsampledData: [number, number][] = this.downsampleData(
+      fullData,
+      2000,
+    );
+
     const baseColor: string = '#8b5cf6';
     const gradientTopColor: string = Highcharts.color(baseColor)
       .setOpacity(0.25)
@@ -470,86 +425,106 @@ export class AnalyzeChartsService {
       .setOpacity(0.02)
       .get('rgba') as string;
 
-    return Highcharts.chart(container, {
-      boost: {
-        useGPUTranslations: true,
-        usePreallocated: true,
-      },
-      chart: {
-        backgroundColor: 'transparent',
-        zooming: { type: 'x' },
-        panning: {
-          enabled: true,
-          type: 'x',
+    return this.ngZone.runOutsideAngular(() => {
+      return Highcharts.chart(container, {
+        boost: {
+          useGPUTranslations: true,
+          usePreallocated: true,
         },
-        panKey: 'ctrl',
-
-        events: {
-          load: function () {
-            const chart = this;
-            chart.container.ondblclick = function () {
-              chart.xAxis[0].setExtremes(undefined, undefined);
-            };
+        chart: {
+          backgroundColor: 'transparent',
+          zooming: { type: 'x' },
+          panning: {
+            enabled: true,
+            type: 'x',
           },
-        },
-      },
-      title: { text: '' },
-      credits: { enabled: false },
-      legend: { enabled: false },
-      xAxis: {
-        type: 'datetime',
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-        labels: { style: { color: '#cfcfe6' } },
-      },
-      yAxis: {
-        title: { text: '' },
-        gridLineColor: 'rgba(255,255,255,0.08)',
-        gridLineWidth: 1,
-        labels: { style: { color: '#cfcfe6' } },
-      },
-      tooltip: {
-        shared: false,
-        snap: 80,
-        useHTML: true,
-      },
-      plotOptions: {
-        series: {
-          states: {
-            inactive: {
-              opacity: 1,
+          panKey: 'ctrl',
+
+          events: {
+            load: function () {
+              const chart = this;
+              chart.container.ondblclick = function () {
+                chart.xAxis[0].setExtremes(undefined, undefined);
+              };
             },
           },
         },
-        areaspline: {
-          marker: { enabled: false },
-        },
-        scatter: {
-          stickyTracking: true,
-        },
-      },
-      series: [
-        {
-          type: 'areaspline',
-          name: paramName,
-          data: dataPoints,
-          boostThreshold: 1,
-          turboThreshold: 0,
-          color: baseColor,
-          lineWidth: 1.5,
-          marker: { enabled: false },
-          threshold: null,
-          softThreshold: false,
-          fillColor: {
-            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-            stops: [
-              [0, gradientTopColor],
-              [1, gradientBottomColor],
-            ],
+        title: { text: '' },
+        credits: { enabled: false },
+        legend: { enabled: false },
+        xAxis: {
+          type: 'datetime',
+          gridLineColor: 'rgba(255,255,255,0.08)',
+          gridLineWidth: 1,
+          labels: { style: { color: '#cfcfe6' } },
+
+          events: {
+            setExtremes: function (event: any) {
+              const chartInstance = this.chart;
+              const mainSeries = chartInstance.series[0];
+
+              const isZoomed =
+                event.min !== undefined && event.max !== undefined;
+
+              if (isZoomed) {
+                mainSeries.setData([...fullData], false);
+              } else {
+                mainSeries.setData([...downsampledData], false);
+              }
+
+              chartInstance.redraw();
+            },
           },
-          shadow: false,
-        } as Highcharts.SeriesOptionsType,
-      ],
+        },
+        yAxis: {
+          title: { text: '' },
+          gridLineColor: 'rgba(255,255,255,0.08)',
+          gridLineWidth: 1,
+          labels: { style: { color: '#cfcfe6' } },
+        },
+        tooltip: {
+          shared: false,
+          snap: 20,
+          useHTML: false,
+        },
+        plotOptions: {
+          series: {
+            states: {
+              inactive: {
+                opacity: 1,
+              },
+            },
+          },
+          areaspline: {
+            marker: { enabled: false },
+          },
+          scatter: {
+            stickyTracking: false,
+          },
+        },
+        series: [
+          {
+            type: 'areaspline',
+            name: paramName,
+            data: downsampledData,
+            boostThreshold: 1,
+            turboThreshold: 0,
+            color: baseColor,
+            lineWidth: 1.5,
+            marker: { enabled: false },
+            threshold: null,
+            softThreshold: false,
+            fillColor: {
+              linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+              stops: [
+                [0, gradientTopColor],
+                [1, gradientBottomColor],
+              ],
+            },
+            shadow: false,
+          } as Highcharts.SeriesOptionsType,
+        ],
+      });
     });
   }
   splitAnomaliesByHistorical(
@@ -574,5 +549,16 @@ export class AnalyzeChartsService {
     }
 
     return { red, yellow };
+  }
+
+  private downsampleData(
+    originalData: [number, number][],
+    maxPoints: number,
+  ): [number, number][] {
+    if (originalData.length <= maxPoints) return originalData;
+
+    const step = Math.ceil(originalData.length / maxPoints);
+
+    return originalData.filter((_, index) => index % step === 0);
   }
 }
