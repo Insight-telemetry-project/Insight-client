@@ -51,7 +51,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public hoveredHistoricalId: string | null = null;
-  private flightCache: Map<number, TelemetrySensorFields[]> = new Map();
 
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
@@ -507,6 +506,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           this.parameters = [];
         },
       });
+    this.loadSpecialPointsCountsForFlight();
 
     this.subscriptions.add(flightSubscription);
   }
@@ -603,5 +603,54 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.drawHistoricalMiniCharts();
       });
     }
+  }
+  private getUniqueHistoricalPointsCount(points: any[]): number {
+    if (!points) return 0;
+
+    const uniqueSet: Set<string> = new Set<string>();
+
+    for (const point of points) {
+      const key: string = point.comparedFlightIndex + '_' + point.time;
+
+      uniqueSet.add(key);
+    }
+
+    return uniqueSet.size;
+  }
+  public parameterSpecialPointsCountMap = new Map();
+  private loadSpecialPointsCountsForFlight(): void {
+    this.archiveService
+      .getAllSpecialPointsForFlight(this.masterIndex)
+      .subscribe((response) => {
+        if (!response) return;
+
+        const anomaliesRecord = response.anomalies;
+        const historicalRecord = response.historicalSimilarity;
+
+        Object.keys(anomaliesRecord).forEach((parameterName: string) => {
+          const anomalyCount: number =
+            anomaliesRecord[parameterName]?.length ?? 0;
+
+          const historicalCount: number = this.getUniqueHistoricalPointsCount(
+            historicalRecord[parameterName],
+          );
+
+          this.parameterSpecialPointsCountMap.set(parameterName, {
+            anomalyCount: anomalyCount,
+            historicalCount: historicalCount,
+          });
+        });
+      });
+  }
+  public getSpecialPointsCountForParameter(parameterName: string): {
+    anomalyCount: number;
+    historicalCount: number;
+  } {
+    return (
+      this.parameterSpecialPointsCountMap.get(parameterName) ?? {
+        anomalyCount: 0,
+        historicalCount: 0,
+      }
+    );
   }
 }
