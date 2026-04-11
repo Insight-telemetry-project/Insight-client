@@ -51,7 +51,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: 'related' | 'historical' = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public hoveredHistoricalId: string | null = null;
-
+  public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
     fixedRowHeight: 420,
@@ -125,10 +125,24 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public get filteredParameters(): string[] {
     const searchQuery: string = this.paramSearchText.trim().toLowerCase();
-    if (searchQuery.length === 0) return this.parameters;
-    return this.parameters.filter((parameterName: string) =>
-      parameterName.toLowerCase().includes(searchQuery),
-    );
+
+    let filtered: string[] =
+      searchQuery.length === 0
+        ? this.parameters
+        : this.parameters.filter((parameterName: string) =>
+            parameterName.toLowerCase().includes(searchQuery),
+          );
+
+    return filtered.sort((a: string, b: string) => {
+      const aCounts = this.getSpecialPointsCountForParameter(a);
+      const bCounts = this.getSpecialPointsCountForParameter(b);
+
+      if (this.paramSortBy === 'historical') {
+        return bCounts.historicalCount - aCounts.historicalCount;
+      }
+
+      return bCounts.anomalyCount - aCounts.anomalyCount;
+    });
   }
 
   public ngOnInit(): void {
@@ -354,8 +368,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onParamSearchChange(searchValue: string): void {
-    this.paramSearchText = searchValue;
-  }
+  this.paramSearchText = searchValue;
+
+  setTimeout(() => {
+    this.drawMiniCharts();
+  });
+}
 
   public clearParamSearch(): void {
     this.paramSearchText = '';
@@ -512,29 +530,34 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawMiniCharts(): void {
-    if (this.flightData.length === 0) return;
-    if (this.miniCharts.size > 0) return;
+  if (this.flightData.length === 0) return;
 
-    this.miniChartElements.forEach(
-      (miniChartElementRef: ElementRef<HTMLDivElement>) => {
-        const parameterName: string | undefined =
-          miniChartElementRef.nativeElement.dataset['param'];
-        if (!parameterName) return;
+  this.miniChartElements.forEach(
+    (miniChartElementRef: ElementRef<HTMLDivElement>) => {
+      const parameterName =
+        miniChartElementRef.nativeElement.dataset['param'];
 
-        const dataPoints: [number, number][] = this.chartsService.buildSeries(
-          this.flightData,
-          parameterName,
-        );
+      if (!parameterName) return;
 
-        const miniChartInstance = this.chartsService.createMiniChart(
-          miniChartElementRef.nativeElement,
-          parameterName,
-          dataPoints,
-        );
-        this.miniCharts.set(parameterName, miniChartInstance);
-      },
-    );
-  }
+      if (this.miniCharts.has(parameterName)) {
+        return;
+      }
+
+      const dataPoints = this.chartsService.buildSeries(
+        this.flightData,
+        parameterName
+      );
+
+      const miniChartInstance = this.chartsService.createMiniChart(
+        miniChartElementRef.nativeElement,
+        parameterName,
+        dataPoints
+      );
+
+      this.miniCharts.set(parameterName, miniChartInstance);
+    }
+  );
+}
 
   private autoSelectParam(paramName: string): void {
     if (!this.parameters.includes(paramName)) return;
@@ -575,12 +598,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           rowsToDisplay,
           paramName,
         );
-        const chart = this.chartsService.createMiniChart(
-          elementRef.nativeElement,
-          paramName,
-          dataPoints,
-        );
-        this.historicalMiniCharts.set(chartId, chart);
+        if (this.historicalMiniCharts.has(chartId)) {
+  return;
+}
+
+const chart = this.chartsService.createMiniChart(
+  elementRef.nativeElement,
+  paramName,
+  dataPoints
+);
+
+this.historicalMiniCharts.set(chartId, chart);
       },
     );
   }
@@ -653,4 +681,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     );
   }
+  public setParamSort(sortType: 'anomalies' | 'historical'): void {
+    this.paramSortBy = sortType;
+  }
+  public trackByParam(index: number, param: string): string {
+  return param;
+}
 }
