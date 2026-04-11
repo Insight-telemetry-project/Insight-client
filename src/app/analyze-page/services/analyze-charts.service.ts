@@ -506,7 +506,7 @@ export class AnalyzeChartsService {
           {
             type: 'areaspline',
             name: paramName,
-            data: downsampledData,
+            data: fullData,
             boostThreshold: 1,
             turboThreshold: 0,
             color: baseColor,
