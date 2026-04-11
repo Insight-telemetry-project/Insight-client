@@ -69,44 +69,78 @@
       </div>
     </section>
 
-    <section class="toolbar paramsToolbar">
-      <div class="search">
-        <span class="searchIcon">⌕</span>
-        <input
-          class="searchInput"
-          type="text"
-          placeholder="Filter parameters..."
-          [value]="paramSearchText"
-          (input)="onParamSearchChange($any($event.target).value)"
-        />
-        <button
-          class="clearBtn"
-          type="button"
-          *ngIf="paramSearchText.length > 0"
-          (click)="clearParamSearch()"
-        >
-          Clear
-        </button>
-      </div>
-
-      <div class="countPill">
-        <span class="countValue">{{ filteredParameters.length }}</span>
-        <span class="countLabel">params</span>
-      </div>
-    </section>
-
     <section class="paramsSection">
-      <p class="subtitle">Click a parameter to add/remove it to the grid</p>
+      <div class="paramsTopRow">
+        <div class="leftSide">
+          <p class="subtitle">Click a parameter to add/remove it to the grid</p>
 
+          <div class="search">
+            <span class="searchIcon">⌕</span>
+            <input
+              class="searchInput"
+              type="text"
+              placeholder="Filter parameters..."
+              [value]="paramSearchText"
+              (input)="onParamSearchChange($any($event.target).value)"
+            />
+            <button
+              class="clearBtn"
+              type="button"
+              *ngIf="paramSearchText.length > 0"
+              (click)="clearParamSearch()"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div class="paramsHeaderRight">
+          <div class="countPill">
+            <span class="countValue">{{ filteredParameters.length }}</span>
+            <span class="countLabel">params</span>
+          </div>
+
+          <div class="sortPill">
+            <button
+              [class.active]="paramSortBy === 'anomalies'"
+              (click)="setParamSort('anomalies')"
+            >
+              Unusual
+            </button>
+
+            <button
+              [class.active]="paramSortBy === 'historical'"
+              (click)="setParamSort('historical')"
+            >
+              Historical
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="paramsGrid">
         <button
           class="paramCard"
-          *ngFor="let param of parameters"
+          *ngFor="let param of parameters; trackBy: trackByParam"
           [class.hidden1]="!isParamVisible(param)"
           [class.selected]="isSelected(param)"
           (click)="toggleParam(param)"
         >
           <div class="paramTitle">{{ param }}</div>
+
+          <div class="paramBadges">
+            <span class="badge anomalyBadge">
+              ● Anomalies ({{
+                getSpecialPointsCountForParameter(param).anomalyCount
+              }})
+            </span>
+
+            <span class="badge historyBadge">
+              ● Historical ({{
+                getSpecialPointsCountForParameter(param).historicalCount
+              }})
+            </span>
+          </div>
+
           <div class="miniChart" #miniChart [attr.data-param]="param"></div>
         </button>
       </div>

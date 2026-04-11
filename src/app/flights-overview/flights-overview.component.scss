@@ -1153,3 +1153,63 @@
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
+.analysisBarWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.analysisPercent {
+  font-size: 12px;
+  font-weight: 800;
+  color: #a78bfa;
+
+  padding: 4px 10px;
+  border-radius: 12px;
+
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+
+  min-width: 45px;
+  text-align: center;
+}
+.analysisBar {
+  position: relative; 
+}
+
+.analysisPercentInside {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  color: white;
+  text-shadow: 0 0 6px rgba(0,0,0,0.6);
+
+  pointer-events: none; 
+}
+.analysisHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.analysisPercentTop {
+  font-size: 14px;
+  font-weight: 900;
+
+  color: #a78bfa;
+
+  padding: 4px 10px;
+  border-radius: 10px;
+
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+
+  min-width: 50px;
+  text-align: center;
+}
