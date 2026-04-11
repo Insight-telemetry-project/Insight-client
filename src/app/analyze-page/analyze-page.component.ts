@@ -421,27 +421,35 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.gridItems.push(newGridChartItem);
     this.changeDetectorRef.detectChanges();
+    setTimeout(() => {
+  window.dispatchEvent(new Event('resize'));
+}, 50);
 
     Promise.resolve().then(() => this.initGridChart(newGridChartItem));
   }
 
   private removeGridItem(paramName: string): void {
-    const gridItemIndex: number = this.gridItems.findIndex(
-      (gridItem) => gridItem.param === paramName,
-    );
-    if (gridItemIndex === -1) return;
+  const gridItemIndex: number = this.gridItems.findIndex(
+    (gridItem) => gridItem.param === paramName,
+  );
+  if (gridItemIndex === -1) return;
 
-    const itemToRemove: GridChartItem = this.gridItems[gridItemIndex];
-    if (itemToRemove.chart) {
-      itemToRemove.chart.destroy();
-      itemToRemove.chart = undefined;
-    }
+  const itemToRemove: any = this.gridItems[gridItemIndex];
 
-    this.gridItems = this.gridItems.filter(
-      (_, currentIndex) => currentIndex !== gridItemIndex,
-    );
-    this.changeDetectorRef.detectChanges();
+  if (itemToRemove.resizeObserver) {
+    itemToRemove.resizeObserver.disconnect();
   }
+
+  if (itemToRemove.chart) {
+    itemToRemove.chart.destroy();
+    itemToRemove.chart = undefined;
+  }
+
+  this.gridItems = this.gridItems.filter(
+    (_, currentIndex) => currentIndex !== gridItemIndex,
+  );
+  this.changeDetectorRef.detectChanges();
+}
 
   private clearGrid(): void {
     for (const gridItem of this.gridItems) {
@@ -454,40 +462,55 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initGridChart(gridChartItem: GridChartItem): void {
-    const gridChartElementRef: ElementRef<HTMLDivElement> | undefined =
-      this.gridChartElements.find(
-        (elementRef) =>
-          elementRef.nativeElement.dataset['param'] === gridChartItem.param,
-      );
-
-    if (!gridChartElementRef) {
-      setTimeout(() => this.initGridChart(gridChartItem), 150);
-      return;
-    }
-
-    gridChartItem.chart = this.chartsService.createGridChart(
-      gridChartElementRef.nativeElement,
-      gridChartItem.param,
-      this.flightData,
+  const gridChartElementRef: ElementRef<HTMLDivElement> | undefined =
+    this.gridChartElements.find(
+      (elementRef) =>
+        elementRef.nativeElement.dataset['param'] === gridChartItem.param,
     );
 
-    const chartInstance = gridChartItem.chart;
-    setTimeout(() => (chartInstance as any)?.reflow(), 0);
-
-    this.anomaliesService.loadAndShowAnomalies(
-      gridChartItem.param,
-      this.flightData,
-      this.flightMeta,
-      chartInstance,
-    );
-
-    this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-      gridChartItem.param,
-      this.flightData,
-      this.flightMeta,
-      chartInstance,
-    );
+  if (!gridChartElementRef) {
+    requestAnimationFrame(() => this.initGridChart(gridChartItem));
+    return;
   }
+
+  const element = gridChartElementRef.nativeElement;
+
+  if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+    requestAnimationFrame(() => this.initGridChart(gridChartItem));
+    return;
+  }
+
+  gridChartItem.chart = this.chartsService.createGridChart(
+    element,
+    gridChartItem.param,
+    this.flightData,
+  );
+
+  const chartInstance = gridChartItem.chart;
+
+  const resizeObserver = new ResizeObserver(() => {
+    chartInstance.reflow();
+  });
+
+  resizeObserver.observe(element);
+  (gridChartItem as any).resizeObserver = resizeObserver;
+
+  this.anomaliesService.loadAndShowAnomalies(
+    gridChartItem.param,
+    this.flightData,
+    this.flightMeta,
+    chartInstance,
+  );
+
+  this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+    gridChartItem.param,
+    this.flightData,
+    this.flightMeta,
+    chartInstance,
+  );
+
+  chartInstance.redraw(false);
+}
 
   private loadFlight(): void {
     const metaSub = this.archiveService

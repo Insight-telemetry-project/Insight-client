@@ -217,6 +217,13 @@
               Sort by Score
             </button>
           </div>
+          <div class="sidebarEmpty" *ngIf="sortedHistoricalItems.length === 0">
+            <div class="sidebarEmptyIcon">📊</div>
+            <div class="sidebarEmptyTitle">No historical similarities</div>
+            <div class="sidebarEmptyText">
+              No matching points were found for this parameter
+            </div>
+          </div>
 
           <div
             class="historicalCard"
