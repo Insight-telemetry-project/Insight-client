@@ -207,9 +207,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.historicalMiniChartElements.changes.subscribe(() => {
-      setTimeout(() => {
-        this.drawHistoricalMiniCharts();
-      });
+      this.drawHistoricalMiniCharts();
     });
   }
 
@@ -253,22 +251,18 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             );
           }
 
-          if (this.sidebarMode === 'historical') {
-            const gridItem = this.gridItems.find((g) => g.param === lastParam);
+          const gridItem = this.gridItems.find((g) => g.param === lastParam);
 
-            if (gridItem && gridItem.chart) {
-              this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-                lastParam,
-                this.flightData,
-                this.flightMeta,
-                gridItem.chart,
-              );
-            }
-
-            setTimeout(() => {
-              this.drawHistoricalMiniCharts();
-            });
+          if (gridItem && gridItem.chart) {
+            this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+              lastParam,
+              this.flightData,
+              this.flightMeta,
+              gridItem.chart,
+            );
           }
+
+          this.drawHistoricalMiniCharts();
         } else {
           this.sidebarParam = null;
           this.related.clear();
@@ -368,12 +362,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onParamSearchChange(searchValue: string): void {
-  this.paramSearchText = searchValue;
+    this.paramSearchText = searchValue;
 
-  setTimeout(() => {
-    this.drawMiniCharts();
-  });
-}
+    setTimeout(() => {
+      this.drawMiniCharts();
+    });
+  }
 
   public clearParamSearch(): void {
     this.paramSearchText = '';
@@ -422,34 +416,34 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gridItems.push(newGridChartItem);
     this.changeDetectorRef.detectChanges();
     setTimeout(() => {
-  window.dispatchEvent(new Event('resize'));
-}, 50);
+      window.dispatchEvent(new Event('resize'));
+    }, 50);
 
     Promise.resolve().then(() => this.initGridChart(newGridChartItem));
   }
 
   private removeGridItem(paramName: string): void {
-  const gridItemIndex: number = this.gridItems.findIndex(
-    (gridItem) => gridItem.param === paramName,
-  );
-  if (gridItemIndex === -1) return;
+    const gridItemIndex: number = this.gridItems.findIndex(
+      (gridItem) => gridItem.param === paramName,
+    );
+    if (gridItemIndex === -1) return;
 
-  const itemToRemove: any = this.gridItems[gridItemIndex];
+    const itemToRemove: any = this.gridItems[gridItemIndex];
 
-  if (itemToRemove.resizeObserver) {
-    itemToRemove.resizeObserver.disconnect();
+    if (itemToRemove.resizeObserver) {
+      itemToRemove.resizeObserver.disconnect();
+    }
+
+    if (itemToRemove.chart) {
+      itemToRemove.chart.destroy();
+      itemToRemove.chart = undefined;
+    }
+
+    this.gridItems = this.gridItems.filter(
+      (_, currentIndex) => currentIndex !== gridItemIndex,
+    );
+    this.changeDetectorRef.detectChanges();
   }
-
-  if (itemToRemove.chart) {
-    itemToRemove.chart.destroy();
-    itemToRemove.chart = undefined;
-  }
-
-  this.gridItems = this.gridItems.filter(
-    (_, currentIndex) => currentIndex !== gridItemIndex,
-  );
-  this.changeDetectorRef.detectChanges();
-}
 
   private clearGrid(): void {
     for (const gridItem of this.gridItems) {
@@ -462,55 +456,55 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initGridChart(gridChartItem: GridChartItem): void {
-  const gridChartElementRef: ElementRef<HTMLDivElement> | undefined =
-    this.gridChartElements.find(
-      (elementRef) =>
-        elementRef.nativeElement.dataset['param'] === gridChartItem.param,
+    const gridChartElementRef: ElementRef<HTMLDivElement> | undefined =
+      this.gridChartElements.find(
+        (elementRef) =>
+          elementRef.nativeElement.dataset['param'] === gridChartItem.param,
+      );
+
+    if (!gridChartElementRef) {
+      requestAnimationFrame(() => this.initGridChart(gridChartItem));
+      return;
+    }
+
+    const element = gridChartElementRef.nativeElement;
+
+    if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+      requestAnimationFrame(() => this.initGridChart(gridChartItem));
+      return;
+    }
+
+    gridChartItem.chart = this.chartsService.createGridChart(
+      element,
+      gridChartItem.param,
+      this.flightData,
     );
 
-  if (!gridChartElementRef) {
-    requestAnimationFrame(() => this.initGridChart(gridChartItem));
-    return;
+    const chartInstance = gridChartItem.chart;
+
+    const resizeObserver = new ResizeObserver(() => {
+      chartInstance.reflow();
+    });
+
+    resizeObserver.observe(element);
+    (gridChartItem as any).resizeObserver = resizeObserver;
+
+    this.anomaliesService.loadAndShowAnomalies(
+      gridChartItem.param,
+      this.flightData,
+      this.flightMeta,
+      chartInstance,
+    );
+
+    this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+      gridChartItem.param,
+      this.flightData,
+      this.flightMeta,
+      chartInstance,
+    );
+
+    chartInstance.redraw(false);
   }
-
-  const element = gridChartElementRef.nativeElement;
-
-  if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-    requestAnimationFrame(() => this.initGridChart(gridChartItem));
-    return;
-  }
-
-  gridChartItem.chart = this.chartsService.createGridChart(
-    element,
-    gridChartItem.param,
-    this.flightData,
-  );
-
-  const chartInstance = gridChartItem.chart;
-
-  const resizeObserver = new ResizeObserver(() => {
-    chartInstance.reflow();
-  });
-
-  resizeObserver.observe(element);
-  (gridChartItem as any).resizeObserver = resizeObserver;
-
-  this.anomaliesService.loadAndShowAnomalies(
-    gridChartItem.param,
-    this.flightData,
-    this.flightMeta,
-    chartInstance,
-  );
-
-  this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-    gridChartItem.param,
-    this.flightData,
-    this.flightMeta,
-    chartInstance,
-  );
-
-  chartInstance.redraw(false);
-}
 
   private loadFlight(): void {
     const metaSub = this.archiveService
@@ -553,34 +547,34 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawMiniCharts(): void {
-  if (this.flightData.length === 0) return;
+    if (this.flightData.length === 0) return;
 
-  this.miniChartElements.forEach(
-    (miniChartElementRef: ElementRef<HTMLDivElement>) => {
-      const parameterName =
-        miniChartElementRef.nativeElement.dataset['param'];
+    this.miniChartElements.forEach(
+      (miniChartElementRef: ElementRef<HTMLDivElement>) => {
+        const parameterName =
+          miniChartElementRef.nativeElement.dataset['param'];
 
-      if (!parameterName) return;
+        if (!parameterName) return;
 
-      if (this.miniCharts.has(parameterName)) {
-        return;
-      }
+        if (this.miniCharts.has(parameterName)) {
+          return;
+        }
 
-      const dataPoints = this.chartsService.buildSeries(
-        this.flightData,
-        parameterName
-      );
+        const dataPoints = this.chartsService.buildSeries(
+          this.flightData,
+          parameterName,
+        );
 
-      const miniChartInstance = this.chartsService.createMiniChart(
-        miniChartElementRef.nativeElement,
-        parameterName,
-        dataPoints
-      );
+        const miniChartInstance = this.chartsService.createMiniChart(
+          miniChartElementRef.nativeElement,
+          parameterName,
+          dataPoints,
+        );
 
-      this.miniCharts.set(parameterName, miniChartInstance);
-    }
-  );
-}
+        this.miniCharts.set(parameterName, miniChartInstance);
+      },
+    );
+  }
 
   private autoSelectParam(paramName: string): void {
     if (!this.parameters.includes(paramName)) return;
@@ -622,16 +616,22 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           paramName,
         );
         if (this.historicalMiniCharts.has(chartId)) {
-  return;
-}
+          const existingChart = this.historicalMiniCharts.get(chartId);
 
-const chart = this.chartsService.createMiniChart(
-  elementRef.nativeElement,
-  paramName,
-  dataPoints
-);
+          if (existingChart) {
+            existingChart.destroy();
+          }
 
-this.historicalMiniCharts.set(chartId, chart);
+          this.historicalMiniCharts.delete(chartId);
+        }
+
+        const chart = this.chartsService.createMiniChart(
+          elementRef.nativeElement,
+          paramName,
+          dataPoints,
+        );
+
+        this.historicalMiniCharts.set(chartId, chart);
       },
     );
   }
@@ -650,9 +650,7 @@ this.historicalMiniCharts.set(chartId, chart);
     }
 
     if (mode === 'historical') {
-      setTimeout(() => {
-        this.drawHistoricalMiniCharts();
-      });
+      this.drawHistoricalMiniCharts();
     }
   }
   private getUniqueHistoricalPointsCount(points: any[]): number {
@@ -708,6 +706,6 @@ this.historicalMiniCharts.set(chartId, chart);
     this.paramSortBy = sortType;
   }
   public trackByParam(index: number, param: string): string {
-  return param;
-}
+    return param;
+  }
 }

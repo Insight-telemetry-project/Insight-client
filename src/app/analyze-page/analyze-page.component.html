@@ -199,7 +199,7 @@
           </button>
         </ng-container>
 
-        <ng-container *ngIf="sidebarMode === 'historical'">
+        <div [hidden]="sidebarMode !== 'historical'">
           <div class="historicalSortSwitch">
             <button
               class="sortBtn"
@@ -271,7 +271,7 @@
               ></div>
             </div>
           </div>
-        </ng-container>
+      </div>
       </div>
     </div>
   </aside>
