@@ -279,13 +279,18 @@ export class AnalyzeChartsService {
 
               if (!historicalId) return;
 
+              const anomalyTime: string = historicalId
+                .split('_')
+                .slice(1)
+                .join('_');
+
               const zone = (window as any).ngZoneRef;
 
               if (zone) {
                 zone.run(() => {
                   window.dispatchEvent(
                     new CustomEvent('historical-point-hover', {
-                      detail: historicalId,
+                      detail: { historicalId, anomalyTime },
                     }),
                   );
                 });

@@ -171,36 +171,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public ngAfterViewInit(): void {
-    window.addEventListener('historical-point-hover', (event: any) => {
-      this.hoveredHistoricalId = event.detail;
-    });
+  window.addEventListener('historical-point-hover', (event: any) => {
+  this.onHistoricalHover(event.detail?.anomalyTime ?? null);
+});
 
-    window.addEventListener('historical-card-hover', (event: any) => {
-      const targetHistoricalId: string | null = event.detail;
+window.addEventListener('historical-card-hover', (event: any) => {
+  const targetId: string | null = event.detail;
+  const anomalyTime = targetId ? targetId.split('_').slice(1).join('_') : null;
+  this.onHistoricalHover(anomalyTime);
+});
 
-      for (const gridItem of this.gridItems) {
-        if (!gridItem.chart) continue;
-
-        for (const chartSeries of gridItem.chart.series) {
-          if (!(chartSeries.options as any).id?.startsWith('history:'))
-            continue;
-
-          for (const seriesPoint of chartSeries.points) {
-            const pointHistoricalId = (seriesPoint.options as any)?.custom
-              ?.historicalId;
-
-            if (
-              targetHistoricalId &&
-              pointHistoricalId === targetHistoricalId
-            ) {
-              seriesPoint.setState('hover');
-            } else {
-              seriesPoint.setState('');
-            }
-          }
-        }
-      }
-    });
+    
 
     setTimeout(() => {
       this.drawHistoricalMiniCharts();
@@ -708,4 +689,43 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public trackByParam(index: number, param: string): string {
     return param;
   }
+
+
+
+  private onHistoricalHover(anomalyTime: string | null): void {
+  const container = document.querySelector('.sidebarContent') as HTMLElement;
+
+  if (anomalyTime && container) {
+    const matched = (Array.from(document.querySelectorAll('[data-id]')) as HTMLElement[])
+      .filter((el) => el.getAttribute('data-id')?.split('_').slice(1).join('_') === anomalyTime);
+
+    matched.forEach((el, i) => {
+      el.classList.add('hovered');
+      if (i === 0) {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = el.getBoundingClientRect();
+        const isVisible = elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom;
+        if (!isVisible) {
+          container.scrollTo({
+            top: container.scrollTop + elementRect.top - containerRect.top - container.clientHeight / 2 + el.clientHeight / 2,
+            behavior: 'smooth',
+          });
+        }
+      }
+    });
+  } else {
+    document.querySelectorAll('[data-id].hovered').forEach((el) => el.classList.remove('hovered'));
+  }
+
+  for (const gridItem of this.gridItems) {
+    if (!gridItem.chart) continue;
+    for (const chartSeries of gridItem.chart.series) {
+      if (!(chartSeries.options as any).id?.startsWith('history:')) continue;
+      for (const point of chartSeries.points) {
+        const pointTime = (point.options as any)?.custom?.historicalId?.split('_').slice(1).join('_');
+        point.setState(anomalyTime && pointTime === anomalyTime ? 'hover' : '');
+      }
+    }
+  }
+}
 }
