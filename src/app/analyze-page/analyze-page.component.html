@@ -217,6 +217,12 @@
               Sort by Score
             </button>
           </div>
+
+          <!-- TEST BUTTON - Simple button to verify clicks work -->
+          <button style="background: red; color: white; padding: 10px; width: 100%; margin-bottom: 10px; cursor: pointer;" (click)="console.log('TEST BUTTON CLICKED')">
+            TEST: Click Me
+          </button>
+
           <div class="sidebarEmpty" *ngIf="sortedHistoricalItems.length === 0">
             <div class="sidebarEmptyIcon">📊</div>
             <div class="sidebarEmptyTitle">No historical similarities</div>
@@ -225,53 +231,71 @@
             </div>
           </div>
 
-          <div
-            class="historicalCard"
-            *ngFor="let item of sortedHistoricalItems"
-            [attr.data-id]="item.comparedFlightIndex + '_' + item.time"
-            [class.hovered]="
-              hoveredHistoricalId === item.comparedFlightIndex + '_' + item.time
-            "
-            (mouseenter)="onHistoricalCardHover(item)"
-            (mouseleave)="onHistoricalCardLeave()"
-            (click)="navigateToHistoricalFlight(item)"
-          >
-            <div class="histContent">
-              <div class="histInfo">
-                <div class="histRow">
-                  <span class="histLabel">Flight</span>
-                  <span class="histValue">
-                    {{ item.comparedFlightIndex }}
-                  </span>
-                </div>
+          <!-- Grouped Historical Cards by Time -->
+          <div class="historicalCardsList">
+            <div 
+              class="timeGroup"
+              *ngFor="let group of groupedHistoricalItems; trackBy: trackByGroupId"
+              [class.expanded]="expandedGroups.has(group.id)"
+            >
+              <!-- TEST BUTTON INSIDE LOOP -->
+              <button style="background: blue; color: white; padding: 5px; width: 100%; margin-bottom: 5px;" (click)="console.log('TEST INSIDE LOOP:', group.id)">
+                TEST IN LOOP: {{ group.id }}
+              </button>
 
-                <div class="histRow">
-                  <span class="histLabel">Score</span>
-                  <span class="histValue">
-                    {{ item.score * 100 | number: "1.0-0" }}%
-                  </span>
+              <!-- Group Header - Clickable Button -->
+              <button
+                class="timeGroupHeader"
+                (click)="toggleGroup(group.id)"
+                [class.hovered]="hoveredHistoricalId && hoveredHistoricalId.startsWith(group.id + '_')"
+                type="button"
+              >
+                <div class="timeGroupInfo">
+                  <div class="timeLabel">{{ group.items[0].time * 1000 | date: "HH:mm:ss" }}</div>
+                  <div class="countBadge">{{ group.items.length }} match{{ group.items.length !== 1 ? 'es' : '' }}</div>
                 </div>
+                <div class="expandIcon">
+                  {{ expandedGroups.has(group.id) ? "▲" : "▼" }}
+                </div>
+              </button>
 
-                <div class="histRow">
-                  <span class="histLabel">Time</span>
-                  <span class="histValue">
-                    {{ item.time * 1000 | date: "HH:mm:ss" }}
-                  </span>
+              <!-- Items - Hidden by default, shown on expand -->
+              <div class="timeGroupItems" *ngIf="expandedGroups.has(group.id)">
+                <div
+                  class="historicalCardNew"
+                  *ngFor="let item of group.items"
+                  [attr.data-id]="item.comparedFlightIndex + '_' + item.time"
+                  [class.hovered]="hoveredHistoricalId === item.comparedFlightIndex + '_' + item.time"
+                  (mouseenter)="onHistoricalCardHover(item)"
+                  (mouseleave)="onHistoricalCardLeave()"
+                  (click)="navigateToHistoricalFlight(item)"
+                >
+                  <div class="cardHeader">
+                    <div class="cardScore">{{ item.score * 100 | number: "1.0-0" }}%</div>
+                    <div class="cardTime">Flight: {{ item.comparedFlightIndex }}</div>
+                  </div>
+                  <div class="cardBody">
+                    <div class="cardInfo">
+                      <div class="infoRow">
+                        <span class="label">Param:</span>
+                        <span class="value">{{ item.param }}</span>
+                      </div>
+                    </div>
+                    <div
+                      class="cardMiniChart"
+                      #historicalMiniChart
+                      [attr.data-flight]="item.comparedFlightIndex"
+                      [attr.data-param]="item.param"
+                      [attr.data-time]="item.time"
+                      [attr.data-start]="item.startEpoch"
+                      [attr.data-end]="item.endEpoch"
+                    ></div>
+                  </div>
                 </div>
               </div>
-
-              <div
-                class="historicalMiniChart"
-                #historicalMiniChart
-                [attr.data-flight]="item.comparedFlightIndex"
-                [attr.data-param]="item.param"
-                [attr.data-time]="item.time"
-                [attr.data-start]="item.startEpoch"
-                [attr.data-end]="item.endEpoch"
-              ></div>
             </div>
           </div>
-      </div>
+        </div>
       </div>
     </div>
   </aside>

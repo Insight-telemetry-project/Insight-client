@@ -32,6 +32,9 @@ import { GridChartItem } from '../common/interfaces/grid-chart-item.interface';
   styleUrls: ['./analyze-page.component.scss'],
 })
 export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Allow console access in template
+  public console = console;
+
   @ViewChildren('miniChart') public miniChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
@@ -82,6 +85,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     new Map();
   private pendingParamToAutoSelect: string | null = null;
   private sidebarParam: string | null = null;
+  
+  // Cache for groupedHistoricalItems to prevent constant re-renders
+  private cachedGroupedHistoricalItems: { id: string; items: HistoricalSidebarItem[] }[] = [];
+  private lastHistoricalSortBy: 'time' | 'score' = 'time';
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
@@ -171,6 +178,16 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public ngAfterViewInit(): void {
+  console.log('✅ ngAfterViewInit called');
+  console.log('📊 historicalSidebarItems length:', this.historicalSidebarItems.length);
+  
+  // Global click listener to debug
+  document.addEventListener('click', (e: any) => {
+    if (e.target?.classList?.contains('histGroupToggle')) {
+      console.log('🌍 GLOBAL: Click detected on histGroupToggle!', e.target);
+    }
+  }, true);
+  
   window.addEventListener('historical-point-hover', (event: any) => {
   this.onHistoricalHover(event.detail?.anomalyTime ?? null);
 });
@@ -184,7 +201,9 @@ window.addEventListener('historical-card-hover', (event: any) => {
     
 
     setTimeout(() => {
+      this.cachedGroupedHistoricalItems = []; // Clear cache to force recalculation
       this.drawHistoricalMiniCharts();
+      console.log('📊 After drawHistoricalMiniCharts - items:', this.sortedHistoricalItems.length);
     });
 
     this.historicalMiniChartElements.changes.subscribe(() => {
@@ -565,6 +584,7 @@ window.addEventListener('historical-card-hover', (event: any) => {
   }
 
   private drawHistoricalMiniCharts(): void {
+    this.cachedGroupedHistoricalItems = []; // Clear cache to force recalculation
     if (!this.historicalMiniChartElements) return;
 
     this.historicalMiniChartElements.forEach(
@@ -691,15 +711,28 @@ window.addEventListener('historical-card-hover', (event: any) => {
   }
 
 
-
-  private onHistoricalHover(anomalyTime: string | null): void {
+private onHistoricalHover(anomalyTime: string | null): void {
   const container = document.querySelector('.sidebarContent') as HTMLElement;
 
   if (anomalyTime && container) {
-    const matched = (Array.from(document.querySelectorAll('[data-id]')) as HTMLElement[])
+    // סלקט כרטיסיות חדשות
+    const matchedCards = (Array.from(document.querySelectorAll('.historicalCardNew[data-id]')) as HTMLElement[])
       .filter((el) => el.getAttribute('data-id')?.split('_').slice(1).join('_') === anomalyTime);
 
-    matched.forEach((el, i) => {
+    // אם אין כרטיסיות גלויות, פתח את הקבוצה שלהן
+    if (matchedCards.length === 0) {
+      const matchedGroup = this.groupedHistoricalItems.find(g =>
+        g.items.some(item => String(item.time) === anomalyTime)
+      );
+      if (matchedGroup) {
+        this.expandedGroups.add(matchedGroup.id);
+        this.changeDetectorRef.detectChanges();
+        setTimeout(() => this.onHistoricalHover(anomalyTime), 50);
+        return;
+      }
+    }
+
+    matchedCards.forEach((el, i) => {
       el.classList.add('hovered');
       if (i === 0) {
         const containerRect = container.getBoundingClientRect();
@@ -714,7 +747,7 @@ window.addEventListener('historical-card-hover', (event: any) => {
       }
     });
   } else {
-    document.querySelectorAll('[data-id].hovered').forEach((el) => el.classList.remove('hovered'));
+    document.querySelectorAll('.historicalCardNew.hovered').forEach((el) => el.classList.remove('hovered'));
   }
 
   for (const gridItem of this.gridItems) {
@@ -728,4 +761,41 @@ window.addEventListener('historical-card-hover', (event: any) => {
     }
   }
 }
+  
+public expandedGroups: Set<string> = new Set<string>();
+
+public get groupedHistoricalItems(): { id: string; items: HistoricalSidebarItem[] }[] {
+  // Only recalculate if sortBy changed or if the sorted items are different
+  if (this.lastHistoricalSortBy !== this.historicalSortBy || this.cachedGroupedHistoricalItems.length === 0) {
+    this.lastHistoricalSortBy = this.historicalSortBy;
+    const map = new Map<string, HistoricalSidebarItem[]>();
+    for (const item of this.sortedHistoricalItems) {
+      const key = String(item.time);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(item);
+    }
+    this.cachedGroupedHistoricalItems = Array.from(map.entries()).map(([key, items]) => ({ id: key, items }));
+  }
+  return this.cachedGroupedHistoricalItems;
+}
+
+public toggleGroup(groupId: string): void {
+  console.log('🔍 toggleGroup CALLED with:', groupId);
+  console.log('📊 Current expanded groups:', Array.from(this.expandedGroups));
+  if (this.expandedGroups.has(groupId)) {
+    console.log('❌ Removing group:', groupId);
+    this.expandedGroups.delete(groupId);
+  } else {
+    console.log('✅ Adding group:', groupId);
+    this.expandedGroups.add(groupId);
+  }
+  console.log('📊 Updated expanded groups:', Array.from(this.expandedGroups));
+  this.changeDetectorRef.detectChanges();
+}
+
+// TrackBy function for *ngFor to prevent re-renders
+public trackByGroupId(index: number, group: { id: string; items: HistoricalSidebarItem[] }): string {
+  return group.id;
+}
+
 }

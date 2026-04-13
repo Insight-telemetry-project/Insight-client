@@ -698,3 +698,332 @@
   align-items: flex-end;
   gap: 6px;
 }
+.historicalGroup {
+  border-radius: 16px;
+  border: 1px solid rgba(190, 120, 255, 0.2);
+  background: rgba(15, 8, 40, 0.6);
+  overflow: hidden;
+  transition: border-color 140ms ease;
+
+  &.hovered {
+    border-color: rgba(220, 170, 255, 0.6);
+  }
+}
+
+.historicalGroupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: rgba(176, 96, 255, 0.08);
+  border-bottom: 1px solid rgba(190, 120, 255, 0.12);
+  transition: background 140ms ease;
+  pointer-events: auto;
+  position: relative;
+  z-index: 50;
+
+  &:hover {
+    background: rgba(176, 96, 255, 0.16);
+  }
+}
+
+.histGroupMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.histGroupTime {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(220, 190, 255, 0.95);
+}
+
+.histGroupCount {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(176, 96, 255, 0.25);
+  border: 1px solid rgba(190, 120, 255, 0.35);
+  color: rgba(220, 170, 255, 0.9);
+  font-weight: 600;
+}
+
+.histGroupToggle {
+  background: transparent;
+  border: none;
+  color: rgba(220, 170, 255, 0.7);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 6px;
+  pointer-events: auto !important;
+  z-index: 100;
+  position: relative;
+}
+
+.historicalCard {
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid rgba(190, 120, 255, 0.08);
+  background: transparent;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 140ms ease;
+
+  &:first-of-type {
+    border-top: none;
+  }
+
+  &:hover,
+  &.hovered {
+    background: rgba(176, 96, 255, 0.14);
+  }
+}
+.historicalCard {
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid rgba(190, 120, 255, 0.08);
+  background: transparent;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 140ms ease;
+  position: relative;
+
+  &:first-of-type {
+    border-top: none;
+  }
+
+  &:hover,
+  &.hovered {
+    background: rgba(176, 96, 255, 0.14);
+  }
+}
+
+.historicalMiniChart {
+  pointer-events: auto;
+
+  ::ng-deep {
+    .highcharts-container,
+    .highcharts-root,
+    svg {
+      pointer-events: auto !important;
+    }
+  }
+}
+
+.histContent {
+  pointer-events: auto;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+// ─── New Historical Cards ────────────────────────────────────────────────────
+
+.historicalCardsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+}
+
+// Time Group Container
+.timeGroup {
+  border-radius: 14px;
+  border: 1px solid rgba(190, 120, 255, 0.2);
+  background: rgba(15, 8, 40, 0.6);
+  overflow: hidden;
+  transition: all 200ms ease;
+  
+  &.expanded {
+    border-color: rgba(220, 170, 255, 0.5);
+    background: rgba(30, 15, 60, 0.8);
+  }
+}
+
+// Time Group Header - Always Visible (as button)
+.timeGroupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: rgba(176, 96, 255, 0.08);
+  border-bottom: 1px solid rgba(190, 120, 255, 0.12);
+  border: none;
+  border-radius: 0;
+  transition: background 200ms ease;
+  user-select: none;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+
+  &:hover {
+    background: rgba(176, 96, 255, 0.16);
+  }
+
+  &:active {
+    background: rgba(176, 96, 255, 0.12);
+  }
+
+  &.hovered {
+    background: rgba(176, 96, 255, 0.2);
+    border-bottom-color: rgba(220, 170, 255, 0.3);
+  }
+}
+
+.timeGroupInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.timeLabel {
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(220, 190, 255, 0.95);
+}
+
+.countBadge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(176, 96, 255, 0.25);
+  border: 1px solid rgba(190, 120, 255, 0.35);
+  color: rgba(220, 190, 255, 0.85);
+  font-weight: 600;
+}
+
+.expandIcon {
+  font-size: 12px;
+  color: rgba(220, 170, 255, 0.7);
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+
+// Time Group Items - Hidden by default
+.timeGroupItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  animation: slideDown 200ms ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.historicalCardsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+}
+
+.historicalCardNew {
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(190, 120, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 200ms ease;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+
+  &:hover,
+  &.hovered {
+    border-color: rgba(220, 170, 255, 0.6);
+    background: rgba(176, 96, 255, 0.15);
+    box-shadow: 0 8px 24px rgba(176, 96, 255, 0.2);
+    transform: translateY(-2px);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardTime {
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(220, 190, 255, 0.95);
+}
+
+.cardScore {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(176, 96, 255, 0.25);
+  border: 1px solid rgba(190, 120, 255, 0.35);
+  color: rgba(255, 220, 100, 0.95);
+}
+
+.cardBody {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.infoRow .label {
+  opacity: 0.65;
+  font-size: 11px;
+  min-width: 50px;
+}
+
+.infoRow .value {
+  font-weight: 600;
+  color: rgba(220, 190, 255, 0.95);
+}
+
+.cardMiniChart {
+  flex: 0 0 140px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 11;
+}
