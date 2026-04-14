@@ -74,4 +74,15 @@ export class HistoricalSimilarityService {
       }
     }
   }
+  public getUniqueHistoricalCount(similarityItems: any[]): number {
+  if (!similarityItems) return 0;
+
+  const uniqueTimes: Set<number> = new Set<number>();
+
+  for (const item of similarityItems) {
+    uniqueTimes.add(Number(item.anomalyTime));
+  }
+
+  return uniqueTimes.size;
+}
 }

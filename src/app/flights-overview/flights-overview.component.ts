@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { TelemetryDeviceService } from '../services/telemetry-device.services';
 import Swal from 'sweetalert2';
 import { AnalysisProgressService } from '../services/analysis-progress.service';
+import { HistoricalSimilarityService } from '../analyze-page/services/historical-similarity.service';
 
 interface ParameterOverview {
   name: string;
@@ -51,6 +52,7 @@ export class FlightsOverviewComponent implements OnInit {
     private readonly telemetryDeviceService: TelemetryDeviceService,
     private readonly router: Router,
     private readonly progressService: AnalysisProgressService,
+    private readonly historicalSimilarityService: HistoricalSimilarityService,
   ) {}
 
   public ngOnInit(): void {
@@ -230,7 +232,7 @@ export class FlightsOverviewComponent implements OnInit {
           (parameterName: string) => ({
             name: parameterName,
             anomalies: response.anomalies[parameterName]?.length ?? 0,
-            historicalPoints: this.getUniqueHistoricalCount(
+            historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
               response.historicalSimilarity[parameterName],
             ),
           }),
@@ -377,7 +379,7 @@ export class FlightsOverviewComponent implements OnInit {
           (parameterName: string) => ({
             name: parameterName,
             anomalies: response.anomalies[parameterName]?.length ?? 0,
-            historicalPoints: this.getUniqueHistoricalCount(
+            historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
               response.historicalSimilarity[parameterName],
             ),
           }),
@@ -523,7 +525,7 @@ export class FlightsOverviewComponent implements OnInit {
           (parameterName: string) => ({
             name: parameterName,
             anomalies: response.anomalies[parameterName]?.length ?? 0,
-            historicalPoints: this.getUniqueHistoricalCount(
+            historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
               response.historicalSimilarity[parameterName],
             ),
           }),
@@ -545,7 +547,7 @@ export class FlightsOverviewComponent implements OnInit {
             (parameterName: string) => ({
               name: parameterName,
               anomalies: response.anomalies[parameterName]?.length ?? 0,
-              historicalPoints: this.getUniqueHistoricalCount(
+              historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
                 response.historicalSimilarity[parameterName],
               ),
             }),
@@ -630,15 +632,5 @@ export class FlightsOverviewComponent implements OnInit {
 
     return '';
   }
-  private getUniqueHistoricalCount(arr: any[]): number {
-    if (!arr) return 0;
-
-    const uniqueTimes = new Set<number>();
-
-    for (const item of arr) {
-      uniqueTimes.add(Number(item.anomalyTime));
-    }
-
-    return uniqueTimes.size;
-  }
+  
 }
