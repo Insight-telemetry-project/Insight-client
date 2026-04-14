@@ -237,8 +237,7 @@
               <button
                 class="timeGroupHeader"
                 (click)="toggleGroup(group.id)"
-                [class.hovered]="hoveredHistoricalId && hoveredHistoricalId.startsWith(group.id + '_')"
-                type="button"
+[class.hovered]="hoveredHistoricalId && hoveredHistoricalId.includes('_' + group.id)"                type="button"
               >
                 <div class="timeGroupInfo">
                   <div class="timeLabel">{{ group.items[0].time * 1000 | date: "HH:mm:ss" }}</div>

@@ -27,6 +27,45 @@ import { HistoricalSidebarItem } from '../common/interfaces/historical-sidebar-i
 import { GridChartItem } from '../common/interfaces/grid-chart-item.interface';
 import { HistoricalGroupItem } from '../common/interfaces/historical-groupItem.interface';
 
+interface FlightMetadata {
+  [key: string]: unknown;
+}
+
+interface SpecialPointsCountMap {
+  anomalyCount: number;
+  historicalCount: number;
+}
+
+interface SpecialPointsResponse {
+  anomalies: Record<string, number[]>;
+  historicalSimilarity: Record<string, Array<{ anomalyTime: number }>>;
+}
+
+interface CustomEventDetail {
+  detail: string | null;
+}
+
+interface HistoricalHoverEventDetail {
+  anomalyTime: string | null;
+}
+
+interface SeriesWithId {
+  options: Record<string, unknown> & { id?: string };
+  show(): void;
+  hide(): void;
+}
+
+interface PointWithCustom {
+  options: Record<string, unknown>;
+  setState(state: string): void;
+}
+
+interface GridItemWithObserver extends GridChartItem {
+  resizeObserver?: ResizeObserver;
+}
+
+type SidebarModeType = 'related' | 'historical';
+
 @Component({
   selector: 'app-analyze-page',
   templateUrl: './analyze-page.component.html',
@@ -48,8 +87,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public parameters: string[] = [];
   public selected: Set<string> = new Set<string>();
   public paramSearchText: string = '';
-  public flightMeta: any;
-  public sidebarMode: 'related' | 'historical' = 'related';
+  public flightMeta: FlightMetadata | null = null;
+  public sidebarMode: SidebarModeType = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public hoveredHistoricalId: string | null = null;
   public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
@@ -86,6 +125,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private cachedGroupedHistoricalItems: HistoricalGroupItem[] = [];
   private lastHistoricalSortBy: 'time' | 'score' = 'time';
+  public parameterSpecialPointsCountMap: Map<string, SpecialPointsCountMap> =
+    new Map();
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
@@ -169,18 +210,21 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.subscriptions.add(routeParamSubscription);
 
-    window.addEventListener('historical-hover', (event: any) => {
-      this.hoveredHistoricalId = event.detail;
+    window.addEventListener('historical-hover', (event: Event) => {
+      const customEvent = event as CustomEvent<string | null>;
+      this.hoveredHistoricalId = customEvent.detail;
     });
   }
 
   public ngAfterViewInit(): void {
-    window.addEventListener('historical-point-hover', (event: any) => {
-      this.onHistoricalHover(event.detail?.anomalyTime ?? null);
+    window.addEventListener('historical-point-hover', (event: Event) => {
+      const customEvent = event as CustomEvent<HistoricalHoverEventDetail>;
+      this.onHistoricalHover(customEvent.detail?.anomalyTime ?? null);
     });
 
-    window.addEventListener('historical-card-hover', (event: any) => {
-      const targetId: string | null = event.detail;
+    window.addEventListener('historical-card-hover', (event: Event) => {
+      const customEvent = event as CustomEvent<string | null>;
+      const targetId: string | null = customEvent.detail;
       const anomalyTime: string | null = targetId
         ? targetId.split('_').slice(1).join('_')
         : null;
@@ -325,13 +369,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!gridChartItem.chart) return;
     gridChartItem.showAnomalies = !gridChartItem.showAnomalies;
     const anomaliesSeries = gridChartItem.chart.series.find(
-      (seriesItem: any) =>
-        seriesItem.options.id === `anomalies:${gridChartItem.param}`,
+      (seriesItem: unknown) => {
+        const seriesWithId = seriesItem as SeriesWithId;
+        return seriesWithId.options?.id === `anomalies:${gridChartItem.param}`;
+      },
     );
     if (anomaliesSeries) {
-      gridChartItem.showAnomalies
-        ? anomaliesSeries.show()
-        : anomaliesSeries.hide();
+      const series = anomaliesSeries as unknown as SeriesWithId;
+      gridChartItem.showAnomalies ? series.show() : series.hide();
     }
   }
 
@@ -339,11 +384,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!gridChartItem.chart) return;
     gridChartItem.showHistory = !gridChartItem.showHistory;
     const historySeries = gridChartItem.chart.series.find(
-      (seriesItem: any) =>
-        seriesItem.options.id === `history:${gridChartItem.param}`,
+      (seriesItem: unknown) => {
+        const seriesWithId = seriesItem as SeriesWithId;
+        return seriesWithId.options?.id === `history:${gridChartItem.param}`;
+      },
     );
     if (historySeries) {
-      gridChartItem.showHistory ? historySeries.show() : historySeries.hide();
+      const series = historySeries as unknown as SeriesWithId;
+      gridChartItem.showHistory ? series.show() : series.hide();
     }
   }
 
@@ -365,7 +413,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  public onHistoricalCardHover(historicalItem: any): void {
+  public onHistoricalCardHover(historicalItem: HistoricalSidebarItem): void {
     const historicalId: string =
       historicalItem.comparedFlightIndex + '_' + historicalItem.time;
     this.hoveredHistoricalId = historicalId;
@@ -414,7 +462,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     if (gridItemIndex === -1) return;
 
-    const itemToRemove: any = this.gridItems[gridItemIndex];
+    const itemToRemove: GridItemWithObserver = this.gridItems[
+      gridItemIndex
+    ] as GridItemWithObserver;
 
     if (itemToRemove.resizeObserver) {
       itemToRemove.resizeObserver.disconnect();
@@ -473,7 +523,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     resizeObserver.observe(element);
-    (gridChartItem as any).resizeObserver = resizeObserver;
+    (gridChartItem as GridItemWithObserver).resizeObserver = resizeObserver;
 
     this.anomaliesService.loadAndShowAnomalies(
       gridChartItem.param,
@@ -495,8 +545,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadFlight(): void {
     const metaSub = this.archiveService
       .getFlight(this.masterIndex)
-      .subscribe((flightMeta) => {
-        this.flightMeta = flightMeta;
+      .subscribe((flightMetadata: FlightMetadata) => {
+        this.flightMeta = flightMetadata;
       });
 
     this.subscriptions.add(metaSub);
@@ -521,8 +571,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           });
         },
-        error: (error: any) => {
-          console.error('Failed to load flight:', error);
+        error: (errorData: unknown) => {
           this.flightData = [];
           this.parameters = [];
         },
@@ -570,7 +619,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawHistoricalMiniCharts(): void {
-    this.cachedGroupedHistoricalItems = []; // Clear cache to force recalculation
+    this.cachedGroupedHistoricalItems = [];
     if (!this.historicalMiniChartElements) return;
 
     this.historicalMiniChartElements.forEach(
@@ -623,7 +672,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  public setSidebarMode(mode: 'related' | 'historical'): void {
+  public setSidebarMode(mode: SidebarModeType): void {
     this.sidebarMode = mode;
 
     if (!this.sidebarParam) return;
@@ -641,11 +690,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  public parameterSpecialPointsCountMap = new Map();
   private loadSpecialPointsCountsForFlight(): void {
     this.archiveService
       .getAllSpecialPointsForFlight(this.masterIndex)
-      .subscribe((response) => {
+      .subscribe((response: SpecialPointsResponse | null) => {
         if (!response) return;
 
         const anomaliesRecord = response.anomalies;
@@ -666,10 +714,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       });
   }
-  public getSpecialPointsCountForParameter(parameterName: string): {
-    anomalyCount: number;
-    historicalCount: number;
-  } {
+
+  public getSpecialPointsCountForParameter(
+    parameterName: string,
+  ): SpecialPointsCountMap {
     return (
       this.parameterSpecialPointsCountMap.get(parameterName) ?? {
         anomalyCount: 0,
@@ -685,27 +733,24 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private onHistoricalHover(anomalyTime: string | null): void {
-    const container = document.querySelector('.sidebarContent') as HTMLElement;
+this.hoveredHistoricalId = anomalyTime ? '_' + anomalyTime : null;    const container = document.querySelector('.sidebarContent') as HTMLElement;
 
     if (anomalyTime && container) {
-      // סלקט כרטיסיות חדשות
       const matchedCards = (
         Array.from(
           document.querySelectorAll('.historicalCardNew[data-id]'),
         ) as HTMLElement[]
       ).filter(
-        (el) =>
-          el.getAttribute('data-id')?.split('_').slice(1).join('_') ===
+        (cardElement) =>
+          cardElement.getAttribute('data-id')?.split('_').slice(1).join('_') ===
           anomalyTime,
       );
 
-      
-
-      matchedCards.forEach((el, i) => {
-        el.classList.add('hovered');
-        if (i === 0) {
+      matchedCards.forEach((cardElement, cardIndex) => {
+        cardElement.classList.add('hovered');
+        if (cardIndex === 0) {
           const containerRect = container.getBoundingClientRect();
-          const elementRect = el.getBoundingClientRect();
+          const elementRect = cardElement.getBoundingClientRect();
           const isVisible =
             elementRect.top >= containerRect.top &&
             elementRect.bottom <= containerRect.bottom;
@@ -716,7 +761,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
                 elementRect.top -
                 containerRect.top -
                 container.clientHeight / 2 +
-                el.clientHeight / 2,
+                cardElement.clientHeight / 2,
               behavior: 'smooth',
             });
           }
@@ -725,21 +770,30 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       document
         .querySelectorAll('.historicalCardNew.hovered')
-        .forEach((el) => el.classList.remove('hovered'));
+        .forEach((cardElement) => cardElement.classList.remove('hovered'));
     }
 
     for (const gridItem of this.gridItems) {
-      if (!gridItem.chart) continue;
-      for (const chartSeries of gridItem.chart.series) {
-        if (!(chartSeries.options as any).id?.startsWith('history:')) continue;
-        for (const point of chartSeries.points) {
-          const pointTime = (point.options as any)?.custom?.historicalId
-            ?.split('_')
-            .slice(1)
-            .join('_');
-          point.setState(
-            anomalyTime && pointTime === anomalyTime ? 'hover' : '',
-          );
+      const chartInstance = gridItem.chart;
+      if (!chartInstance) continue;
+
+      for (const series of chartInstance.series) {
+        const seriesId = (series.options as any)?.id;
+
+        if (!seriesId || !seriesId.startsWith('history:')) continue;
+
+        for (const point of series.points as any[]) {
+          const historicalId = point?.options?.custom?.historicalId;
+
+          const pointTime = historicalId
+            ? historicalId.split('_').slice(1).join('_')
+            : null;
+
+          if (anomalyTime && pointTime === anomalyTime) {
+            point.setState('hover');
+          } else {
+            point.setState('');
+          }
         }
       }
     }
@@ -748,7 +802,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public expandedGroups: Set<string> = new Set<string>();
 
   public get groupedHistoricalItems(): HistoricalGroupItem[] {
-    // Only recalculate if sortBy changed or if the sorted items are different
     if (
       this.lastHistoricalSortBy !== this.historicalSortBy ||
       this.cachedGroupedHistoricalItems.length === 0
@@ -783,7 +836,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.changeDetectorRef.detectChanges();
   }
 
-  // TrackBy function for *ngFor to prevent re-renders
   public trackByGroupId(
     index: number,
     historicalGroupItem: HistoricalGroupItem,

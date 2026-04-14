@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   HostListener,
   ElementRef,
   ViewChild,
@@ -19,6 +20,22 @@ interface ParameterOverview {
   historicalPoints: number;
 }
 
+interface FlightAnalysisProgress {
+  completed: number;
+  total: number;
+}
+
+interface SpecialPointsResponse {
+  anomalies: Record<string, number[]>;
+  historicalSimilarity: Record<string, Array<{ anomalyTime: number }>>;
+}
+
+type SortType = 'anomalies' | 'historical';
+type FlightSortType = 'anomalies' | 'historical' | 'number';
+type ExportFormat = 'json' | string;
+type AnalysisStage = 'historical' | 'causality' | 'finished' | string;
+type DragEventType = DragEvent & { relatedTarget: EventTarget | null };
+
 @Component({
   selector: 'app-flights-overview',
   templateUrl: './flights-overview.component.html',
@@ -32,20 +49,18 @@ export class FlightsOverviewComponent implements OnInit {
   public expandedFlight: number | null = null;
   public parametersMap: Map<number, ParameterOverview[]> = new Map();
   public rawAnomaliesMap: Map<number, Record<string, number[]>> = new Map();
-  public progressMap: Map<number, { completed: number; total: number }> =
-    new Map();
+  public progressMap: Map<number, FlightAnalysisProgress> = new Map();
   public searchTerm: string = '';
-  public sortBy: 'anomalies' | 'historical' = 'historical';
+  public sortBy: SortType = 'historical';
   public flightSearchTerm: string = '';
-  public flightSortBy: 'anomalies' | 'historical' | 'number' = 'number';
+  public flightSortBy: FlightSortType = 'number';
   public preparingMap: Map<number, boolean> = new Map();
   public isUploadModalOpen: boolean = false;
   public isDropActive: boolean = false;
-  isExportModalOpen: boolean = false;
-  public flightAnalysisStageMap: Map<number, string> = new Map();
-  selectedFlights: number[] = [];
-
-  exportFormat: string = 'json';
+  public isExportModalOpen: boolean = false;
+  public flightAnalysisStageMap: Map<number, AnalysisStage> = new Map();
+  public selectedFlights: number[] = [];
+  public exportFormat: ExportFormat = 'json';
 
   public constructor(
     private readonly archiveService: FlightArchiveService,
@@ -58,37 +73,37 @@ export class FlightsOverviewComponent implements OnInit {
   public ngOnInit(): void {
     this.loadFlights();
 
-    this.progressService.progress$.subscribe((progress) => {
-      this.preparingMap.delete(progress.flightId);
+    this.progressService.progress$.subscribe((progressUpdate) => {
+      this.preparingMap.delete(progressUpdate.flightId);
 
-      this.progressMap.set(progress.flightId, {
-        completed: progress.completedParameters,
-        total: progress.totalParameters,
+      this.progressMap.set(progressUpdate.flightId, {
+        completed: progressUpdate.completedParameters,
+        total: progressUpdate.totalParameters,
       });
     });
 
-    this.progressService.analysisStage$.subscribe((data) => {
-      this.flightAnalysisStageMap.set(data.flightId, data.stage);
+    this.progressService.analysisStage$.subscribe((stageData) => {
+      this.flightAnalysisStageMap.set(stageData.flightId, stageData.stage);
     });
 
-    this.progressService.analysisFinished$.subscribe((flightId: number) => {
-      this.flightAnalysisStageMap.set(flightId, 'finished');
-      this.progressMap.delete(flightId);
+    this.progressService.analysisFinished$.subscribe((finishedFlightId: number) => {
+      this.flightAnalysisStageMap.set(finishedFlightId, 'finished');
+      this.progressMap.delete(finishedFlightId);
 
-      this.refreshFlightData(flightId);
+      this.refreshFlightData(finishedFlightId);
       this.refreshAllFlightsData();
 
-      this.progressService.leaveFlight(flightId);
+      this.progressService.leaveFlight(finishedFlightId);
     });
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.progressService.disconnect();
   }
   private loadFlights(): void {
     this.archiveService.getAllFlights().subscribe({
-      next: (flights: FlightSummary[]) => {
-        this.flights = flights ?? [];
+      next: (loadedFlights: FlightSummary[]) => {
+        this.flights = loadedFlights ?? [];
         this.flights.forEach((flight: FlightSummary) => {
           this.loadAnomaliesForFlight(flight.flightNumber);
         });
@@ -116,7 +131,7 @@ export class FlightsOverviewComponent implements OnInit {
     }
   }
 
-  setExportFormat(format: string): void {
+  public setExportFormat(format: ExportFormat): void {
     this.exportFormat = format;
   }
   public openUploadModal(): void {
@@ -175,8 +190,8 @@ export class FlightsOverviewComponent implements OnInit {
   public onWindowDragLeave(event: DragEvent): void {
     if (!this.isDropActive) return;
 
-    const relatedTarget: EventTarget | null =
-      (event as any).relatedTarget ?? null;
+    const dragEventWithRelatedTarget: DragEventType = event as unknown as DragEventType;
+    const relatedTarget: EventTarget | null = dragEventWithRelatedTarget.relatedTarget ?? null;
 
     if (relatedTarget === null) {
       this.isDropActive = false;
@@ -220,25 +235,25 @@ export class FlightsOverviewComponent implements OnInit {
 
     this.archiveService
       .getAllSpecialPointsForFlight(masterIndex)
-      .subscribe((response) => {
-        if (!response) {
+      .subscribe((specialPointsResponse: SpecialPointsResponse | null) => {
+        if (!specialPointsResponse) {
           this.parametersMap.set(masterIndex, []);
           return;
         }
 
-        this.rawAnomaliesMap.set(masterIndex, response.anomalies);
+        this.rawAnomaliesMap.set(masterIndex, specialPointsResponse.anomalies);
 
-        const list: ParameterOverview[] = Object.keys(response.anomalies).map(
+        const parameterOverviewList: ParameterOverview[] = Object.keys(specialPointsResponse.anomalies).map(
           (parameterName: string) => ({
             name: parameterName,
-            anomalies: response.anomalies[parameterName]?.length ?? 0,
+            anomalies: specialPointsResponse.anomalies[parameterName]?.length ?? 0,
             historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
-              response.historicalSimilarity[parameterName],
+              specialPointsResponse.historicalSimilarity[parameterName],
             ),
           }),
         );
 
-        this.parametersMap.set(masterIndex, list);
+        this.parametersMap.set(masterIndex, parameterOverviewList);
       });
   }
 
@@ -257,22 +272,22 @@ export class FlightsOverviewComponent implements OnInit {
     ) as number[][];
 
     return anomalyArrays.reduce(
-      (total: number, arr: number[]) => total + arr.length,
+      (totalCount: number, anomalyArray: number[]) => totalCount + anomalyArray.length,
       0,
     );
   }
 
   public getVisibleParameters(masterIndex: number): ParameterOverview[] {
-    const all: ParameterOverview[] = this.parametersMap.get(masterIndex) ?? [];
+    const allParameters: ParameterOverview[] = this.parametersMap.get(masterIndex) ?? [];
 
-    const filtered: ParameterOverview[] = all.filter((p) =>
-      p.name.toLowerCase().includes(this.searchTerm.toLowerCase()),
+    const filteredParameters: ParameterOverview[] = allParameters.filter((parameterItem) =>
+      parameterItem.name.toLowerCase().includes(this.searchTerm.toLowerCase()),
     );
 
-    return filtered.sort((a, b) =>
+    return filteredParameters.sort((parameterA: ParameterOverview, parameterB: ParameterOverview) =>
       this.sortBy === 'historical'
-        ? b.historicalPoints - a.historicalPoints
-        : b.anomalies - a.anomalies,
+        ? parameterB.historicalPoints - parameterA.historicalPoints
+        : parameterB.anomalies - parameterA.anomalies,
     );
   }
 
@@ -284,7 +299,7 @@ export class FlightsOverviewComponent implements OnInit {
     this.searchTerm = '';
   }
 
-  public setSort(sortType: 'anomalies' | 'historical'): void {
+  public setSort(sortType: SortType): void {
     this.sortBy = sortType;
   }
 
@@ -367,25 +382,25 @@ export class FlightsOverviewComponent implements OnInit {
 
     this.archiveService
       .getAllSpecialPointsForFlight(masterIndex)
-      .subscribe((response) => {
-        if (!response) {
+      .subscribe((specialPointsResponse: SpecialPointsResponse | null) => {
+        if (!specialPointsResponse) {
           this.parametersMap.set(masterIndex, []);
           return;
         }
 
-        this.rawAnomaliesMap.set(masterIndex, response.anomalies);
+        this.rawAnomaliesMap.set(masterIndex, specialPointsResponse.anomalies);
 
-        const list: ParameterOverview[] = Object.keys(response.anomalies).map(
+        const parameterOverviewList: ParameterOverview[] = Object.keys(specialPointsResponse.anomalies).map(
           (parameterName: string) => ({
             name: parameterName,
-            anomalies: response.anomalies[parameterName]?.length ?? 0,
+            anomalies: specialPointsResponse.anomalies[parameterName]?.length ?? 0,
             historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
-              response.historicalSimilarity[parameterName],
+              specialPointsResponse.historicalSimilarity[parameterName],
             ),
           }),
         );
 
-        this.parametersMap.set(masterIndex, list);
+        this.parametersMap.set(masterIndex, parameterOverviewList);
       });
   }
 
@@ -420,9 +435,9 @@ export class FlightsOverviewComponent implements OnInit {
       this.extractFlightNumberFromFileName(fileName);
 
     if (extractedFlightNumber !== null) {
-      const exists: boolean = this.isFlightAlreadyExists(extractedFlightNumber);
+      const flightExists: boolean = this.isFlightAlreadyExists(extractedFlightNumber);
 
-      if (exists) {
+      if (flightExists) {
         Swal.fire({
           title: 'Flight already exists',
           text: `Flight #${extractedFlightNumber} already exists in the system.`,
@@ -452,8 +467,8 @@ export class FlightsOverviewComponent implements OnInit {
 
         this.archiveService
           .getAllFlights()
-          .subscribe((flights: FlightSummary[]) => {
-            this.flights = flights ?? [];
+          .subscribe((loadedFlights: FlightSummary[]) => {
+            this.flights = loadedFlights ?? [];
 
             this.parametersMap.clear();
             this.rawAnomaliesMap.clear();
@@ -462,12 +477,12 @@ export class FlightsOverviewComponent implements OnInit {
               this.loadAnomaliesForFlight(flight.flightNumber);
             });
 
-            const newFlights: FlightSummary[] = this.flights.filter(
+            const newFlightsList: FlightSummary[] = this.flights.filter(
               (flight: FlightSummary) =>
                 !existingFlightIds.has(flight.flightNumber),
             );
 
-            newFlights.forEach((flight: FlightSummary) => {
+            newFlightsList.forEach((flight: FlightSummary) => {
               this.preparingMap.set(flight.flightNumber, true);
               this.progressService.connect(flight.flightNumber);
             });
@@ -489,17 +504,17 @@ export class FlightsOverviewComponent implements OnInit {
     for (const flightNumber of this.selectedFlights) {
       this.archiveService
         .exportFlight(flightNumber, this.exportFormat)
-        .subscribe((fileBlob: Blob) => {
-          const url: string = window.URL.createObjectURL(fileBlob);
+        .subscribe((exportFileBlob: Blob) => {
+          const downloadUrl: string = window.URL.createObjectURL(exportFileBlob);
 
-          const link: HTMLAnchorElement = document.createElement('a');
+          const downloadLink: HTMLAnchorElement = document.createElement('a');
 
-          link.href = url;
-          link.download = `flight_${flightNumber}.zip`;
+          downloadLink.href = downloadUrl;
+          downloadLink.download = `flight_${flightNumber}.zip`;
 
-          link.click();
+          downloadLink.click();
 
-          window.URL.revokeObjectURL(url);
+          window.URL.revokeObjectURL(downloadUrl);
         });
     }
 
@@ -507,95 +522,96 @@ export class FlightsOverviewComponent implements OnInit {
   }
 
   public getProgressPercent(flightNumber: number): number {
-    const progress = this.progressMap.get(flightNumber);
+    const flightProgress: FlightAnalysisProgress | undefined = this.progressMap.get(flightNumber);
 
-    if (!progress) return 0;
+    if (!flightProgress) return 0;
 
-    return Math.floor((progress.completed / progress.total) * 100);
+    return Math.floor((flightProgress.completed / flightProgress.total) * 100);
   }
   private refreshFlightData(flightId: number): void {
     this.archiveService
       .getAllSpecialPointsForFlight(flightId)
-      .subscribe((response) => {
-        if (!response) return;
+      .subscribe((specialPointsResponse: SpecialPointsResponse | null) => {
+        if (!specialPointsResponse) return;
 
-        this.rawAnomaliesMap.set(flightId, response.anomalies);
+        this.rawAnomaliesMap.set(flightId, specialPointsResponse.anomalies);
 
-        const list: ParameterOverview[] = Object.keys(response.anomalies).map(
+        const parameterOverviewList: ParameterOverview[] = Object.keys(specialPointsResponse.anomalies).map(
           (parameterName: string) => ({
             name: parameterName,
-            anomalies: response.anomalies[parameterName]?.length ?? 0,
+            anomalies: specialPointsResponse.anomalies[parameterName]?.length ?? 0,
             historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
-              response.historicalSimilarity[parameterName],
+              specialPointsResponse.historicalSimilarity[parameterName],
             ),
           }),
         );
 
-        this.parametersMap.set(flightId, list);
+        this.parametersMap.set(flightId, parameterOverviewList);
       });
   }
   private refreshAllFlightsData(): void {
     this.flights.forEach((flight: FlightSummary) => {
       this.archiveService
         .getAllSpecialPointsForFlight(flight.flightNumber)
-        .subscribe((response) => {
-          if (!response) return;
+        .subscribe((specialPointsResponse: SpecialPointsResponse | null) => {
+          if (!specialPointsResponse) return;
 
-          this.rawAnomaliesMap.set(flight.flightNumber, response.anomalies);
+          this.rawAnomaliesMap.set(flight.flightNumber, specialPointsResponse.anomalies);
 
-          const list: ParameterOverview[] = Object.keys(response.anomalies).map(
+          const parameterOverviewList: ParameterOverview[] = Object.keys(specialPointsResponse.anomalies).map(
             (parameterName: string) => ({
               name: parameterName,
-              anomalies: response.anomalies[parameterName]?.length ?? 0,
+              anomalies: specialPointsResponse.anomalies[parameterName]?.length ?? 0,
               historicalPoints: this.historicalSimilarityService.getUniqueHistoricalCount(
-                response.historicalSimilarity[parameterName],
+                specialPointsResponse.historicalSimilarity[parameterName],
               ),
             }),
           );
 
-          this.parametersMap.set(flight.flightNumber, list);
+          this.parametersMap.set(flight.flightNumber, parameterOverviewList);
         });
     });
   }
   public getVisibleFlights(): FlightSummary[] {
-    let filtered: FlightSummary[] = this.flights.filter(
+    let filteredFlights: FlightSummary[] = this.flights.filter(
       (flight: FlightSummary) =>
         flight.flightNumber.toString().includes(this.flightSearchTerm),
     );
 
-    return filtered.sort((a: FlightSummary, b: FlightSummary) => {
+    return filteredFlights.sort((flightA: FlightSummary, flightB: FlightSummary) => {
       if (this.flightSortBy === 'number') {
-        return b.flightNumber - a.flightNumber;
+        return flightB.flightNumber - flightA.flightNumber;
       }
 
       if (this.flightSortBy === 'anomalies') {
         return (
-          this.getTotalAnomalies(b.flightNumber) -
-          this.getTotalAnomalies(a.flightNumber)
+          this.getTotalAnomalies(flightB.flightNumber) -
+          this.getTotalAnomalies(flightA.flightNumber)
         );
       }
 
       if (this.flightSortBy === 'historical') {
-        const histA = this.getTotalHistorical(a.flightNumber);
-        const histB = this.getTotalHistorical(b.flightNumber);
-        return histB - histA;
+        const flightAHistoricalCount: number = this.getTotalHistorical(flightA.flightNumber);
+        const flightBHistoricalCount: number = this.getTotalHistorical(flightB.flightNumber);
+        return flightBHistoricalCount - flightAHistoricalCount;
       }
 
       return 0;
     });
   }
   public getTotalHistorical(masterIndex: number): number {
-    const params = this.parametersMap.get(masterIndex);
-    if (!params) return 0;
+    const parametersList: ParameterOverview[] | undefined = this.parametersMap.get(masterIndex);
+    if (!parametersList) return 0;
 
-    return params.reduce(
-      (sum: number, p: ParameterOverview) => sum + p.historicalPoints,
+    return parametersList.reduce(
+      (totalPoints: number, parameterItem: ParameterOverview) => totalPoints + parameterItem.historicalPoints,
       0,
     );
   }
   private isNumeric(value: string): boolean {
     return /^\d+$/.test(value);
   }
+
   private extractFlightNumberFromFileName(fileName: string): number | null {
     const nameWithoutExtension: string = fileName.split('.')[0];
 
@@ -605,28 +621,29 @@ export class FlightsOverviewComponent implements OnInit {
 
     return Number(nameWithoutExtension);
   }
+
   private isFlightAlreadyExists(flightNumber: number): boolean {
     return this.flights.some(
       (flight: FlightSummary) => flight.flightNumber === flightNumber,
     );
   }
   public getFlightAnalysisStatusText(flightId: number): string {
-    const stage = this.flightAnalysisStageMap.get(flightId);
-    const progress = this.progressMap.get(flightId);
+    const analysisStage: AnalysisStage | undefined = this.flightAnalysisStageMap.get(flightId);
+    const flightProgress: FlightAnalysisProgress | undefined = this.progressMap.get(flightId);
 
-    if (stage === 'historical') {
+    if (analysisStage === 'historical') {
       return 'Searching historical points...';
     }
 
-    if (stage === 'causality') {
+    if (analysisStage === 'causality') {
       return 'Analyzing flight causality...';
     }
 
-    if (progress) {
-      return `Analyzing ${progress.completed}/${progress.total}`;
+    if (flightProgress) {
+      return `Analyzing ${flightProgress.completed}/${flightProgress.total}`;
     }
 
-    if (stage === 'finished') {
+    if (analysisStage === 'finished') {
       return 'Analysis completed';
     }
 
