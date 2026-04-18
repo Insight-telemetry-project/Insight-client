@@ -2,76 +2,80 @@ import { Injectable } from '@angular/core';
 import * as Highcharts from 'highcharts';
 import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-fields.interface';
 import { AnalyzeChartsService } from './analyze-charts.service';
-import { AnomalyWindow } from '../../common/interfaces/anomaly-window.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AnomaliesService {
-  public constructor(
-    private readonly chartsService: AnalyzeChartsService,
-  ) {}
+  public constructor(private readonly chartsService: AnalyzeChartsService) {}
 
   public loadAndShowAnomalies(
-  parameterName: string,
-  flightData: TelemetrySensorFields[],
-  flightMeta: any,
-  chart: Highcharts.Chart,
-): void {
+    parameterName: string,
+    flightData: TelemetrySensorFields[],
+    flightMeta: any,
+    chart: Highcharts.Chart,
+  ): void {
+    const anomalyWindows = flightMeta?.anomalies?.[parameterName] ?? [];
+    const historicalSimilarityPoints =
+      flightMeta?.historicalSimilarity?.[parameterName] ?? [];
 
-  const anomalyWindows = flightMeta?.anomalies?.[parameterName] ?? [];
-  const historicalSimilarityPoints =
-    flightMeta?.historicalSimilarity?.[parameterName] ?? [];
+    const anomalyTimes: number[] = anomalyWindows.map((window: any) =>
+      Number(window.representativeEpoch),
+    );
 
-  const anomalyTimes: number[] =
-    anomalyWindows.map((window: any) => Number(window.representativeEpoch));
+    const historicalWindows = historicalSimilarityPoints.map((point: any) => ({
+      start: Number(point.startEpoch),
+      end: Number(point.endEpoch),
+      anomalyTime: Number(point.anomalyTime),
+    }));
 
-  const historicalWindows = historicalSimilarityPoints.map((point: any) => ({
-    start: Number(point.startEpoch),
-    end: Number(point.endEpoch),
-    anomalyTime: Number(point.anomalyTime),
-  }));
-
-  
-  const allAnomalyPoints =
-    this.chartsService.mapAnomalyEpochSecondsToXY(
+    const allAnomalyPoints = this.chartsService.mapAnomalyEpochSecondsToXY(
       flightData,
       parameterName,
       anomalyTimes,
     );
 
-  const redPoints: [number, number][] = [];
-  const yellowPoints: [number, number][] = [];
+    const { redPoints, yellowPoints } = this.splitAnomalyPointsByHistorical(
+      anomalyTimes,
+      allAnomalyPoints,
+      historicalWindows,
+    );
 
-  for (let i = 0; i < anomalyTimes.length; i++) {
-    const anomalyTime = anomalyTimes[i];
-    const pointXY = allAnomalyPoints[i];
+    this.chartsService.addOrReplaceAnomaliesSeries(
+      chart,
+      parameterName,
+      redPoints,
+    );
 
-    let isHistorical = false;
+    this.chartsService.addOrReplaceHistoricalSimilaritySeries(
+      chart,
+      parameterName,
+      yellowPoints,
+    );
+  }
 
-    for (const window of historicalWindows) {
-      if (anomalyTime >= window.start && anomalyTime <= window.end) {
-        isHistorical = true;
-        break;
+  private splitAnomalyPointsByHistorical(
+    anomalyTimes: number[],
+    allAnomalyPoints: [number, number][],
+    historicalWindows: { start: number; end: number; anomalyTime: number }[],
+  ): { redPoints: [number, number][]; yellowPoints: [number, number][] } {
+    const redPoints: [number, number][] = [];
+    const yellowPoints: [number, number][] = [];
+
+    for (let pointIndex = 0; pointIndex < anomalyTimes.length; pointIndex++) {
+      const anomalyTime = anomalyTimes[pointIndex];
+      const pointXY = allAnomalyPoints[pointIndex];
+
+      const isHistorical = historicalWindows.some(
+        (window) =>
+          anomalyTime >= window.start && anomalyTime <= window.end,
+      );
+
+      if (isHistorical) {
+        yellowPoints.push(pointXY);
+      } else {
+        redPoints.push(pointXY);
       }
     }
 
-    if (isHistorical) {
-      yellowPoints.push(pointXY);
-    } else {
-      redPoints.push(pointXY);
-    }
+    return { redPoints, yellowPoints };
   }
-
-  
-  this.chartsService.addOrReplaceAnomaliesSeries(
-    chart,
-    parameterName,
-    redPoints,
-  );
-
-  this.chartsService.addOrReplaceHistoricalSimilaritySeries(
-    chart,
-    parameterName,
-    yellowPoints,
-  );
-}
 }

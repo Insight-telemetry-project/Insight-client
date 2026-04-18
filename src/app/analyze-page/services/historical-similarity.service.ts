@@ -25,10 +25,6 @@ export class HistoricalSimilarityService {
   ): void {
     const historicalSimilarityPoints =
       flightMeta?.historicalSimilarity?.[parameterName] ?? [];
-    console.log(
-      '[HistoricalSimilarity] raw points:',
-      JSON.stringify(historicalSimilarityPoints.slice(0, 2)),
-    );
 
     const similarityChartPoints =
       this.chartsService.mapHistoricalSimilarityToPoints(
@@ -44,6 +40,53 @@ export class HistoricalSimilarityService {
     );
 
     this.appendSidebarItems(parameterName, historicalSimilarityPoints);
+  }
+
+  public getUniqueHistoricalCount(similarityItems: any[]): number {
+    if (!similarityItems) return 0;
+
+    const uniqueTimes: Set<number> = new Set<number>();
+
+    for (const item of similarityItems) {
+      uniqueTimes.add(Number(item.anomalyTime));
+    }
+
+    return uniqueTimes.size;
+  }
+
+  public buildSortedSidebarItems(sortBy: 'time' | 'score'): HistoricalSidebarItem[] {
+    const sidebarItemsCopy: HistoricalSidebarItem[] = [...this.sidebarItems];
+
+    if (sortBy === 'time') {
+      return sidebarItemsCopy.sort(
+        (firstItem, secondItem) => firstItem.time - secondItem.time,
+      );
+    }
+
+    return sidebarItemsCopy.sort(
+      (firstItem, secondItem) => secondItem.score - firstItem.score,
+    );
+  }
+
+  public buildGroupedHistoricalItems(
+    sortedSidebarItems: HistoricalSidebarItem[],
+  ): { id: string; items: HistoricalSidebarItem[] }[] {
+    const historicalItemsByTime = new Map<string, HistoricalSidebarItem[]>();
+
+    for (const historicalItem of sortedSidebarItems) {
+      const timeKey: string = String(historicalItem.time);
+      if (!historicalItemsByTime.has(timeKey)) {
+        historicalItemsByTime.set(timeKey, []);
+      }
+      historicalItemsByTime.get(timeKey)!.push(historicalItem);
+    }
+
+    return Array.from(historicalItemsByTime.entries()).map(
+      ([timeKey, groupItems]: [string, HistoricalSidebarItem[]]) => ({
+        id: timeKey,
+        items: groupItems,
+      }),
+    );
   }
 
   private appendSidebarItems(
@@ -74,15 +117,4 @@ export class HistoricalSimilarityService {
       }
     }
   }
-  public getUniqueHistoricalCount(similarityItems: any[]): number {
-  if (!similarityItems) return 0;
-
-  const uniqueTimes: Set<number> = new Set<number>();
-
-  for (const item of similarityItems) {
-    uniqueTimes.add(Number(item.anomalyTime));
-  }
-
-  return uniqueTimes.size;
-}
 }

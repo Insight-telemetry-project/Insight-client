@@ -11,7 +11,6 @@ export class RelatedParamsService {
   public relatedForParam: string | null = null;
 
   private relatedSub: Subscription | null = null;
-  public sidebarMode: 'related' | 'historical' = 'related';
 
   public constructor(private readonly archiveService: FlightArchiveService) {}
 
@@ -28,7 +27,11 @@ export class RelatedParamsService {
     }
   }
 
-  public openFor(masterIndex: number, param: string, subs: Subscription): void {
+  public openFor(
+    masterIndex: number,
+    param: string,
+    subs: Subscription,
+  ): void {
     this.relatedForParam = param;
     this.relatedOpen = true;
     this.load(masterIndex, param, subs);
@@ -49,7 +52,11 @@ export class RelatedParamsService {
     }
   }
 
-  public load(masterIndex: number, param: string, subs: Subscription): void {
+  public load(
+    masterIndex: number,
+    param: string,
+    subs: Subscription,
+  ): void {
     this.relatedLoading = true;
     this.relatedError = null;
     this.relatedParams = [];
@@ -59,17 +66,18 @@ export class RelatedParamsService {
       this.relatedSub = null;
     }
 
-    this.relatedSub = this.archiveService.getFlightConnectionsParam(masterIndex, param).subscribe({
-      next: (items: string[]) => {
-        this.relatedParams = (items ?? []).slice();
-        this.relatedLoading = false;
-      },
-      error: (err: any) => {
-        console.error('Failed to load related params for', param, err);
-        this.relatedError = 'Failed to load related parameters';
-        this.relatedLoading = false;
-      }
-    });
+    this.relatedSub = this.archiveService
+      .getFlightConnectionsParam(masterIndex, param)
+      .subscribe({
+        next: (items: string[]) => {
+          this.relatedParams = (items ?? []).slice();
+          this.relatedLoading = false;
+        },
+        error: (err: any) => {
+          this.relatedError = 'Failed to load related parameters';
+          this.relatedLoading = false;
+        },
+      });
 
     subs.add(this.relatedSub);
   }

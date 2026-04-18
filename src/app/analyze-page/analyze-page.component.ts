@@ -41,10 +41,6 @@ interface SpecialPointsResponse {
   historicalSimilarity: Record<string, Array<{ anomalyTime: number }>>;
 }
 
-interface CustomEventDetail {
-  detail: string | null;
-}
-
 interface HistoricalHoverEventDetail {
   anomalyTime: string | null;
 }
@@ -53,11 +49,6 @@ interface SeriesWithId {
   options: Record<string, unknown> & { id?: string };
   show(): void;
   hide(): void;
-}
-
-interface PointWithCustom {
-  options: Record<string, unknown>;
-  setState(state: string): void;
 }
 
 interface GridItemWithObserver extends GridChartItem {
@@ -78,7 +69,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('gridChartEl') public gridChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
-
   @ViewChildren('historicalMiniChart')
   public historicalMiniChartElements!: QueryList<ElementRef<HTMLDivElement>>;
 
@@ -115,6 +105,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   public gridItems: GridChartItem[] = [];
+  public expandedGroups: Set<string> = new Set<string>();
+  public parameterSpecialPointsCountMap: Map<string, SpecialPointsCountMap> =
+    new Map();
 
   private subscriptions: Subscription = new Subscription();
   private miniCharts: Map<string, import('highcharts').Chart> = new Map();
@@ -122,11 +115,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     new Map();
   private pendingParamToAutoSelect: string | null = null;
   private sidebarParam: string | null = null;
-
   private cachedGroupedHistoricalItems: HistoricalGroupItem[] = [];
   private lastHistoricalSortBy: 'time' | 'score' = 'time';
-  public parameterSpecialPointsCountMap: Map<string, SpecialPointsCountMap> =
-    new Map();
+
   public constructor(
     private readonly route: ActivatedRoute,
     private readonly archiveService: FlightArchiveService,
@@ -155,23 +146,15 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public get sortedHistoricalItems(): HistoricalSidebarItem[] {
-    const sidebarItemsCopy: HistoricalSidebarItem[] = [
-      ...this.historicalSidebarItems,
-    ];
-    if (this.historicalSortBy === 'time') {
-      return sidebarItemsCopy.sort(
-        (firstItem, secondItem) => firstItem.time - secondItem.time,
-      );
-    }
-    return sidebarItemsCopy.sort(
-      (firstItem, secondItem) => secondItem.score - firstItem.score,
+    return this.historicalSimilarityService.buildSortedSidebarItems(
+      this.historicalSortBy,
     );
   }
 
   public get filteredParameters(): string[] {
     const searchQuery: string = this.paramSearchText.trim().toLowerCase();
 
-    let filtered: string[] =
+    const filtered: string[] =
       searchQuery.length === 0
         ? this.parameters
         : this.parameters.filter((parameterName: string) =>
@@ -190,6 +173,20 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  public get groupedHistoricalItems(): HistoricalGroupItem[] {
+    if (
+      this.lastHistoricalSortBy !== this.historicalSortBy ||
+      this.cachedGroupedHistoricalItems.length === 0
+    ) {
+      this.lastHistoricalSortBy = this.historicalSortBy;
+      this.cachedGroupedHistoricalItems =
+        this.historicalSimilarityService.buildGroupedHistoricalItems(
+          this.sortedHistoricalItems,
+        );
+    }
+    return this.cachedGroupedHistoricalItems;
+  }
+
   public ngOnInit(): void {
     const routeParamSubscription: Subscription = this.route.paramMap.subscribe(
       (paramMap) => {
@@ -198,7 +195,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.clearGrid();
         this.related.clear();
         this.historicalSimilarityService.reset();
-
         this.miniCharts.forEach((miniChart) => miniChart.destroy());
         this.miniCharts.clear();
         this.paramSearchText = '';
@@ -260,77 +256,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const wasSelected: boolean = this.selected.has(paramName);
 
     if (wasSelected) {
-      this.removeGridItem(paramName);
-      this.selected.delete(paramName);
-
-      if (this.sidebarParam === paramName) {
-        const remainingParams = Array.from(this.selected);
-
-        if (remainingParams.length > 0) {
-          const lastParam = remainingParams[remainingParams.length - 1];
-          this.sidebarParam = lastParam;
-
-          this.related.clear();
-          this.historicalSimilarityService.reset();
-
-          if (this.sidebarMode === 'related') {
-            this.related.openFor(
-              this.masterIndex,
-              lastParam,
-              this.subscriptions,
-            );
-          }
-
-          const gridItem = this.gridItems.find((g) => g.param === lastParam);
-
-          if (gridItem && gridItem.chart) {
-            this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-              lastParam,
-              this.flightData,
-              this.flightMeta,
-              gridItem.chart,
-            );
-          }
-
-          this.drawHistoricalMiniCharts();
-        } else {
-          this.sidebarParam = null;
-          this.related.clear();
-          this.historicalSimilarityService.reset();
-        }
-      }
-
+      this.handleParamDeselect(paramName);
       return;
     }
 
-    this.selected.add(paramName);
-    this.sidebarParam = paramName;
-
-    this.addGridItem(paramName);
-
-    this.related.clear();
-    this.historicalSimilarityService.reset();
-
-    if (this.sidebarMode === 'related') {
-      this.related.openFor(this.masterIndex, paramName, this.subscriptions);
-    }
-
-    if (this.sidebarMode === 'historical') {
-      const gridItem = this.gridItems.find((grid) => grid.param === paramName);
-
-      if (gridItem && gridItem.chart) {
-        this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
-          paramName,
-          this.flightData,
-          this.flightMeta,
-          gridItem.chart,
-        );
-      }
-
-      setTimeout(() => {
-        this.drawHistoricalMiniCharts();
-      });
-    }
+    this.handleParamSelect(paramName);
   }
 
   public onRelatedParamClick(paramName: string): void {
@@ -340,7 +270,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (this.sidebarParam === paramName) {
         this.sidebarParam = null;
-
         this.related.clear();
         this.historicalSimilarityService.reset();
       }
@@ -435,6 +364,129 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     return paramName.toLowerCase().includes(searchQuery);
   }
 
+  public setSidebarMode(mode: SidebarModeType): void {
+    this.sidebarMode = mode;
+
+    if (!this.sidebarParam) return;
+
+    if (mode === 'related') {
+      this.related.openFor(
+        this.masterIndex,
+        this.sidebarParam,
+        this.subscriptions,
+      );
+    }
+
+    if (mode === 'historical') {
+      this.drawHistoricalMiniCharts();
+    }
+  }
+
+  public getSpecialPointsCountForParameter(
+    parameterName: string,
+  ): SpecialPointsCountMap {
+    return (
+      this.parameterSpecialPointsCountMap.get(parameterName) ?? {
+        anomalyCount: 0,
+        historicalCount: 0,
+      }
+    );
+  }
+
+  public setParamSort(sortType: 'anomalies' | 'historical'): void {
+    this.paramSortBy = sortType;
+  }
+
+  public trackByParam(index: number, param: string): string {
+    return param;
+  }
+
+  public toggleGroup(groupId: string): void {
+    if (this.expandedGroups.has(groupId)) {
+      this.expandedGroups.delete(groupId);
+    } else {
+      this.expandedGroups.add(groupId);
+    }
+    this.changeDetectorRef.detectChanges();
+  }
+
+  public trackByGroupId(
+    index: number,
+    historicalGroupItem: HistoricalGroupItem,
+  ): string {
+    return historicalGroupItem.id;
+  }
+
+  private handleParamSelect(paramName: string): void {
+    this.selected.add(paramName);
+    this.sidebarParam = paramName;
+
+    this.addGridItem(paramName);
+
+    this.related.clear();
+    this.historicalSimilarityService.reset();
+
+    if (this.sidebarMode === 'related') {
+      this.related.openFor(this.masterIndex, paramName, this.subscriptions);
+    }
+
+    if (this.sidebarMode === 'historical') {
+      const gridItem = this.gridItems.find((grid) => grid.param === paramName);
+
+      if (gridItem && gridItem.chart) {
+        this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+          paramName,
+          this.flightData,
+          this.flightMeta,
+          gridItem.chart,
+        );
+      }
+
+      setTimeout(() => {
+        this.drawHistoricalMiniCharts();
+      });
+    }
+  }
+
+  private handleParamDeselect(paramName: string): void {
+    this.removeGridItem(paramName);
+    this.selected.delete(paramName);
+
+    if (this.sidebarParam !== paramName) return;
+
+    const remainingParams = Array.from(this.selected);
+
+    if (remainingParams.length === 0) {
+      this.sidebarParam = null;
+      this.related.clear();
+      this.historicalSimilarityService.reset();
+      return;
+    }
+
+    const lastParam = remainingParams[remainingParams.length - 1];
+    this.sidebarParam = lastParam;
+
+    this.related.clear();
+    this.historicalSimilarityService.reset();
+
+    if (this.sidebarMode === 'related') {
+      this.related.openFor(this.masterIndex, lastParam, this.subscriptions);
+    }
+
+    const gridItem = this.gridItems.find((g) => g.param === lastParam);
+
+    if (gridItem && gridItem.chart) {
+      this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+        lastParam,
+        this.flightData,
+        this.flightMeta,
+        gridItem.chart,
+      );
+    }
+
+    this.drawHistoricalMiniCharts();
+  }
+
   private addGridItem(paramName: string): void {
     const newGridChartItem: GridChartItem = {
       param: paramName,
@@ -449,6 +501,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.gridItems.push(newGridChartItem);
     this.changeDetectorRef.detectChanges();
+
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 50);
@@ -543,13 +596,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadFlight(): void {
-    const metaSub = this.archiveService
+    const metaSubscription = this.archiveService
       .getFlight(this.masterIndex)
       .subscribe((flightMetadata: FlightMetadata) => {
         this.flightMeta = flightMetadata;
       });
 
-    this.subscriptions.add(metaSub);
+    this.subscriptions.add(metaSubscription);
+
     const flightSubscription: Subscription = this.archiveService
       .getFlightFields(this.masterIndex)
       .subscribe({
@@ -557,7 +611,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           this.flightData = (flightRows ?? [])
             .slice()
             .sort(
-              (firstRow, secondRow) => firstRow.timestep - secondRow.timestep,
+              (firstRow, secondRow) =>
+                firstRow.timestep - secondRow.timestep,
             );
 
           this.parameters = Object.keys(this.flightData[0]?.fields ?? {});
@@ -571,13 +626,13 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           });
         },
-        error: (errorData: unknown) => {
+        error: () => {
           this.flightData = [];
           this.parameters = [];
         },
       });
-    this.loadSpecialPointsCountsForFlight();
 
+    this.loadSpecialPointsCountsForFlight();
     this.subscriptions.add(flightSubscription);
   }
 
@@ -651,13 +706,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           rowsToDisplay,
           paramName,
         );
+
         if (this.historicalMiniCharts.has(chartId)) {
           const existingChart = this.historicalMiniCharts.get(chartId);
-
           if (existingChart) {
             existingChart.destroy();
           }
-
           this.historicalMiniCharts.delete(chartId);
         }
 
@@ -670,24 +724,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.historicalMiniCharts.set(chartId, chart);
       },
     );
-  }
-
-  public setSidebarMode(mode: SidebarModeType): void {
-    this.sidebarMode = mode;
-
-    if (!this.sidebarParam) return;
-
-    if (mode === 'related') {
-      this.related.openFor(
-        this.masterIndex,
-        this.sidebarParam,
-        this.subscriptions,
-      );
-    }
-
-    if (mode === 'historical') {
-      this.drawHistoricalMiniCharts();
-    }
   }
 
   private loadSpecialPointsCountsForFlight(): void {
@@ -707,33 +743,19 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             this.historicalSimilarityService.getUniqueHistoricalCount(
               historicalRecord[parameterName],
             );
+
           this.parameterSpecialPointsCountMap.set(parameterName, {
-            anomalyCount: anomalyCount,
-            historicalCount: historicalCount,
+            anomalyCount,
+            historicalCount,
           });
         });
       });
   }
 
-  public getSpecialPointsCountForParameter(
-    parameterName: string,
-  ): SpecialPointsCountMap {
-    return (
-      this.parameterSpecialPointsCountMap.get(parameterName) ?? {
-        anomalyCount: 0,
-        historicalCount: 0,
-      }
-    );
-  }
-  public setParamSort(sortType: 'anomalies' | 'historical'): void {
-    this.paramSortBy = sortType;
-  }
-  public trackByParam(index: number, param: string): string {
-    return param;
-  }
-
   private onHistoricalHover(anomalyTime: string | null): void {
-this.hoveredHistoricalId = anomalyTime ? '_' + anomalyTime : null;    const container = document.querySelector('.sidebarContent') as HTMLElement;
+    this.hoveredHistoricalId = anomalyTime ? '_' + anomalyTime : null;
+
+    const container = document.querySelector('.sidebarContent') as HTMLElement;
 
     if (anomalyTime && container) {
       const matchedCards = (
@@ -742,8 +764,11 @@ this.hoveredHistoricalId = anomalyTime ? '_' + anomalyTime : null;    const cont
         ) as HTMLElement[]
       ).filter(
         (cardElement) =>
-          cardElement.getAttribute('data-id')?.split('_').slice(1).join('_') ===
-          anomalyTime,
+          cardElement
+            .getAttribute('data-id')
+            ?.split('_')
+            .slice(1)
+            .join('_') === anomalyTime,
       );
 
       matchedCards.forEach((cardElement, cardIndex) => {
@@ -797,49 +822,5 @@ this.hoveredHistoricalId = anomalyTime ? '_' + anomalyTime : null;    const cont
         }
       }
     }
-  }
-
-  public expandedGroups: Set<string> = new Set<string>();
-
-  public get groupedHistoricalItems(): HistoricalGroupItem[] {
-    if (
-      this.lastHistoricalSortBy !== this.historicalSortBy ||
-      this.cachedGroupedHistoricalItems.length === 0
-    ) {
-      this.lastHistoricalSortBy = this.historicalSortBy;
-      const historicalItemsByTime = new Map<string, HistoricalSidebarItem[]>();
-
-      for (const historicalItem of this.sortedHistoricalItems) {
-        const timeKey: string = String(historicalItem.time);
-        if (!historicalItemsByTime.has(timeKey)) {
-          historicalItemsByTime.set(timeKey, []);
-        }
-        historicalItemsByTime.get(timeKey)!.push(historicalItem);
-      }
-
-      this.cachedGroupedHistoricalItems = Array.from(
-        historicalItemsByTime.entries(),
-      ).map(([timeKey, groupItems]: [string, HistoricalSidebarItem[]]) => ({
-        id: timeKey,
-        items: groupItems,
-      }));
-    }
-    return this.cachedGroupedHistoricalItems;
-  }
-
-  public toggleGroup(groupId: string): void {
-    if (this.expandedGroups.has(groupId)) {
-      this.expandedGroups.delete(groupId);
-    } else {
-      this.expandedGroups.add(groupId);
-    }
-    this.changeDetectorRef.detectChanges();
-  }
-
-  public trackByGroupId(
-    index: number,
-    historicalGroupItem: HistoricalGroupItem,
-  ): string {
-    return historicalGroupItem.id;
   }
 }
