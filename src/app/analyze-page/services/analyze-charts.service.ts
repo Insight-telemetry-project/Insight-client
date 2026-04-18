@@ -417,10 +417,7 @@ export class AnalyzeChartsService {
       paramName,
     );
 
-    const downsampledData: [number, number][] = this.downsampleData(
-      fullData,
-      2000,
-    );
+
 
     const baseColor: string = '#8b5cf6';
     const gradientTopColor: string = Highcharts.color(baseColor)
@@ -464,21 +461,6 @@ export class AnalyzeChartsService {
           labels: { style: { color: '#cfcfe6' } },
 
           events: {
-            setExtremes: function (event: any) {
-              const chartInstance = this.chart;
-              const mainSeries = chartInstance.series[0];
-
-              const isZoomed =
-                event.min !== undefined && event.max !== undefined;
-
-              if (isZoomed) {
-                mainSeries.setData([...fullData], false);
-              } else {
-                mainSeries.setData([...downsampledData], false);
-              }
-
-              chartInstance.redraw();
-            },
           },
         },
         yAxis: {
@@ -556,14 +538,4 @@ export class AnalyzeChartsService {
     return { red, yellow };
   }
 
-  private downsampleData(
-    originalData: [number, number][],
-    maxPoints: number,
-  ): [number, number][] {
-    if (originalData.length <= maxPoints) return originalData;
-
-    const step = Math.ceil(originalData.length / maxPoints);
-
-    return originalData.filter((_, index) => index % step === 0);
-  }
 }
