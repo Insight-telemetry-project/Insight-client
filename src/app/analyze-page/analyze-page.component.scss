@@ -1027,3 +1027,45 @@
   pointer-events: auto;
   z-index: 11;
 }
+.anomaly-popup {
+position: fixed;
+  min-width: 220px;
+  background: rgba(30, 15, 60, 0.95);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 12px;
+  padding: 12px;
+  color: white;
+  z-index: 2000;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.popup-header {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #f87171;
+}
+
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.popup-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  background: #a855f7;
+  color: white;
+  cursor: pointer;
+}
+.anomaly-header {
+  color: #ff2d2d;
+}
+
+.historical-header {
+  color: #facc15;
+}

@@ -26,6 +26,7 @@ import { RelatedParamsService } from './services/related-params.service';
 import { HistoricalSidebarItem } from '../common/interfaces/historical-sidebar-item.interface';
 import { GridChartItem } from '../common/interfaces/grid-chart-item.interface';
 import { HistoricalGroupItem } from '../common/interfaces/historical-groupItem.interface';
+import { SelectedPoint } from '../common/interfaces/selected-point .interface';
 
 interface FlightMetadata {
   [key: string]: unknown;
@@ -80,6 +81,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public flightMeta: FlightMetadata | null = null;
   public sidebarMode: SidebarModeType = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
+  public selectedPoint: SelectedPoint | null = null;
   public hoveredHistoricalId: string | null = null;
   public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
   public gridOptions: GridsterConfig = {
@@ -227,6 +229,34 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.onHistoricalHover(anomalyTime);
     });
 
+    window.addEventListener('anomaly-click', (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        type: 'anomaly' | 'historical';
+        x: number;
+        y: number;
+        param: string;
+        historicalId?: string;
+        clientX: number;
+        clientY: number;
+      }>;
+
+      console.log('CLICK POINT:', customEvent.detail);
+
+      this.selectedPoint = customEvent.detail;
+    });
+    window.addEventListener('click', (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      if (target.closest('.highcharts-point')) {
+        return;
+      }
+
+      if (target.closest('.anomaly-popup')) {
+        return;
+      }
+
+      this.selectedPoint = null;
+    });
     setTimeout(() => {
       this.cachedGroupedHistoricalItems = [];
       this.drawHistoricalMiniCharts();
@@ -611,8 +641,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           this.flightData = (flightRows ?? [])
             .slice()
             .sort(
-              (firstRow, secondRow) =>
-                firstRow.timestep - secondRow.timestep,
+              (firstRow, secondRow) => firstRow.timestep - secondRow.timestep,
             );
 
           this.parameters = Object.keys(this.flightData[0]?.fields ?? {});
@@ -764,11 +793,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         ) as HTMLElement[]
       ).filter(
         (cardElement) =>
-          cardElement
-            .getAttribute('data-id')
-            ?.split('_')
-            .slice(1)
-            .join('_') === anomalyTime,
+          cardElement.getAttribute('data-id')?.split('_').slice(1).join('_') ===
+          anomalyTime,
       );
 
       matchedCards.forEach((cardElement, cardIndex) => {
@@ -822,5 +848,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     }
+  }
+  public openInvestigationModal(event: MouseEvent): void {
+    event.stopPropagation();
+    console.log('OPEN MODAL', this.selectedPoint);
   }
 }

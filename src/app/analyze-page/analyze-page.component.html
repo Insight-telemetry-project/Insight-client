@@ -145,6 +145,47 @@
         </button>
       </div>
     </section>
+    <div
+      *ngIf="selectedPoint"
+      class="anomaly-popup"
+      [style.top.px]="selectedPoint.clientY + 10"
+      [style.left.px]="selectedPoint.clientX + 10"
+      (click)="$event.stopPropagation()"
+    >
+      <div
+        class="popup-header"
+        [ngClass]="{
+          'anomaly-header': selectedPoint.type === 'anomaly',
+          'historical-header': selectedPoint.type === 'historical',
+        }"
+      >
+        {{ selectedPoint.type === "anomaly" ? "Anomaly" : "Historical Match" }}
+      </div>
+
+      <div class="popup-row">
+        <span>Param:</span>
+        <span>{{ selectedPoint.param }}</span>
+      </div>
+
+      <div class="popup-row">
+        <span>Value:</span>
+        <span>{{ selectedPoint.y }}</span>
+      </div>
+
+      <div class="popup-row">
+        <span>Time:</span>
+        <span>{{ selectedPoint.x | date: "HH:mm:ss" }}</span>
+      </div>
+
+      <div *ngIf="selectedPoint.type === 'historical'" class="popup-row">
+        <span>Matches:</span>
+        <span>Similar pattern</span>
+      </div>
+
+      <button class="popup-btn" (click)="openInvestigationModal($event)">
+        Add Investigation
+      </button>
+    </div>
   </div>
 
   <aside class="sidebar">
@@ -228,20 +269,33 @@
 
           <!-- Grouped Historical Cards by Time -->
           <div class="historicalCardsList">
-            <div 
+            <div
               class="timeGroup"
-              *ngFor="let group of groupedHistoricalItems; trackBy: trackByGroupId"
+              *ngFor="
+                let group of groupedHistoricalItems;
+                trackBy: trackByGroupId
+              "
               [class.expanded]="expandedGroups.has(group.id)"
             >
               <!-- Group Header - Clickable Button -->
               <button
                 class="timeGroupHeader"
                 (click)="toggleGroup(group.id)"
-[class.hovered]="hoveredHistoricalId && hoveredHistoricalId.includes('_' + group.id)"                type="button"
+                [class.hovered]="
+                  hoveredHistoricalId &&
+                  hoveredHistoricalId.includes('_' + group.id)
+                "
+                type="button"
               >
                 <div class="timeGroupInfo">
-                  <div class="timeLabel">{{ group.items[0].time * 1000 | date: "HH:mm:ss" }}</div>
-                  <div class="countBadge">{{ group.items.length }} match{{ group.items.length !== 1 ? 'es' : '' }}</div>
+                  <div class="timeLabel">
+                    {{ group.items[0].time * 1000 | date: "HH:mm:ss" }}
+                  </div>
+                  <div class="countBadge">
+                    {{ group.items.length }} match{{
+                      group.items.length !== 1 ? "es" : ""
+                    }}
+                  </div>
                 </div>
                 <div class="expandIcon">
                   {{ expandedGroups.has(group.id) ? "▲" : "▼" }}
@@ -254,14 +308,21 @@
                   class="historicalCardNew"
                   *ngFor="let item of group.items"
                   [attr.data-id]="item.comparedFlightIndex + '_' + item.time"
-                  [class.hovered]="hoveredHistoricalId === item.comparedFlightIndex + '_' + item.time"
+                  [class.hovered]="
+                    hoveredHistoricalId ===
+                    item.comparedFlightIndex + '_' + item.time
+                  "
                   (mouseenter)="onHistoricalCardHover(item)"
                   (mouseleave)="onHistoricalCardLeave()"
                   (click)="navigateToHistoricalFlight(item)"
                 >
                   <div class="cardHeader">
-                    <div class="cardScore">{{ item.score * 100 | number: "1.0-0" }}%</div>
-                    <div class="cardTime">Flight: {{ item.comparedFlightIndex }}</div>
+                    <div class="cardScore">
+                      {{ item.score * 100 | number: "1.0-0" }}%
+                    </div>
+                    <div class="cardTime">
+                      Flight: {{ item.comparedFlightIndex }}
+                    </div>
                   </div>
                   <div class="cardBody">
                     <div class="cardInfo">

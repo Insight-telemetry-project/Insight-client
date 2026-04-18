@@ -102,6 +102,39 @@ export class AnalyzeChartsService {
             },
           },
         },
+        point: {
+          events: {
+            click: function (event: Highcharts.PointClickEventObject) {
+              const point = this as Highcharts.Point;
+
+              const zone = (
+                window as unknown as {
+                  ngZoneRef: import('@angular/core').NgZone;
+                }
+              ).ngZoneRef;
+
+              if (zone) {
+                const mouseEvent = event as unknown as MouseEvent;
+                const matchesCount = (point.options as any).custom?.matchesCount ?? 1;
+                zone.run(() => {
+                  window.dispatchEvent(
+                    new CustomEvent('anomaly-click', {
+                      detail: {
+                        type: 'anomaly',
+                        x: point.x,
+                        y: point.y,
+                        param: paramName,
+                        clientX: mouseEvent.clientX,
+                        clientY: mouseEvent.clientY,
+                        matchesCount: matchesCount
+                      },
+                    }),
+                  );
+                });
+              }
+            },
+          },
+        },
         states: { hover: { enabled: true } },
         tooltip: {
           useHTML: true,
@@ -309,6 +342,40 @@ export class AnalyzeChartsService {
                 });
               }
             },
+            click: function (event: Highcharts.PointClickEventObject) {
+              const point = this as Highcharts.Point;
+
+              const historicalId = (
+                point.options as {
+                  custom?: { historicalId?: string };
+                }
+              ).custom?.historicalId;
+
+              const zone = (
+                window as unknown as {
+                  ngZoneRef: import('@angular/core').NgZone;
+                }
+              ).ngZoneRef;
+
+              if (zone) {
+                const mouseEvent = event as unknown as MouseEvent;
+                zone.run(() => {
+                  window.dispatchEvent(
+                    new CustomEvent('anomaly-click', {
+                      detail: {
+                        type: 'historical',
+                        x: point.x,
+                        y: point.y,
+                        param: paramName,
+                        historicalId: historicalId,
+                        clientX: mouseEvent.clientX,
+                        clientY: mouseEvent.clientY,
+                      },
+                    }),
+                  );
+                });
+              }
+            },
           },
         },
 
@@ -417,8 +484,6 @@ export class AnalyzeChartsService {
       paramName,
     );
 
-
-
     const baseColor: string = '#8b5cf6';
     const gradientTopColor: string = Highcharts.color(baseColor)
       .setOpacity(0.25)
@@ -460,8 +525,7 @@ export class AnalyzeChartsService {
           gridLineWidth: 1,
           labels: { style: { color: '#cfcfe6' } },
 
-          events: {
-          },
+          events: {},
         },
         yAxis: {
           title: { text: '' },
@@ -537,5 +601,4 @@ export class AnalyzeChartsService {
 
     return { red, yellow };
   }
-
 }
