@@ -115,7 +115,8 @@ export class AnalyzeChartsService {
 
               if (zone) {
                 const mouseEvent = event as unknown as MouseEvent;
-                const matchesCount = (point.options as any).custom?.matchesCount ?? 1;
+                const matchesCount =
+                  (point.options as any).custom?.matchesCount ?? 1;
                 zone.run(() => {
                   window.dispatchEvent(
                     new CustomEvent('anomaly-click', {
@@ -126,7 +127,7 @@ export class AnalyzeChartsService {
                         param: paramName,
                         clientX: mouseEvent.clientX,
                         clientY: mouseEvent.clientY,
-                        matchesCount: matchesCount
+                        matchesCount: matchesCount,
                       },
                     }),
                   );
@@ -301,6 +302,15 @@ export class AnalyzeChartsService {
         zIndex: 7,
         color: '#facc15',
         enableMouseTracking: true,
+
+        tooltip: {
+          useHTML: true,
+          pointFormat: `
+    <b style="color:#facc15">Historical</b><br/>
+    <b>${paramName}</b>: {point.y}<br/>
+    Time: {point.x:%H:%M:%S}
+  `,
+        },
 
         point: {
           events: {
