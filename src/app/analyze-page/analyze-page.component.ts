@@ -853,4 +853,20 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     event.stopPropagation();
     console.log('OPEN MODAL', this.selectedPoint);
   }
+  public onTimeGroupHover(group: HistoricalGroupItem): void {
+  if (!group.items || group.items.length === 0) return;
+
+  const firstItem = group.items[0];
+
+  const historicalId =
+    firstItem.comparedFlightIndex + '_' + firstItem.time;
+
+  this.hoveredHistoricalId = historicalId;
+
+  window.dispatchEvent(
+    new CustomEvent('historical-card-hover', {
+      detail: historicalId,
+    }),
+  );
+}
 }

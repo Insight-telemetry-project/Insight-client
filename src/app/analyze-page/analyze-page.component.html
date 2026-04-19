@@ -277,7 +277,6 @@
               "
               [class.expanded]="expandedGroups.has(group.id)"
             >
-              <!-- Group Header - Clickable Button -->
               <button
                 class="timeGroupHeader"
                 (click)="toggleGroup(group.id)"
@@ -287,7 +286,11 @@
                 "
                 type="button"
               >
-                <div class="timeGroupInfo">
+                <div
+                  class="timeGroupInfo"
+                  (mouseenter)="onTimeGroupHover(group)"
+                  (mouseleave)="onHistoricalCardLeave()"
+                >
                   <div class="timeLabel">
                     {{ group.items[0].time * 1000 | date: "HH:mm:ss" }}
                   </div>
