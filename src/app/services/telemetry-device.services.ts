@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TelemetryDeviceService {
-  private readonly baseUrl: string = 'https://localhost:7130';
+  // private readonly baseUrl: string = 'https://localhost:7130';
+  private readonly baseUrl: string = environment.telemetryApi;
 
   public constructor(private readonly httpClient: HttpClient) {}
 

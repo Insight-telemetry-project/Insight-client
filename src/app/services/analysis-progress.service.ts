@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { Subject } from 'rxjs';
+import { environment } from 'src/environments/environment.prod';
 
 export interface AnalysisProgress {
   flightId: number;
@@ -32,7 +33,7 @@ export class AnalysisProgressService {
   public async connect(flightId: number): Promise<void> {
     if (!this.connection) {
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl('https://localhost:7274/analysis-progress', {
+        .withUrl(`${environment.signalR}/analysis-progress`, {
           withCredentials: true,
         })
         .withAutomaticReconnect()

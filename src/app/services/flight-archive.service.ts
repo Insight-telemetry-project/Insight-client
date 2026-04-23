@@ -5,14 +5,16 @@ import { TelemetrySensorFields } from '../common/interfaces/telemetry-sensor-fie
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { HistoricalSimilarityPoint } from '../common/interfaces/historical-similarity-point.interface';
 import { FlightPoints } from '../common/interfaces/flight-points';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FlightArchiveService {
-  private readonly baseUrl: string =
-    'https://localhost:7219/TelemetryDataArchive';
+  // private readonly baseUrl: string =
+  //   'https://localhost:7219/TelemetryDataArchive';
 
+  private readonly baseUrl: string = `${environment.archiveApi}/TelemetryDataArchive`;
   public constructor(private readonly http: HttpClient) {}
 
   public getAllFlights(): Observable<FlightSummary[]> {
