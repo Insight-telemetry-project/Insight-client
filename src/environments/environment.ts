@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
 
-  telemetryApi: 'http://localhost:7130',
-  archiveApi: 'http://localhost:7150',
-  signalR: 'http://localhost:7274'
+  telemetryApi: 'https://localhost:7130',
+  archiveApi: 'https://localhost:7219',
+  signalR: 'https://localhost:7274'
 };
