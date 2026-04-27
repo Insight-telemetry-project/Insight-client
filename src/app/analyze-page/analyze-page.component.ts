@@ -388,6 +388,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
+  public onGridCardClick(event: MouseEvent, item: GridChartItem): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('.gridChartBody') || target.closest('.gridChartActions')) return;
+    this.selectParamForSidebar(item.param);
+  }
+
   public isParamVisible(paramName: string): boolean {
     const searchQuery: string = this.paramSearchText.trim().toLowerCase();
     if (searchQuery.length === 0) return true;
@@ -781,6 +787,30 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
+  private selectParamForSidebar(paramName: string): void {
+    if (this.sidebarParam === paramName) return;
+    this.sidebarParam = paramName;
+    this.related.clear();
+    this.historicalSimilarityService.reset();
+
+    if (this.sidebarMode === 'related') {
+      this.related.openFor(this.masterIndex, paramName, this.subscriptions);
+      return;
+    }
+
+    this.related.relatedForParam = paramName;
+    const gridItem = this.gridItems.find((g) => g.param === paramName);
+    if (gridItem && gridItem.chart) {
+      this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+        paramName,
+        this.flightData,
+        this.flightMeta,
+        gridItem.chart,
+      );
+    }
+    setTimeout(() => this.drawHistoricalMiniCharts());
+  }
+
   private onHistoricalHover(anomalyTime: string | null): void {
     this.hoveredHistoricalId = anomalyTime ? '_' + anomalyTime : null;
 
@@ -854,19 +884,18 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('OPEN MODAL', this.selectedPoint);
   }
   public onTimeGroupHover(group: HistoricalGroupItem): void {
-  if (!group.items || group.items.length === 0) return;
+    if (!group.items || group.items.length === 0) return;
 
-  const firstItem = group.items[0];
+    const firstItem = group.items[0];
 
-  const historicalId =
-    firstItem.comparedFlightIndex + '_' + firstItem.time;
+    const historicalId = firstItem.comparedFlightIndex + '_' + firstItem.time;
 
-  this.hoveredHistoricalId = historicalId;
+    this.hoveredHistoricalId = historicalId;
 
-  window.dispatchEvent(
-    new CustomEvent('historical-card-hover', {
-      detail: historicalId,
-    }),
-  );
-}
+    window.dispatchEvent(
+      new CustomEvent('historical-card-hover', {
+        detail: historicalId,
+      }),
+    );
+  }
 }

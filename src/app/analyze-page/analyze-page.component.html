@@ -16,7 +16,7 @@
           [item]="item"
           class="gridsterItemWrapper"
         >
-          <div class="gridChartCard">
+          <div class="gridChartCard" (click)="onGridCardClick($event, item)">
             <div class="gridChartHeader">
               <span class="gridChartTitle">{{ item.param }}</span>
               <div class="gridChartActions">
