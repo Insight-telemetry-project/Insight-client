@@ -83,6 +83,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public historicalSortBy: 'time' | 'score' = 'time';
   public selectedPoint: SelectedPoint | null = null;
   public hoveredHistoricalId: string | null = null;
+  public zoomedParam: string | null = null;
+  public syncingParam: string | null = null;
+  private zoomedExtremes: { min: number; max: number } | null = null;
+  private isSyncing = false;
   public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
@@ -257,6 +261,33 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.selectedPoint = null;
     });
+    window.addEventListener('chart-zoom-update', (event: Event) => {
+      if (this.isSyncing) return;
+      const { param, min, max } = (event as CustomEvent<{ param: string; min: number; max: number }>).detail;
+      if (this.syncingParam === param) {
+        this.zoomedExtremes = { min, max };
+        this.applySyncExtremes(min, max, param);
+      } else if (!this.syncingParam) {
+        this.zoomedParam = param;
+        this.zoomedExtremes = { min, max };
+      }
+      this.changeDetectorRef.detectChanges();
+    });
+
+    window.addEventListener('chart-zoom-reset', (event: Event) => {
+      if (this.isSyncing) return;
+      const { param } = (event as CustomEvent<{ param: string }>).detail;
+      if (this.zoomedParam === param) {
+        this.zoomedParam = null;
+        this.zoomedExtremes = null;
+      }
+      if (this.syncingParam === param) {
+        this.syncingParam = null;
+        this.applySyncReset(param);
+      }
+      this.changeDetectorRef.detectChanges();
+    });
+
     setTimeout(() => {
       this.cachedGroupedHistoricalItems = [];
       this.drawHistoricalMiniCharts();
@@ -386,6 +417,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     window.dispatchEvent(
       new CustomEvent('historical-card-hover', { detail: null }),
     );
+  }
+
+  public toggleSync(param: string): void {
+    if (this.syncingParam === param) {
+      this.syncingParam = null;
+      return;
+    }
+    this.syncingParam = param;
+    if (this.zoomedExtremes) {
+      this.applySyncExtremes(this.zoomedExtremes.min, this.zoomedExtremes.max, param);
+    }
   }
 
   public onGridCardClick(event: MouseEvent, item: GridChartItem): void {
@@ -546,6 +588,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private removeGridItem(paramName: string): void {
+    if (this.zoomedParam === paramName) {
+      this.zoomedParam = null;
+      this.zoomedExtremes = null;
+    }
+    if (this.syncingParam === paramName) {
+      this.syncingParam = null;
+    }
+
     const gridItemIndex: number = this.gridItems.findIndex(
       (gridItem) => gridItem.param === paramName,
     );
@@ -785,6 +835,24 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           });
         });
       });
+  }
+
+  private applySyncExtremes(min: number, max: number, sourceParam: string): void {
+    this.isSyncing = true;
+    for (const item of this.gridItems) {
+      if (!item.chart || item.param === sourceParam) continue;
+      item.chart.xAxis[0].setExtremes(min, max, true, false);
+    }
+    this.isSyncing = false;
+  }
+
+  private applySyncReset(sourceParam: string): void {
+    this.isSyncing = true;
+    for (const item of this.gridItems) {
+      if (!item.chart || item.param === sourceParam) continue;
+      item.chart.xAxis[0].setExtremes(undefined, undefined, true, false);
+    }
+    this.isSyncing = false;
   }
 
   private selectParamForSidebar(paramName: string): void {

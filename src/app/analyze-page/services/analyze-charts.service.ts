@@ -510,7 +510,32 @@ export class AnalyzeChartsService {
         },
         chart: {
           backgroundColor: 'transparent',
-          zooming: { type: 'x' },
+          zooming: {
+            type: 'x',
+            resetButton: {
+              theme: {
+                fill: 'rgba(15, 20, 40, 0.88)',
+                stroke: 'rgba(100, 200, 255, 0.45)',
+                r: 6,
+                'stroke-width': 1,
+                style: {
+                  color: 'rgba(100, 200, 255, 0.9)',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                },
+                states: {
+                  hover: {
+                    fill: 'rgba(60, 160, 255, 0.22)',
+                    stroke: 'rgba(100, 200, 255, 0.75)',
+                    style: { color: '#64c8ff' },
+                  },
+                },
+              },
+              position: { align: 'right', verticalAlign: 'top', x: -8, y: 8 },
+            },
+          } as any,
           panning: {
             enabled: true,
             type: 'x',
@@ -521,7 +546,7 @@ export class AnalyzeChartsService {
             load: function () {
               const chart = this;
               chart.container.ondblclick = function () {
-                chart.xAxis[0].setExtremes(undefined, undefined);
+                chart.zoomOut();
               };
             },
           },
@@ -535,7 +560,28 @@ export class AnalyzeChartsService {
           gridLineWidth: 1,
           labels: { style: { color: '#cfcfe6' } },
 
-          events: {},
+          events: {
+            afterSetExtremes: function (e: any) {
+              const zone = (window as any).ngZoneRef;
+              if (!zone) return;
+              const isReset = e.userMin == null && e.userMax == null;
+              zone.run(() => {
+                if (isReset) {
+                  window.dispatchEvent(
+                    new CustomEvent('chart-zoom-reset', {
+                      detail: { param: paramName },
+                    }),
+                  );
+                } else {
+                  window.dispatchEvent(
+                    new CustomEvent('chart-zoom-update', {
+                      detail: { param: paramName, min: e.min, max: e.max },
+                    }),
+                  );
+                }
+              });
+            },
+          },
         },
         yAxis: {
           title: { text: '' },

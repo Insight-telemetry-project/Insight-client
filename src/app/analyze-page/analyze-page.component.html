@@ -21,6 +21,17 @@
               <span class="gridChartTitle">{{ item.param }}</span>
               <div class="gridChartActions">
                 <button
+                  *ngIf="(zoomedParam === item.param || syncingParam === item.param) && gridItems.length > 1"
+                  class="gridChartToggleBtn syncZoomBtn"
+                  [class.syncing]="syncingParam === item.param"
+                  type="button"
+                  (click)="toggleSync(item.param); $event.stopPropagation()"
+                  [title]="syncingParam === item.param ? 'Stop syncing (other charts stay)' : 'Sync zoom to all charts and track'"
+                >
+                  ⇔ {{ syncingParam === item.param ? 'Syncing...' : 'Sync zoom' }}
+                </button>
+
+                <button
                   class="gridChartToggleBtn anomalyBtn"
                   type="button"
                   [class.hidden]="!item.showAnomalies"
