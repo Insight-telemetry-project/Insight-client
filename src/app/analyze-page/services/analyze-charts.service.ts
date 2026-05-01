@@ -504,12 +504,9 @@ export class AnalyzeChartsService {
 
     return this.ngZone.runOutsideAngular(() => {
       return Highcharts.chart(container, {
-        boost: {
-          useGPUTranslations: true,
-          usePreallocated: true,
-        },
         chart: {
           backgroundColor: 'transparent',
+          animation: false,
           zooming: {
             type: 'x',
             resetButton: {
@@ -561,26 +558,27 @@ export class AnalyzeChartsService {
           labels: { style: { color: '#cfcfe6' } },
 
           events: {
-            afterSetExtremes: function (e: any) {
-              const zone = (window as any).ngZoneRef;
-              if (!zone) return;
-              const isReset = e.userMin == null && e.userMax == null;
-              zone.run(() => {
-                if (isReset) {
-                  window.dispatchEvent(
-                    new CustomEvent('chart-zoom-reset', {
-                      detail: { param: paramName },
-                    }),
-                  );
-                } else {
-                  window.dispatchEvent(
-                    new CustomEvent('chart-zoom-update', {
-                      detail: { param: paramName, min: e.min, max: e.max },
-                    }),
-                  );
-                }
-              });
-            },
+            afterSetExtremes: (() => {
+              let rafId: number | null = null;
+              return function (e: any) {
+                const snapshot = { userMin: e.userMin, userMax: e.userMax, min: e.min, max: e.max };
+                if (rafId !== null) cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(() => {
+                  rafId = null;
+                  const zone = (window as any).ngZoneRef;
+                  if (!zone) return;
+                  const isReset = snapshot.userMin == null && snapshot.userMax == null;
+                  zone.run(() => {
+                    window.dispatchEvent(new CustomEvent(
+                      isReset ? 'chart-zoom-reset' : 'chart-zoom-update',
+                      { detail: isReset
+                          ? { param: paramName }
+                          : { param: paramName, min: snapshot.min, max: snapshot.max } },
+                    ));
+                  });
+                });
+              };
+            })(),
           },
         },
         yAxis: {
@@ -596,6 +594,7 @@ export class AnalyzeChartsService {
         },
         plotOptions: {
           series: {
+            animation: false,
             states: {
               inactive: {
                 opacity: 1,
@@ -614,8 +613,8 @@ export class AnalyzeChartsService {
             type: 'areaspline',
             name: paramName,
             data: fullData,
-            boostThreshold: 1,
             turboThreshold: 0,
+            enableMouseTracking: false,
             color: baseColor,
             lineWidth: 1.5,
             marker: { enabled: false },

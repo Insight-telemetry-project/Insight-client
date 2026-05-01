@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  NgZone,
   OnDestroy,
   OnInit,
   QueryList,
@@ -131,6 +132,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly chartsService: AnalyzeChartsService,
     private readonly anomaliesService: AnomaliesService,
     private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
     public readonly related: RelatedParamsService,
     public readonly historicalSimilarityService: HistoricalSimilarityService,
   ) {}
@@ -157,17 +159,19 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  public get filteredParameters(): string[] {
+  public filteredParameters: string[] = [];
+
+  private rebuildFilteredParameters(): void {
     const searchQuery: string = this.paramSearchText.trim().toLowerCase();
 
     const filtered: string[] =
       searchQuery.length === 0
-        ? this.parameters
+        ? this.parameters.slice()
         : this.parameters.filter((parameterName: string) =>
             parameterName.toLowerCase().includes(searchQuery),
           );
 
-    return filtered.sort((a: string, b: string) => {
+    this.filteredParameters = filtered.sort((a: string, b: string) => {
       const aCounts = this.getSpecialPointsCountForParameter(a);
       const bCounts = this.getSpecialPointsCountForParameter(b);
 
@@ -212,80 +216,78 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.subscriptions.add(routeParamSubscription);
 
-    window.addEventListener('historical-hover', (event: Event) => {
-      const customEvent = event as CustomEvent<string | null>;
-      this.hoveredHistoricalId = customEvent.detail;
+    this.ngZone.runOutsideAngular(() => {
+      window.addEventListener('historical-hover', (event: Event) => {
+        const customEvent = event as CustomEvent<string | null>;
+        this.hoveredHistoricalId = customEvent.detail;
+        this.changeDetectorRef.detectChanges();
+      });
     });
   }
 
   public ngAfterViewInit(): void {
-    window.addEventListener('historical-point-hover', (event: Event) => {
-      const customEvent = event as CustomEvent<HistoricalHoverEventDetail>;
-      this.onHistoricalHover(customEvent.detail?.anomalyTime ?? null);
-    });
+    this.ngZone.runOutsideAngular(() => {
+      window.addEventListener('historical-point-hover', (event: Event) => {
+        const customEvent = event as CustomEvent<HistoricalHoverEventDetail>;
+        this.onHistoricalHover(customEvent.detail?.anomalyTime ?? null);
+      });
 
-    window.addEventListener('historical-card-hover', (event: Event) => {
-      const customEvent = event as CustomEvent<string | null>;
-      const targetId: string | null = customEvent.detail;
-      const anomalyTime: string | null = targetId
-        ? targetId.split('_').slice(1).join('_')
-        : null;
-      this.onHistoricalHover(anomalyTime);
-    });
+      window.addEventListener('historical-card-hover', (event: Event) => {
+        const customEvent = event as CustomEvent<string | null>;
+        const targetId: string | null = customEvent.detail;
+        const anomalyTime: string | null = targetId
+          ? targetId.split('_').slice(1).join('_')
+          : null;
+        this.onHistoricalHover(anomalyTime);
+      });
 
-    window.addEventListener('anomaly-click', (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        type: 'anomaly' | 'historical';
-        x: number;
-        y: number;
-        param: string;
-        historicalId?: string;
-        clientX: number;
-        clientY: number;
-      }>;
+      window.addEventListener('anomaly-click', (event: Event) => {
+        const customEvent = event as CustomEvent<{
+          type: 'anomaly' | 'historical';
+          x: number;
+          y: number;
+          param: string;
+          historicalId?: string;
+          clientX: number;
+          clientY: number;
+        }>;
+        this.selectedPoint = customEvent.detail;
+        this.changeDetectorRef.detectChanges();
+      });
 
-      console.log('CLICK POINT:', customEvent.detail);
+      window.addEventListener('click', (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (target.closest('.highcharts-point') || target.closest('.anomaly-popup')) return;
+        this.selectedPoint = null;
+        this.changeDetectorRef.detectChanges();
+      });
 
-      this.selectedPoint = customEvent.detail;
-    });
-    window.addEventListener('click', (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
+      window.addEventListener('chart-zoom-update', (event: Event) => {
+        if (this.isSyncing) return;
+        const { param, min, max } = (event as CustomEvent<{ param: string; min: number; max: number }>).detail;
+        if (this.syncingParam === param) {
+          this.zoomedExtremes = { min, max };
+          this.applySyncExtremes(min, max, param);
+        } else if (!this.syncingParam) {
+          this.zoomedParam = param;
+          this.zoomedExtremes = { min, max };
+        }
+        this.changeDetectorRef.detectChanges();
+      });
 
-      if (target.closest('.highcharts-point')) {
-        return;
-      }
-
-      if (target.closest('.anomaly-popup')) {
-        return;
-      }
-
-      this.selectedPoint = null;
-    });
-    window.addEventListener('chart-zoom-update', (event: Event) => {
-      if (this.isSyncing) return;
-      const { param, min, max } = (event as CustomEvent<{ param: string; min: number; max: number }>).detail;
-      if (this.syncingParam === param) {
-        this.zoomedExtremes = { min, max };
-        this.applySyncExtremes(min, max, param);
-      } else if (!this.syncingParam) {
-        this.zoomedParam = param;
-        this.zoomedExtremes = { min, max };
-      }
-      this.changeDetectorRef.detectChanges();
-    });
-
-    window.addEventListener('chart-zoom-reset', (event: Event) => {
-      if (this.isSyncing) return;
-      const { param } = (event as CustomEvent<{ param: string }>).detail;
-      if (this.zoomedParam === param) {
-        this.zoomedParam = null;
-        this.zoomedExtremes = null;
-      }
-      if (this.syncingParam === param) {
-        this.syncingParam = null;
-        this.applySyncReset(param);
-      }
-      this.changeDetectorRef.detectChanges();
+      window.addEventListener('chart-zoom-reset', (event: Event) => {
+        if (this.isSyncing) return;
+        const { param } = (event as CustomEvent<{ param: string }>).detail;
+        if (this.zoomedParam === param) {
+          this.zoomedParam = null;
+          this.zoomedExtremes = null;
+        }
+        if (this.syncingParam === param) {
+          this.syncingParam = null;
+          this.applySyncReset(param);
+        }
+        this.changeDetectorRef.detectChanges();
+      });
     });
 
     setTimeout(() => {
@@ -387,6 +389,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public onParamSearchChange(searchValue: string): void {
     this.paramSearchText = searchValue;
+    this.rebuildFilteredParameters();
 
     setTimeout(() => {
       this.drawMiniCharts();
@@ -395,6 +398,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public clearParamSearch(): void {
     this.paramSearchText = '';
+    this.rebuildFilteredParameters();
   }
 
   public navigateToHistoricalFlight(sidebarItem: HistoricalSidebarItem): void {
@@ -473,6 +477,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public setParamSort(sortType: 'anomalies' | 'historical'): void {
     this.paramSortBy = sortType;
+    this.rebuildFilteredParameters();
   }
 
   public trackByParam(index: number, param: string): string {
@@ -658,7 +663,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const chartInstance = gridChartItem.chart;
 
     const resizeObserver = new ResizeObserver(() => {
-      chartInstance.reflow();
+      this.ngZone.runOutsideAngular(() => chartInstance.reflow());
     });
 
     resizeObserver.observe(element);
@@ -701,6 +706,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             );
 
           this.parameters = Object.keys(this.flightData[0]?.fields ?? {});
+          this.rebuildFilteredParameters();
 
           setTimeout(() => {
             this.drawMiniCharts();
@@ -792,13 +798,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           paramName,
         );
 
-        if (this.historicalMiniCharts.has(chartId)) {
-          const existingChart = this.historicalMiniCharts.get(chartId);
-          if (existingChart) {
-            existingChart.destroy();
-          }
-          this.historicalMiniCharts.delete(chartId);
-        }
+        if (this.historicalMiniCharts.has(chartId)) return;
 
         const chart = this.chartsService.createMiniChart(
           elementRef.nativeElement,
@@ -834,6 +834,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             historicalCount,
           });
         });
+
+        this.rebuildFilteredParameters();
       });
   }
 
