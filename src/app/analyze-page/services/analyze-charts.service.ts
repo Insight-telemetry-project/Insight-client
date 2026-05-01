@@ -556,7 +556,6 @@ export class AnalyzeChartsService {
           gridLineColor: 'rgba(255,255,255,0.08)',
           gridLineWidth: 1,
           labels: { style: { color: '#cfcfe6' } },
-
           events: {
             afterSetExtremes: (() => {
               let rafId: number | null = null;
@@ -588,9 +587,9 @@ export class AnalyzeChartsService {
           labels: { style: { color: '#cfcfe6' } },
         },
         tooltip: {
-          shared: false,
-          snap: 20,
-          useHTML: false,
+          shared: true,
+          snap: 10,
+          xDateFormat: '%H:%M:%S',
         },
         plotOptions: {
           series: {
@@ -614,7 +613,7 @@ export class AnalyzeChartsService {
             name: paramName,
             data: fullData,
             turboThreshold: 0,
-            enableMouseTracking: false,
+            enableMouseTracking: true,
             color: baseColor,
             lineWidth: 1.5,
             marker: { enabled: false },
