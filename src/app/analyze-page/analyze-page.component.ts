@@ -120,6 +120,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private miniCharts: Map<string, import('highcharts').Chart> = new Map();
   private historicalMiniCharts: Map<string, import('highcharts').Chart> =
     new Map();
+  private comparedFlightDataCache: Map<number, TelemetrySensorFields[]> =
+    new Map();
   private pendingParamToAutoSelect: string | null = null;
   private sidebarParam: string | null = null;
   private cachedGroupedHistoricalItems: HistoricalGroupItem[] = [];
@@ -207,6 +209,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.historicalSimilarityService.reset();
         this.miniCharts.forEach((miniChart) => miniChart.destroy());
         this.miniCharts.clear();
+        this.chartsService.destroyMiniCharts(this.historicalMiniCharts);
+        this.comparedFlightDataCache.clear();
         this.paramSearchText = '';
         this.pendingParamToAutoSelect =
           this.route.snapshot.queryParamMap.get('param');
@@ -304,6 +308,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.unsubscribe();
     this.clearGrid();
     this.chartsService.destroyMiniCharts(this.miniCharts);
+    this.chartsService.destroyMiniCharts(this.historicalMiniCharts);
     this.related.clear();
   }
 
@@ -768,45 +773,72 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cachedGroupedHistoricalItems = [];
     if (!this.historicalMiniChartElements) return;
 
+    const masterStart = this.flightData[0]?.timestep ?? 0;
+    const masterEnd = this.flightData[this.flightData.length - 1]?.timestep ?? 0;
+    const masterRange = masterEnd - masterStart;
+
     this.historicalMiniChartElements.forEach(
       (elementRef: ElementRef<HTMLDivElement>) => {
         const paramName = elementRef.nativeElement.dataset['param'];
         const timeAttr = elementRef.nativeElement.dataset['time'];
         const flightIndexAttr = elementRef.nativeElement.dataset['flight'];
-        const startEpochAttr = elementRef.nativeElement.dataset['start'];
-        const endEpochAttr = elementRef.nativeElement.dataset['end'];
 
         if (!paramName || !flightIndexAttr) return;
 
-        const startEpoch = startEpochAttr ? Number(startEpochAttr) : null;
-        const endEpoch = endEpochAttr ? Number(endEpochAttr) : null;
+        const comparedFlightIndex = Number(flightIndexAttr);
+        const anomalyTime = timeAttr ? Number(timeAttr) : masterStart;
         const chartId = flightIndexAttr + '_' + paramName + '_' + timeAttr;
 
-        let rowsToDisplay = this.flightData;
-
-        if (startEpoch !== null && endEpoch !== null) {
-          const padding = (endEpoch - startEpoch) * 0.15;
-          rowsToDisplay = this.flightData.filter(
-            (row) =>
-              row.timestep >= startEpoch - padding &&
-              row.timestep <= endEpoch + padding,
-          );
+        const existingChart = this.historicalMiniCharts.get(chartId);
+        if (existingChart) {
+          if (document.body.contains(existingChart.container)) return;
+          existingChart.destroy();
+          this.historicalMiniCharts.delete(chartId);
         }
 
-        const dataPoints = this.chartsService.buildSeries(
-          rowsToDisplay,
-          paramName,
-        );
+        const buildChart = (comparedFlightData: TelemetrySensorFields[]) => {
+          const existing = this.historicalMiniCharts.get(chartId);
+          if (existing && document.body.contains(existing.container)) return;
 
-        if (this.historicalMiniCharts.has(chartId)) return;
+          const comparedStart = comparedFlightData[0]?.timestep ?? 0;
+          const comparedEnd = comparedFlightData[comparedFlightData.length - 1]?.timestep ?? 0;
+          const comparedRange = comparedEnd - comparedStart;
 
-        const chart = this.chartsService.createMiniChart(
-          elementRef.nativeElement,
-          paramName,
-          dataPoints,
-        );
+          const relativePos = masterRange > 0 ? (anomalyTime - masterStart) / masterRange : 0.5;
+          const centerInCompared = comparedStart + relativePos * comparedRange;
+          const halfWindow = 100;
 
-        this.historicalMiniCharts.set(chartId, chart);
+          const windowedRows = comparedFlightData.filter(
+            (row) =>
+              row.timestep >= centerInCompared - halfWindow &&
+              row.timestep <= centerInCompared + halfWindow,
+          );
+
+          const dataPoints = this.chartsService.buildSeries(windowedRows, paramName);
+          const chart = this.chartsService.createMiniChart(
+            elementRef.nativeElement,
+            paramName,
+            dataPoints,
+          );
+          this.historicalMiniCharts.set(chartId, chart);
+        };
+
+        if (this.comparedFlightDataCache.has(comparedFlightIndex)) {
+          buildChart(this.comparedFlightDataCache.get(comparedFlightIndex)!);
+        } else {
+          this.archiveService.getFlightFields(comparedFlightIndex).subscribe({
+            next: (data) => {
+              const sortedData = (data ?? [])
+                .slice()
+                .sort((a, b) => a.timestep - b.timestep);
+              this.comparedFlightDataCache.set(comparedFlightIndex, sortedData);
+              buildChart(sortedData);
+            },
+            error: (err) => {
+              console.error('[HistoricalMiniCharts] failed to fetch flight fields for flight:', comparedFlightIndex, err);
+            },
+          });
+        }
       },
     );
   }
