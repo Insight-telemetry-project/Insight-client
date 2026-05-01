@@ -815,7 +815,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           );
 
           const dataPoints = this.chartsService.buildSeries(windowedRows, paramName);
-          const chart = this.chartsService.createMiniChart(
+          const chart = this.chartsService.createHistoricalMiniChart(
             elementRef.nativeElement,
             paramName,
             dataPoints,

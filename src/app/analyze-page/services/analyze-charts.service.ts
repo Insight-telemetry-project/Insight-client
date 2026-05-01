@@ -210,6 +210,56 @@ export class AnalyzeChartsService {
     });
   }
 
+  public createHistoricalMiniChart(
+    container: HTMLElement,
+    paramName: string,
+    dataPoints: [number, number][],
+  ): Highcharts.Chart {
+    let yAxisMin: number | undefined;
+    let yAxisMax: number | undefined;
+
+    if (dataPoints.length > 1) {
+      const sorted = dataPoints.map((p) => p[1]).sort((a, b) => a - b);
+      const p5 = sorted[Math.max(0, Math.floor(sorted.length * 0.05))];
+      const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
+      const pad = (p95 - p5) * 0.15 || Math.abs(p5) * 0.05 || 1;
+      yAxisMin = p5 - pad;
+      yAxisMax = p95 + pad;
+    }
+
+    return Highcharts.chart(container, {
+      chart: {
+        backgroundColor: 'transparent',
+        height: 100,
+        margin: [4, 4, 4, 4],
+      },
+      title: { text: '' },
+      credits: { enabled: false },
+      legend: { enabled: false },
+      xAxis: { type: 'datetime', visible: false },
+      yAxis: { title: { text: '' }, visible: false, min: yAxisMin, max: yAxisMax },
+      tooltip: { enabled: false },
+      plotOptions: {
+        series: {
+          animation: false,
+          marker: { enabled: false },
+          lineWidth: 1.5,
+          enableMouseTracking: false,
+          states: { hover: { enabled: false } },
+        },
+      },
+      series: [
+        {
+          type: 'line',
+          name: paramName,
+          data: dataPoints,
+          color: '#8b5cf6',
+          turboThreshold: 0,
+        } as Highcharts.SeriesLineOptions,
+      ],
+    });
+  }
+
   public destroyChart(chart: Highcharts.Chart | null): void {
     if (chart) chart.destroy();
   }

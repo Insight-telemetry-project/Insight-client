@@ -330,23 +330,29 @@
                   (mouseleave)="onHistoricalCardLeave()"
                   (click)="navigateToHistoricalFlight(item)"
                 >
-                  <div class="cardHeader">
-                    <div class="cardScore">
-                      {{ item.score * 100 | number: "1.0-0" }}%
+                  <div class="hcardHeader">
+                    <div class="hcardFlight">
+                      <span class="hcardFlightIcon">✈</span>
+                      Flight #{{ item.comparedFlightIndex }}
                     </div>
-                    <div class="cardTime">
-                      Flight: {{ item.comparedFlightIndex }}
-                    </div>
+                    <div class="hcardScore">{{ item.score * 100 | number: "1.0-0" }}% match</div>
                   </div>
-                  <div class="cardBody">
-                    <div class="cardInfo">
-                      <div class="infoRow">
-                        <span class="label">Param:</span>
-                        <span class="value">{{ item.param }}</span>
-                      </div>
-                    </div>
+
+                  <div class="hcardMeta">
+                    <span class="hcardChip">
+                      <span class="hcardChipLabel">Param</span>
+                      <span class="hcardChipValue">{{ item.param }}</span>
+                    </span>
+                    <span class="hcardChip" *ngIf="item.label">
+                      <span class="hcardChipLabel">Type</span>
+                      <span class="hcardChipValue">{{ item.label }}</span>
+                    </span>
+                  </div>
+
+                  <div class="hcardChartWrap">
+                    <div class="hcardChartLabel">Flight #{{ item.comparedFlightIndex }} — {{ item.param }}</div>
                     <div
-                      class="cardMiniChart"
+                      class="hcardChart"
                       #historicalMiniChart
                       [attr.data-flight]="item.comparedFlightIndex"
                       [attr.data-param]="item.param"
