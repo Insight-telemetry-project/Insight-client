@@ -134,6 +134,7 @@
           *ngFor="let param of parameters; trackBy: trackByParam"
           [class.hidden1]="!isParamVisible(param)"
           [class.selected]="isSelected(param)"
+          [style.order]="getParamOrder(param)"
           (click)="toggleParam(param)"
         >
           <div class="paramTitle">{{ param }}</div>

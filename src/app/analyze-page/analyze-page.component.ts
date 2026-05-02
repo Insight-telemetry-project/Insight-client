@@ -404,6 +404,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public clearParamSearch(): void {
     this.paramSearchText = '';
     this.rebuildFilteredParameters();
+    setTimeout(() => this.drawMiniCharts());
   }
 
   public navigateToHistoricalFlight(sidebarItem: HistoricalSidebarItem): void {
@@ -487,6 +488,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public trackByParam(index: number, param: string): string {
     return param;
+  }
+
+  public getParamOrder(param: string): number {
+    const index = this.filteredParameters.indexOf(param);
+    return index === -1 ? 0 : index;
   }
 
   public toggleGroup(groupId: string): void {
@@ -742,8 +748,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (!parameterName) return;
 
-        if (this.miniCharts.has(parameterName)) {
-          return;
+        const existingChart = this.miniCharts.get(parameterName);
+        if (existingChart) {
+          if (document.body.contains(existingChart.container)) return;
+          existingChart.destroy();
+          this.miniCharts.delete(parameterName);
         }
 
         const dataPoints = this.chartsService.buildSeries(
