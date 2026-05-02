@@ -466,7 +466,16 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (mode === 'historical') {
-      this.drawHistoricalMiniCharts();
+      const gridItem = this.gridItems.find((g) => g.param === this.sidebarParam);
+      if (gridItem && gridItem.chart) {
+        this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
+          this.sidebarParam,
+          this.flightData,
+          this.flightMeta,
+          gridItem.chart,
+        );
+      }
+      setTimeout(() => this.drawHistoricalMiniCharts());
     }
   }
 
