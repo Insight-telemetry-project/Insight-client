@@ -41,6 +41,10 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# PCAP files
+*.pcap
+*.pcapng
+
 # Playwright
 node_modules/
 /test-results/

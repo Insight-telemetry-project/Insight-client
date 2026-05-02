@@ -1,7 +1,13 @@
 <div class="layout">
   <div class="content">
     <header class="header">
-      <h1 class="title">Flight {{ masterIndex }}</h1>
+      <div class="headerLeft">
+        <h1 class="title">Flight {{ masterIndex }}</h1>
+        <span class="framesBadge" *ngIf="flightData.length > 0">
+          <span class="framesBadgeValue">{{ flightData.length | number }}</span>
+          <span class="framesBadgeLabel">frames</span>
+        </span>
+      </div>
       <button class="back-btn" type="button" (click)="goBack()">←</button>
     </header>
 

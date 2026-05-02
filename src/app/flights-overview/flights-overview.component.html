@@ -99,9 +99,12 @@
           <img class="icon" src="assets/images/uav.png" />
           <div class="flightInfo">
             <h3 class="flightNumber">{{ flight.flightNumber }}</h3>
-            <span class="duration">{{
-              getDurationText(flight.flightLenght)
-            }}</span>
+            <div class="flightMeta">
+              <span class="duration">{{
+                getDurationText(flight.flightLenght)
+              }}</span>
+              <span class="framesPill">{{ flight.flightLenght | number }} frames</span>
+            </div>
           </div>
         </div>
 

@@ -141,6 +141,24 @@
   flex-direction: column;
 }
 
+.flightMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.framesPill {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(190, 120, 255, 0.22);
+  background: rgba(176, 96, 255, 0.1);
+  color: rgba(220, 190, 255, 0.75);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .flightNumber {
   margin: 0;
   font-size: 20px;
