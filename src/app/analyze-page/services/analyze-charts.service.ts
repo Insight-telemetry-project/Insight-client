@@ -637,13 +637,14 @@ export class AnalyzeChartsService {
           labels: { style: { color: '#cfcfe6' } },
         },
         tooltip: {
-          shared: true,
-          snap: 10,
+          shared: false,
+          snap: 20,
           xDateFormat: '%H:%M:%S',
         },
         plotOptions: {
           series: {
             animation: false,
+            stickyTracking: false,
             states: {
               inactive: {
                 opacity: 1,
