@@ -27,7 +27,7 @@
               <span class="gridChartTitle">{{ item.param }}</span>
               <div class="gridChartActions">
                 <button
-                  *ngIf="(zoomedParam === item.param || syncingParam === item.param) && gridItems.length > 1"
+                  *ngIf="gridItems.length > 1 && (syncingParam === item.param || (!syncingParam && zoomedParams.has(item.param)))"
                   class="gridChartToggleBtn syncZoomBtn"
                   [class.syncing]="syncingParam === item.param"
                   type="button"

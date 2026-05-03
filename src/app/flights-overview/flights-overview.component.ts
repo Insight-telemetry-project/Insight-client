@@ -13,28 +13,16 @@ import { TelemetryDeviceService } from '../services/telemetry-device.services';
 import Swal from 'sweetalert2';
 import { AnalysisProgressService } from '../services/analysis-progress.service';
 import { HistoricalSimilarityService } from '../analyze-page/services/historical-similarity.service';
-
-interface ParameterOverview {
-  name: string;
-  anomalies: number;
-  historicalPoints: number;
-}
-
-interface FlightAnalysisProgress {
-  completed: number;
-  total: number;
-}
-
-interface SpecialPointsResponse {
-  anomalies: Record<string, number[]>;
-  historicalSimilarity: Record<string, Array<{ anomalyTime: number }>>;
-}
-
-type SortType = 'anomalies' | 'historical';
-type FlightSortType = 'anomalies' | 'historical' | 'number';
-type ExportFormat = 'json' | string;
-type AnalysisStage = 'historical' | 'causality' | 'finished' | string;
-type DragEventType = DragEvent & { relatedTarget: EventTarget | null };
+import { ParameterOverview } from '../common/interfaces/parameter-overview.interface';
+import { FlightAnalysisProgress } from '../common/interfaces/flight-analysis-progress.interface';
+import { SpecialPointsResponse } from '../common/interfaces/special-points-response.interface';
+import {
+  SortType,
+  FlightSortType,
+  ExportFormat,
+  AnalysisStage,
+  DragEventType,
+} from '../common/interfaces/flights-overview.types';
 
 @Component({
   selector: 'app-flights-overview',
