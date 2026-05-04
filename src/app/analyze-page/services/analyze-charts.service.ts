@@ -559,6 +559,7 @@ export class AnalyzeChartsService {
           animation: false,
           zooming: {
             type: 'x',
+            mouseWheel: { enabled: true, type: 'x' },
             resetButton: {
               theme: {
                 fill: 'rgba(15, 20, 40, 0.88)',

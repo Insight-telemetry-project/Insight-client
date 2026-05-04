@@ -7,6 +7,7 @@ import {
   OnDestroy,
   OnInit,
   QueryList,
+  ViewChild,
   ViewChildren,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -45,6 +46,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('miniChart') public miniChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
+  @ViewChild('expandedChartEl') private expandedChartElRef?: ElementRef<HTMLDivElement>;
   @ViewChildren('gridChartEl') public gridChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
@@ -66,6 +68,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private zoomedExtremesMap: Map<string, { min: number; max: number }> = new Map();
   private isSyncing = false;
   public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
+  public expandedChartParam: string | null = null;
+  private expandedChart: import('highcharts').Chart | null = null;
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
     fixedRowHeight: 420,
@@ -198,6 +202,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.add(routeParamSubscription);
 
     this.ngZone.runOutsideAngular(() => {
+      window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && this.expandedChartParam) {
+          this.ngZone.run(() => this.closeExpandedChart());
+        }
+      });
+    });
+
+    this.ngZone.runOutsideAngular(() => {
       window.addEventListener('historical-hover', (event: Event) => {
         const customEvent = event as CustomEvent<string | null>;
         this.hoveredHistoricalId = customEvent.detail;
@@ -285,6 +297,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.chartsService.destroyMiniCharts(this.miniCharts);
     this.chartsService.destroyMiniCharts(this.historicalMiniCharts);
     this.related.clear();
+    if (this.expandedChart) {
+      this.expandedChart.destroy();
+      this.expandedChart = null;
+    }
   }
 
   public goBack(): void {
@@ -420,6 +436,29 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const target = event.target as HTMLElement;
     if (target.closest('.gridChartBody') || target.closest('.gridChartActions')) return;
     this.selectParamForSidebar(item.param);
+  }
+
+  public expandChart(item: GridChartItem): void {
+    if (this.expandedChart) {
+      this.expandedChart.destroy();
+      this.expandedChart = null;
+    }
+    this.expandedChartParam = item.param;
+    this.changeDetectorRef.detectChanges();
+    requestAnimationFrame(() => {
+      const el = this.expandedChartElRef?.nativeElement;
+      if (el) {
+        this.expandedChart = this.chartsService.createGridChart(el, item.param, this.flightData);
+      }
+    });
+  }
+
+  public closeExpandedChart(): void {
+    if (this.expandedChart) {
+      this.expandedChart.destroy();
+      this.expandedChart = null;
+    }
+    this.expandedChartParam = null;
   }
 
   public isParamVisible(paramName: string): boolean {

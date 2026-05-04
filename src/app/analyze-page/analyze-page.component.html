@@ -60,6 +60,12 @@
                   }})
                 </button>
                 <button
+                  class="gridChartToggleBtn expandChartBtn"
+                  type="button"
+                  (click)="expandChart(item); $event.stopPropagation()"
+                  title="Expand chart"
+                >⛶</button>
+                <button
                   class="gridChartClose"
                   type="button"
                   (click)="toggleParam(item.param)"
@@ -203,6 +209,17 @@
       <button class="popup-btn" (click)="openInvestigationModal($event)">
         Add Investigation
       </button>
+    </div>
+  </div>
+
+  <div class="chartOverlay" *ngIf="expandedChartParam" (click)="closeExpandedChart()">
+    <div class="chartOverlayPanel" (click)="$event.stopPropagation()">
+      <div class="chartOverlayHeader">
+        <span class="chartOverlayTitle">{{ expandedChartParam }}</span>
+        <span class="chartOverlayHint">Drag to zoom · Scroll to zoom · Double-click to reset</span>
+        <button class="chartOverlayClose" type="button" (click)="closeExpandedChart()">✕</button>
+      </div>
+      <div #expandedChartEl class="chartOverlayBody"></div>
     </div>
   </div>
 
