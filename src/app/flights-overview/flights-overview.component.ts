@@ -608,6 +608,8 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
           this.expandedFlight = null;
         }
 
+        this.refreshAllFlightsData();
+
         Swal.fire({
           title: 'Deleted!',
           text: `Flight #${flightNumber} has been removed.`,
