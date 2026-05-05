@@ -7,7 +7,6 @@ import {
   OnDestroy,
   OnInit,
   QueryList,
-  ViewChild,
   ViewChildren,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -36,6 +35,7 @@ import { HistoricalHoverEventDetail } from '../common/interfaces/historical-hove
 import { SeriesWithId } from '../common/interfaces/series-with-id.interface';
 import { GridItemWithObserver } from '../common/interfaces/grid-item-with-observer.interface';
 import { SidebarModeType } from '../common/interfaces/analyze-page.types';
+import { Investigation } from '../common/interfaces/investigation.interface';
 
 @Component({
   selector: 'app-analyze-page',
@@ -46,7 +46,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('miniChart') public miniChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
-  @ViewChild('expandedChartEl') private expandedChartElRef?: ElementRef<HTMLDivElement>;
   @ViewChildren('gridChartEl') public gridChartElements!: QueryList<
     ElementRef<HTMLDivElement>
   >;
@@ -62,14 +61,24 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public sidebarMode: SidebarModeType = 'related';
   public historicalSortBy: 'time' | 'score' = 'time';
   public selectedPoint: SelectedPoint | null = null;
+  public modalPoint: SelectedPoint | null = null;
   public hoveredHistoricalId: string | null = null;
+  public flightInvestigations: Map<string, Investigation> = new Map();
+  private comparedFlightInvestigations: Map<number, Investigation[]> = new Map();
+  private loadedComparedFlightIds: Set<number> = new Set();
+  private comparedFlightHistoricalLinks: Map<string, number> = new Map();
+  private loadedHistoricalLinksKeys: Set<string> = new Set();
+  public showInvestigationModal: boolean = false;
+  public investigationName: string = '';
+  public investigationDescription: string = '';
+  public investigationSaving: boolean = false;
+  public showInvestigationReport: boolean = false;
+  public currentReport: Investigation | null = null;
   public zoomedParams: Set<string> = new Set();
   public syncingParam: string | null = null;
   private zoomedExtremesMap: Map<string, { min: number; max: number }> = new Map();
   private isSyncing = false;
   public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
-  public expandedChartParam: string | null = null;
-  private expandedChart: import('highcharts').Chart | null = null;
   public gridOptions: GridsterConfig = {
     gridType: GridType.VerticalFixed,
     fixedRowHeight: 420,
@@ -188,6 +197,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.clearGrid();
         this.related.clear();
         this.historicalSimilarityService.reset();
+        this.resetHistoricalLinks();
         this.miniCharts.forEach((miniChart) => miniChart.destroy());
         this.miniCharts.clear();
         this.chartsService.destroyMiniCharts(this.historicalMiniCharts);
@@ -196,18 +206,62 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.pendingParamToAutoSelect =
           this.route.snapshot.queryParamMap.get('param');
         this.loadFlight();
+        this.loadInvestigations();
       },
     );
 
     this.subscriptions.add(routeParamSubscription);
 
-    this.ngZone.runOutsideAngular(() => {
-      window.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Escape' && this.expandedChartParam) {
-          this.ngZone.run(() => this.closeExpandedChart());
+    const itemsAddedSub = this.historicalSimilarityService.itemsAdded$.subscribe(
+      (newItems) => {
+        const uniqueFlightIds = new Set(newItems.map((item) => item.comparedFlightIndex));
+        for (const flightId of uniqueFlightIds) {
+          if (!this.loadedComparedFlightIds.has(flightId)) {
+            this.loadedComparedFlightIds.add(flightId);
+            this.archiveService.getInvestigationsForFlight(flightId).subscribe({
+              next: (list) => {
+                this.comparedFlightInvestigations.set(flightId, list);
+                this.changeDetectorRef.detectChanges();
+              },
+            });
+          }
         }
-      });
-    });
+
+        const uniqueCombos = new Set(newItems.map((item) => `${item.comparedFlightIndex}|${item.param}`));
+        for (const combo of uniqueCombos) {
+          if (this.loadedHistoricalLinksKeys.has(combo)) continue;
+          this.loadedHistoricalLinksKeys.add(combo);
+
+          const pipeIdx = combo.indexOf('|');
+          const comparedFlightIndex = Number(combo.slice(0, pipeIdx));
+          const param = combo.slice(pipeIdx + 1);
+
+          const tYValues = this.historicalSimilarityService.sidebarItems
+            .filter((i) => i.comparedFlightIndex === comparedFlightIndex && i.param === param)
+            .map((i) => i.time)
+            .sort((a, b) => a - b);
+
+          this.archiveService.getFlightHistoricalSimilarity(comparedFlightIndex, param).subscribe({
+            next: (records) => {
+              const tXValues = records
+                .filter((r) => r.comparedFlightIndex === this.masterIndex)
+                .map((r) => Number(r.anomalyTime))
+                .sort((a, b) => a - b);
+
+              const pairCount = Math.min(tYValues.length, tXValues.length);
+              for (let i = 0; i < pairCount; i++) {
+                this.comparedFlightHistoricalLinks.set(
+                  `${comparedFlightIndex}|${param}|${tYValues[i]}`,
+                  tXValues[i],
+                );
+              }
+              this.changeDetectorRef.detectChanges();
+            },
+          });
+        }
+      },
+    );
+    this.subscriptions.add(itemsAddedSub);
 
     this.ngZone.runOutsideAngular(() => {
       window.addEventListener('historical-hover', (event: Event) => {
@@ -250,7 +304,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       window.addEventListener('click', (event: MouseEvent) => {
         const target = event.target as HTMLElement;
-        if (target.closest('.highcharts-point') || target.closest('.anomaly-popup')) return;
+        if (
+          target.closest('.highcharts-point') ||
+          target.closest('.anomaly-popup') ||
+          target.closest('.inv-overlay')
+        ) return;
         this.selectedPoint = null;
         this.changeDetectorRef.detectChanges();
       });
@@ -297,10 +355,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.chartsService.destroyMiniCharts(this.miniCharts);
     this.chartsService.destroyMiniCharts(this.historicalMiniCharts);
     this.related.clear();
-    if (this.expandedChart) {
-      this.expandedChart.destroy();
-      this.expandedChart = null;
-    }
   }
 
   public goBack(): void {
@@ -331,6 +385,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.sidebarParam = null;
         this.related.clear();
         this.historicalSimilarityService.reset();
+        this.resetHistoricalLinks();
       }
 
       return;
@@ -436,29 +491,6 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const target = event.target as HTMLElement;
     if (target.closest('.gridChartBody') || target.closest('.gridChartActions')) return;
     this.selectParamForSidebar(item.param);
-  }
-
-  public expandChart(item: GridChartItem): void {
-    if (this.expandedChart) {
-      this.expandedChart.destroy();
-      this.expandedChart = null;
-    }
-    this.expandedChartParam = item.param;
-    this.changeDetectorRef.detectChanges();
-    requestAnimationFrame(() => {
-      const el = this.expandedChartElRef?.nativeElement;
-      if (el) {
-        this.expandedChart = this.chartsService.createGridChart(el, item.param, this.flightData);
-      }
-    });
-  }
-
-  public closeExpandedChart(): void {
-    if (this.expandedChart) {
-      this.expandedChart.destroy();
-      this.expandedChart = null;
-    }
-    this.expandedChartParam = null;
   }
 
   public isParamVisible(paramName: string): boolean {
@@ -1012,9 +1044,103 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
   }
+  private resetHistoricalLinks(): void {
+    this.comparedFlightHistoricalLinks.clear();
+    this.loadedHistoricalLinksKeys.clear();
+  }
+
+  private loadInvestigations(): void {
+    this.comparedFlightInvestigations.clear();
+    this.loadedComparedFlightIds.clear();
+    this.resetHistoricalLinks();
+    this.archiveService.getInvestigationsForFlight(this.masterIndex).subscribe({
+      next: (list) => {
+        this.flightInvestigations = new Map(
+          list.map((inv) => [`${inv.param}_${inv.time}`, inv]),
+        );
+        this.changeDetectorRef.detectChanges();
+      },
+    });
+  }
+
+  public getInvestigationForCard(
+    param: string,
+    time: number,
+    comparedFlightIndex: number,
+  ): Investigation | null {
+    const currentFlightInv = this.flightInvestigations.get(`${param}_${time}`);
+    if (currentFlightInv) return currentFlightInv;
+
+    const tX = this.comparedFlightHistoricalLinks.get(`${comparedFlightIndex}|${param}|${time}`);
+    if (tX !== undefined) {
+      const comparedList = this.comparedFlightInvestigations.get(comparedFlightIndex);
+      if (comparedList) {
+        return comparedList.find((inv) => inv.param === param && inv.time === tX) ?? null;
+      }
+    }
+
+    return null;
+  }
+
+  public openInvestigationReport(
+    event: MouseEvent,
+    param: string,
+    time: number,
+    comparedFlightIndex: number,
+  ): void {
+    event.stopPropagation();
+    this.currentReport = this.getInvestigationForCard(param, time, comparedFlightIndex);
+    if (!this.currentReport) return;
+    this.showInvestigationReport = true;
+    this.changeDetectorRef.detectChanges();
+  }
+
+  public closeInvestigationReport(): void {
+    this.showInvestigationReport = false;
+    this.changeDetectorRef.detectChanges();
+  }
+
   public openInvestigationModal(event: MouseEvent): void {
     event.stopPropagation();
-    console.log('OPEN MODAL', this.selectedPoint);
+    this.modalPoint = this.selectedPoint;
+    this.selectedPoint = null;
+    this.investigationName = '';
+    this.investigationDescription = '';
+    this.investigationSaving = false;
+    this.showInvestigationModal = true;
+    this.changeDetectorRef.detectChanges();
+  }
+
+  public closeInvestigationModal(): void {
+    this.showInvestigationModal = false;
+    this.changeDetectorRef.detectChanges();
+  }
+
+  public saveInvestigation(): void {
+    if (!this.modalPoint || !this.investigationName.trim()) return;
+
+    const payload: Investigation = {
+      name: this.investigationName.trim(),
+      description: this.investigationDescription.trim(),
+      masterIndex: this.masterIndex,
+      param: this.modalPoint.param,
+      time: Math.round(this.modalPoint.x / 1000),
+      value: this.modalPoint.y,
+    };
+
+    this.investigationSaving = true;
+    this.archiveService.createInvestigation(payload).subscribe({
+      next: (created) => {
+        this.flightInvestigations.set(`${created.param}_${created.time}`, created);
+        this.investigationSaving = false;
+        this.showInvestigationModal = false;
+        this.changeDetectorRef.detectChanges();
+      },
+      error: () => {
+        this.investigationSaving = false;
+        this.changeDetectorRef.detectChanges();
+      },
+    });
   }
   public onTimeGroupHover(group: HistoricalGroupItem): void {
     if (!group.items || group.items.length === 0) return;

@@ -5,6 +5,7 @@ import { TelemetrySensorFields } from '../common/interfaces/telemetry-sensor-fie
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { HistoricalSimilarityPoint } from '../common/interfaces/historical-similarity-point.interface';
 import { FlightPoints } from '../common/interfaces/flight-points';
+import { Investigation } from '../common/interfaces/investigation.interface';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -85,5 +86,13 @@ export class FlightArchiveService {
   }
   public getFlightMeta(masterIndex: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/flight-meta/${masterIndex}`);
+  }
+
+  public createInvestigation(investigation: Omit<Investigation, 'id' | 'createdAt'>): Observable<Investigation> {
+    return this.http.post<Investigation>(`${this.baseUrl}/investigations`, investigation);
+  }
+
+  public getInvestigationsForFlight(masterIndex: number): Observable<Investigation[]> {
+    return this.http.get<Investigation[]>(`${this.baseUrl}/investigations/${masterIndex}`);
   }
 }

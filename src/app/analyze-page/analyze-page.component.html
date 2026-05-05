@@ -59,12 +59,7 @@
                       .historicalCount
                   }})
                 </button>
-                <button
-                  class="gridChartToggleBtn expandChartBtn"
-                  type="button"
-                  (click)="expandChart(item); $event.stopPropagation()"
-                  title="Expand chart"
-                >⛶</button>
+               
                 <button
                   class="gridChartClose"
                   type="button"
@@ -212,14 +207,88 @@
     </div>
   </div>
 
-  <div class="chartOverlay" *ngIf="expandedChartParam" (click)="closeExpandedChart()">
-    <div class="chartOverlayPanel" (click)="$event.stopPropagation()">
-      <div class="chartOverlayHeader">
-        <span class="chartOverlayTitle">{{ expandedChartParam }}</span>
-        <span class="chartOverlayHint">Drag to zoom · Scroll to zoom · Double-click to reset</span>
-        <button class="chartOverlayClose" type="button" (click)="closeExpandedChart()">✕</button>
+  <!-- Investigation Modal -->
+  <div *ngIf="showInvestigationModal" class="inv-overlay">
+    <div class="inv-backdrop" (click)="closeInvestigationModal()"></div>
+    <div class="inv-modal">
+      <div class="inv-modal-header">
+        <span>New Investigation</span>
+        <button class="inv-close-btn" type="button" (click)="closeInvestigationModal()">✕</button>
       </div>
-      <div #expandedChartEl class="chartOverlayBody"></div>
+
+      <div class="inv-context" *ngIf="modalPoint">
+        <!-- <span class="inv-context-badge" [class.inv-anomaly]="modalPoint.type === 'anomaly'" [class.inv-historical]="modalPoint.type === 'historical'">
+          {{ modalPoint.type === 'anomaly' ? 'Anomaly' : 'Historical Match' }}
+        </span> -->
+        <span class="inv-context-param">{{ modalPoint.param }}</span>
+        <span class="inv-context-time"> {{ modalPoint.x | date: 'HH:mm:ss' }}</span>
+      </div>
+
+      <div class="inv-field">
+        <label class="inv-label">Name</label>
+        <input
+          class="inv-input"
+          [(ngModel)]="investigationName"
+          placeholder="Give this investigation a name..."
+          maxlength="100"
+        />
+      </div>
+
+      <div class="inv-field">
+        <label class="inv-label">Description</label>
+        <textarea
+          class="inv-textarea"
+          [(ngModel)]="investigationDescription"
+          placeholder="Describe the fault or anomaly in detail..."
+          rows="4"
+          maxlength="1000"
+        ></textarea>
+      </div>
+
+      <div class="inv-footer">
+        <button class="inv-btn inv-btn-cancel" (click)="closeInvestigationModal()">Cancel</button>
+        <button
+          class="inv-btn inv-btn-save"
+          (click)="saveInvestigation()"
+          [disabled]="!investigationName.trim() || investigationSaving"
+        >
+          {{ investigationSaving ? 'Saving...' : 'Save Investigation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Investigation Report Modal (read-only) -->
+  <div *ngIf="showInvestigationReport && currentReport" class="inv-overlay">
+    <div class="inv-backdrop" (click)="closeInvestigationReport()"></div>
+    <div class="inv-modal">
+      <div class="inv-modal-header">
+        <span>Investigation Report</span>
+        <button class="inv-close-btn" type="button" (click)="closeInvestigationReport()">✕</button>
+      </div>
+
+      <div class="inv-context">
+        <span class="inv-context-param">{{ currentReport.param }}</span>
+        <span class="inv-context-time">@ {{ currentReport.time * 1000 | date: 'HH:mm:ss' }}</span>
+      </div>
+
+      <div class="inv-report-block">
+        <div class="inv-label">Name</div>
+        <div class="inv-report-text inv-report-name">{{ currentReport.name }}</div>
+      </div>
+
+      <div class="inv-report-block">
+        <div class="inv-label">Description</div>
+        <div class="inv-report-text">{{ currentReport.description || '—' }}</div>
+      </div>
+
+      <div class="inv-report-meta" *ngIf="currentReport.createdAt">
+        Created {{ currentReport.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+      </div>
+
+      <div class="inv-footer">
+        <button class="inv-btn inv-btn-cancel" (click)="closeInvestigationReport()">Close</button>
+      </div>
     </div>
   </div>
 
@@ -374,7 +443,7 @@
                   </div>
 
                   <div class="hcardChartWrap">
-                    <div class="hcardChartLabel">Flight #{{ item.comparedFlightIndex }} — {{ item.param }}</div>
+                    <div class="hcardChartLabel">Flight #{{ item.comparedFlightIndex }} - {{ item.param }}</div>
                     <div
                       class="hcardChart"
                       #historicalMiniChart
@@ -385,6 +454,15 @@
                       [attr.data-end]="item.endEpoch"
                     ></div>
                   </div>
+
+                  <button
+                    *ngIf="getInvestigationForCard(item.param, item.time, item.comparedFlightIndex)"
+                    class="hcard-inv-btn"
+                    type="button"
+                    (click)="openInvestigationReport($event, item.param, item.time, item.comparedFlightIndex)"
+                  >
+                    📋 Investigation report found
+                  </button>
                 </div>
               </div>
             </div>

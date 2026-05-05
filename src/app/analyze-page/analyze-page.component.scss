@@ -1255,6 +1255,254 @@ position: fixed;
   }
 }
 
-.expandChartBtn {
+
+.inv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 3, 15, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 150ms ease;
+}
+
+.inv-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  cursor: default;
+}
+
+.inv-modal {
+  position: relative;
+  z-index: 1;
+  width: 440px;
+  max-width: calc(100vw - 40px);
+  background: linear-gradient(180deg, rgba(22, 12, 44, 0.98), rgba(12, 6, 28, 0.98));
+  border: 1px solid rgba(190, 120, 255, 0.28);
+  border-radius: 18px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  animation: fadeIn 150ms ease;
+}
+
+.inv-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  span {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(220, 190, 255, 0.95);
+  }
+}
+
+.inv-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(190, 120, 255, 0.22);
+  background: rgba(176, 96, 255, 0.10);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+  transition: background 130ms, border-color 130ms, color 130ms;
+
+  &:hover {
+    background: rgba(255, 60, 60, 0.22);
+    border-color: rgba(255, 100, 100, 0.45);
+    color: #fff;
+  }
+}
+
+.inv-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(190, 120, 255, 0.12);
+  flex-wrap: wrap;
+}
+
+.inv-context-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.inv-anomaly {
+    background: rgba(255, 45, 45, 0.18);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 45, 45, 0.3);
+  }
+
+  &.inv-historical {
+    background: rgba(250, 204, 21, 0.15);
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+}
+
+.inv-context-param {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(200, 170, 255, 0.9);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inv-context-time {
+  font-size: 11px;
+  color: rgba(180, 160, 220, 0.5);
+  flex-shrink: 0;
+}
+
+.inv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inv-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(180, 150, 230, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inv-input,
+.inv-textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(190, 120, 255, 0.22);
+  border-radius: 9px;
+  color: rgba(230, 215, 255, 0.92);
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 150ms;
+  resize: none;
+  font-family: inherit;
+
+  &::placeholder {
+    color: rgba(180, 150, 220, 0.3);
+  }
+
+  &:focus {
+    border-color: rgba(168, 85, 247, 0.6);
+    background: rgba(255, 255, 255, 0.07);
+  }
+}
+
+.inv-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.inv-btn {
+  padding: 8px 20px;
+  border-radius: 9px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 140ms, background 140ms;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.inv-btn-cancel {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(200, 180, 230, 0.75);
+  border: 1px solid rgba(190, 120, 255, 0.18);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.11);
+  }
+}
+
+.inv-btn-save {
+  background: #a855f7;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #9333ea;
+  }
+}
+
+// ─── Historical Card Investigation Indicator ──────────────────────────────────
+
+.hcard-inv-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.10);
+  color: rgba(200, 160, 255, 0.9);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms;
+  letter-spacing: 0.2px;
+
+  &:hover {
+    background: rgba(168, 85, 247, 0.22);
+    border-color: rgba(168, 85, 247, 0.6);
+    color: #fff;
+  }
+}
+
+// ─── Investigation Report (read-only) ────────────────────────────────────────
+
+.inv-report-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inv-report-text {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(190, 120, 255, 0.14);
+  border-radius: 9px;
+  color: rgba(230, 215, 255, 0.88);
+  font-size: 13px;
+  padding: 9px 12px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  min-height: 36px;
+}
+
+.inv-report-name {
+  font-weight: 600;
   font-size: 14px;
+}
+
+.inv-report-meta {
+  font-size: 10px;
+  color: rgba(180, 150, 220, 0.4);
+  text-align: right;
+  margin-top: -6px;
 }
