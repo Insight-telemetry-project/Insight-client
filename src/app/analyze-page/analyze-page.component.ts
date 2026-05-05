@@ -64,7 +64,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public modalPoint: SelectedPoint | null = null;
   public hoveredHistoricalId: string | null = null;
   public flightInvestigations: Map<string, Investigation> = new Map();
-  private comparedFlightInvestigations: Map<number, Investigation[]> = new Map();
+  private comparedFlightInvestigations: Map<number, Investigation[]> =
+    new Map();
   private loadedComparedFlightIds: Set<number> = new Set();
   private comparedFlightHistoricalLinks: Map<string, number> = new Map();
   private loadedHistoricalLinksKeys: Set<string> = new Set();
@@ -81,7 +82,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public investigationDeleting: boolean = false;
   public zoomedParams: Set<string> = new Set();
   public syncingParam: string | null = null;
-  private zoomedExtremesMap: Map<string, { min: number; max: number }> = new Map();
+  private zoomedExtremesMap: Map<string, { min: number; max: number }> =
+    new Map();
   private isSyncing = false;
   public paramSortBy: 'anomalies' | 'historical' = 'anomalies';
   public gridOptions: GridsterConfig = {
@@ -217,9 +219,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.subscriptions.add(routeParamSubscription);
 
-    const itemsAddedSub = this.historicalSimilarityService.itemsAdded$.subscribe(
-      (newItems) => {
-        const uniqueFlightIds = new Set(newItems.map((item) => item.comparedFlightIndex));
+    const itemsAddedSub =
+      this.historicalSimilarityService.itemsAdded$.subscribe((newItems) => {
+        const uniqueFlightIds = new Set(
+          newItems.map((item) => item.comparedFlightIndex),
+        );
         for (const flightId of uniqueFlightIds) {
           if (!this.loadedComparedFlightIds.has(flightId)) {
             this.loadedComparedFlightIds.add(flightId);
@@ -232,7 +236,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
 
-        const uniqueCombos = new Set(newItems.map((item) => `${item.comparedFlightIndex}|${item.param}`));
+        const uniqueCombos = new Set(
+          newItems.map((item) => `${item.comparedFlightIndex}|${item.param}`),
+        );
         for (const combo of uniqueCombos) {
           if (this.loadedHistoricalLinksKeys.has(combo)) continue;
           this.loadedHistoricalLinksKeys.add(combo);
@@ -242,30 +248,35 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           const param = combo.slice(pipeIdx + 1);
 
           const tYValues = this.historicalSimilarityService.sidebarItems
-            .filter((i) => i.comparedFlightIndex === comparedFlightIndex && i.param === param)
+            .filter(
+              (i) =>
+                i.comparedFlightIndex === comparedFlightIndex &&
+                i.param === param,
+            )
             .map((i) => i.time)
             .sort((a, b) => a - b);
 
-          this.archiveService.getFlightHistoricalSimilarity(comparedFlightIndex, param).subscribe({
-            next: (records) => {
-              const tXValues = records
-                .filter((r) => r.comparedFlightIndex === this.masterIndex)
-                .map((r) => Number(r.anomalyTime))
-                .sort((a, b) => a - b);
+          this.archiveService
+            .getFlightHistoricalSimilarity(comparedFlightIndex, param)
+            .subscribe({
+              next: (records) => {
+                const tXValues = records
+                  .filter((r) => r.comparedFlightIndex === this.masterIndex)
+                  .map((r) => Number(r.anomalyTime))
+                  .sort((a, b) => a - b);
 
-              const pairCount = Math.min(tYValues.length, tXValues.length);
-              for (let i = 0; i < pairCount; i++) {
-                this.comparedFlightHistoricalLinks.set(
-                  `${comparedFlightIndex}|${param}|${tYValues[i]}`,
-                  tXValues[i],
-                );
-              }
-              this.changeDetectorRef.detectChanges();
-            },
-          });
+                const pairCount = Math.min(tYValues.length, tXValues.length);
+                for (let i = 0; i < pairCount; i++) {
+                  this.comparedFlightHistoricalLinks.set(
+                    `${comparedFlightIndex}|${param}|${tYValues[i]}`,
+                    tXValues[i],
+                  );
+                }
+                this.changeDetectorRef.detectChanges();
+              },
+            });
         }
-      },
-    );
+      });
     this.subscriptions.add(itemsAddedSub);
 
     this.ngZone.runOutsideAngular(() => {
@@ -299,11 +310,22 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           x: number;
           y: number;
           param: string;
-          historicalId?: string;
           clientX: number;
           clientY: number;
         }>;
-        this.selectedPoint = customEvent.detail;
+
+        const point = customEvent.detail;
+
+        this.selectedPoint = null;
+
+        this.modalPoint = point;
+
+        this.investigationName = '';
+        this.investigationDescription = '';
+        this.investigationSaving = false;
+
+        this.showInvestigationModal = true;
+
         this.changeDetectorRef.detectChanges();
       });
 
@@ -314,14 +336,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           target.closest('.highcharts-point') ||
           target.closest('.anomaly-popup') ||
           target.closest('.inv-overlay')
-        ) return;
+        )
+          return;
         this.selectedPoint = null;
         this.changeDetectorRef.detectChanges();
       });
 
       window.addEventListener('chart-zoom-update', (event: Event) => {
         if (this.isSyncing) return;
-        const { param, min, max } = (event as CustomEvent<{ param: string; min: number; max: number }>).detail;
+        const { param, min, max } = (
+          event as CustomEvent<{ param: string; min: number; max: number }>
+        ).detail;
         if (this.syncingParam === param) {
           this.zoomedExtremesMap.set(param, { min, max });
           this.applySyncExtremes(min, max, param);
@@ -495,7 +520,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public onGridCardClick(event: MouseEvent, item: GridChartItem): void {
     const target = event.target as HTMLElement;
-    if (target.closest('.gridChartBody') || target.closest('.gridChartActions')) return;
+    if (target.closest('.gridChartBody') || target.closest('.gridChartActions'))
+      return;
     this.selectParamForSidebar(item.param);
   }
 
@@ -519,7 +545,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (mode === 'historical') {
-      const gridItem = this.gridItems.find((g) => g.param === this.sidebarParam);
+      const gridItem = this.gridItems.find(
+        (g) => g.param === this.sidebarParam,
+      );
       if (gridItem && gridItem.chart) {
         this.historicalSimilarityService.loadAndShowHistoricalSimilarity(
           this.sidebarParam,
@@ -843,7 +871,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.historicalMiniChartElements) return;
 
     const masterStart = this.flightData[0]?.timestep ?? 0;
-    const masterEnd = this.flightData[this.flightData.length - 1]?.timestep ?? 0;
+    const masterEnd =
+      this.flightData[this.flightData.length - 1]?.timestep ?? 0;
     const masterRange = masterEnd - masterStart;
 
     this.historicalMiniChartElements.forEach(
@@ -870,10 +899,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           if (existing && document.body.contains(existing.container)) return;
 
           const comparedStart = comparedFlightData[0]?.timestep ?? 0;
-          const comparedEnd = comparedFlightData[comparedFlightData.length - 1]?.timestep ?? 0;
+          const comparedEnd =
+            comparedFlightData[comparedFlightData.length - 1]?.timestep ?? 0;
           const comparedRange = comparedEnd - comparedStart;
 
-          const relativePos = masterRange > 0 ? (anomalyTime - masterStart) / masterRange : 0.5;
+          const relativePos =
+            masterRange > 0 ? (anomalyTime - masterStart) / masterRange : 0.5;
           const centerInCompared = comparedStart + relativePos * comparedRange;
           const halfWindow = 100;
 
@@ -883,7 +914,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
               row.timestep <= centerInCompared + halfWindow,
           );
 
-          const dataPoints = this.chartsService.buildSeries(windowedRows, paramName);
+          const dataPoints = this.chartsService.buildSeries(
+            windowedRows,
+            paramName,
+          );
           const chart = this.chartsService.createHistoricalMiniChart(
             elementRef.nativeElement,
             paramName,
@@ -904,7 +938,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
               buildChart(sortedData);
             },
             error: (err) => {
-              console.error('[HistoricalMiniCharts] failed to fetch flight fields for flight:', comparedFlightIndex, err);
+              console.error(
+                '[HistoricalMiniCharts] failed to fetch flight fields for flight:',
+                comparedFlightIndex,
+                err,
+              );
             },
           });
         }
@@ -940,7 +978,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  private applySyncExtremes(min: number, max: number, sourceParam: string): void {
+  private applySyncExtremes(
+    min: number,
+    max: number,
+    sourceParam: string,
+  ): void {
     this.isSyncing = true;
     for (const item of this.gridItems) {
       if (!item.chart || item.param === sourceParam) continue;
@@ -1077,11 +1119,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const currentFlightInv = this.flightInvestigations.get(`${param}_${time}`);
     if (currentFlightInv) return currentFlightInv;
 
-    const tX = this.comparedFlightHistoricalLinks.get(`${comparedFlightIndex}|${param}|${time}`);
+    const tX = this.comparedFlightHistoricalLinks.get(
+      `${comparedFlightIndex}|${param}|${time}`,
+    );
     if (tX !== undefined) {
-      const comparedList = this.comparedFlightInvestigations.get(comparedFlightIndex);
+      const comparedList =
+        this.comparedFlightInvestigations.get(comparedFlightIndex);
       if (comparedList) {
-        return comparedList.find((inv) => inv.param === param && inv.time === tX) ?? null;
+        return (
+          comparedList.find((inv) => inv.param === param && inv.time === tX) ??
+          null
+        );
       }
     }
 
@@ -1124,21 +1172,35 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public saveEditedInvestigation(): void {
-    if (!this.currentReport?.id || !this.editingName.trim() || !this.editingDescription.trim()) return;
+    if (
+      !this.currentReport?.id ||
+      !this.editingName.trim() ||
+      !this.editingDescription.trim()
+    )
+      return;
     this.investigationSaving = true;
-    this.archiveService.updateInvestigation(this.currentReport.id, this.editingName.trim(), this.editingDescription.trim()).subscribe({
-      next: (updated) => {
-        this.flightInvestigations.set(`${updated.param}_${updated.time}`, updated);
-        this.currentReport = updated;
-        this.isEditingInvestigation = false;
-        this.investigationSaving = false;
-        this.changeDetectorRef.detectChanges();
-      },
-      error: () => {
-        this.investigationSaving = false;
-        this.changeDetectorRef.detectChanges();
-      },
-    });
+    this.archiveService
+      .updateInvestigation(
+        this.currentReport.id,
+        this.editingName.trim(),
+        this.editingDescription.trim(),
+      )
+      .subscribe({
+        next: (updated) => {
+          this.flightInvestigations.set(
+            `${updated.param}_${updated.time}`,
+            updated,
+          );
+          this.currentReport = updated;
+          this.isEditingInvestigation = false;
+          this.investigationSaving = false;
+          this.changeDetectorRef.detectChanges();
+        },
+        error: () => {
+          this.investigationSaving = false;
+          this.changeDetectorRef.detectChanges();
+        },
+      });
   }
 
   public deleteCurrentInvestigation(): void {
@@ -1146,7 +1208,9 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.investigationDeleting = true;
     this.archiveService.deleteInvestigation(this.currentReport.id).subscribe({
       next: () => {
-        this.flightInvestigations.delete(`${this.currentReport!.param}_${this.currentReport!.time}`);
+        this.flightInvestigations.delete(
+          `${this.currentReport!.param}_${this.currentReport!.time}`,
+        );
         this.investigationDeleting = false;
         this.showInvestigationReport = false;
         this.currentReport = null;
@@ -1159,16 +1223,13 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  public openInvestigationModal(event: MouseEvent): void {
-    event.stopPropagation();
-    this.modalPoint = this.selectedPoint;
-    this.selectedPoint = null;
-    this.investigationName = '';
-    this.investigationDescription = '';
-    this.investigationSaving = false;
-    this.showInvestigationModal = true;
-    this.changeDetectorRef.detectChanges();
-  }
+  public openInvestigationModal(): void {
+  this.investigationName = '';
+  this.investigationDescription = '';
+  this.investigationSaving = false;
+  this.showInvestigationModal = true;
+  this.changeDetectorRef.detectChanges();
+}
 
   public closeInvestigationModal(): void {
     this.showInvestigationModal = false;
@@ -1176,7 +1237,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public saveInvestigation(): void {
-    if (!this.modalPoint || !this.investigationName.trim() || !this.investigationDescription.trim()) return;
+    if (
+      !this.modalPoint ||
+      !this.investigationName.trim() ||
+      !this.investigationDescription.trim()
+    )
+      return;
 
     const payload: Investigation = {
       name: this.investigationName.trim(),
@@ -1190,7 +1256,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.investigationSaving = true;
     this.archiveService.createInvestigation(payload).subscribe({
       next: (created) => {
-        this.flightInvestigations.set(`${created.param}_${created.time}`, created);
+        this.flightInvestigations.set(
+          `${created.param}_${created.time}`,
+          created,
+        );
         this.investigationSaving = false;
         this.showInvestigationModal = false;
         this.changeDetectorRef.detectChanges();

@@ -196,12 +196,8 @@
         <span>{{ selectedPoint.x | date: "HH:mm:ss" }}</span>
       </div>
 
-      <div *ngIf="selectedPoint.type === 'historical'" class="popup-row">
-        <span>Matches:</span>
-        <span>Similar pattern</span>
-      </div>
 
-      <button class="popup-btn" (click)="openInvestigationModal($event)">
+      <button class="popup-btn" (click)="openInvestigationModal()">
         Add Investigation
       </button>
     </div>
