@@ -88,11 +88,35 @@ export class FlightArchiveService {
     return this.http.get<any>(`${this.baseUrl}/flight-meta/${masterIndex}`);
   }
 
-  public createInvestigation(investigation: Omit<Investigation, 'id' | 'createdAt'>): Observable<Investigation> {
-    return this.http.post<Investigation>(`${this.baseUrl}/investigations`, investigation);
+  public createInvestigation(
+    investigation: Omit<Investigation, 'id' | 'createdAt'>,
+  ): Observable<Investigation> {
+    return this.http.post<Investigation>(
+      `${this.baseUrl}/investigations`,
+      investigation,
+    );
   }
 
-  public getInvestigationsForFlight(masterIndex: number): Observable<Investigation[]> {
-    return this.http.get<Investigation[]>(`${this.baseUrl}/investigations/${masterIndex}`);
+  public getInvestigationsForFlight(
+    masterIndex: number,
+  ): Observable<Investigation[]> {
+    return this.http.get<Investigation[]>(
+      `${this.baseUrl}/investigations/${masterIndex}`,
+    );
+  }
+
+  public updateInvestigation(
+    id: string,
+    name: string,
+    description: string,
+  ): Observable<Investigation> {
+    return this.http.post<Investigation>(
+      `${this.baseUrl}/update-investigations/${id}`,
+      { name, description },
+    );
+  }
+
+  public deleteInvestigation(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/investigations/${id}`);
   }
 }

@@ -1278,16 +1278,18 @@ position: fixed;
 .inv-modal {
   position: relative;
   z-index: 1;
-  width: 440px;
+  width: 580px;
   max-width: calc(100vw - 40px);
-  background: linear-gradient(180deg, rgba(22, 12, 44, 0.98), rgba(12, 6, 28, 0.98));
-  border: 1px solid rgba(190, 120, 255, 0.28);
-  border-radius: 18px;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(22, 12, 44, 0.99), rgba(12, 6, 28, 0.99));
+  border: 1px solid rgba(190, 120, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(190, 120, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 22px;
+  gap: 18px;
+  padding: 26px;
   animation: fadeIn 150ms ease;
 }
 
@@ -1389,23 +1391,32 @@ position: fixed;
 .inv-textarea {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(190, 120, 255, 0.22);
-  border-radius: 9px;
+  border-radius: 10px;
   color: rgba(230, 215, 255, 0.92);
-  font-size: 13px;
-  padding: 9px 12px;
+  font-size: 14px;
+  padding: 10px 14px;
   outline: none;
-  transition: border-color 150ms;
-  resize: none;
+  transition: border-color 150ms, background 150ms;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 
   &::placeholder {
     color: rgba(180, 150, 220, 0.3);
   }
 
   &:focus {
-    border-color: rgba(168, 85, 247, 0.6);
-    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(168, 85, 247, 0.65);
+    background: rgba(255, 255, 255, 0.08);
   }
+}
+
+.inv-textarea {
+  resize: vertical;
+  min-height: 140px;
+  max-height: 280px;
+  overflow-y: auto;
+  line-height: 1.6;
 }
 
 .inv-footer {
@@ -1436,16 +1447,48 @@ position: fixed;
   border: 1px solid rgba(190, 120, 255, 0.18);
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.11);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(220, 200, 255, 0.9);
   }
 }
 
 .inv-btn-save {
-  background: #a855f7;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
   color: #fff;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
 
   &:hover:not(:disabled) {
-    background: #9333ea;
+    background: linear-gradient(135deg, #9333ea, #6d28d9);
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.45);
+  }
+}
+
+.inv-btn-edit {
+  background: rgba(99, 179, 237, 0.12);
+  color: rgba(147, 210, 255, 0.9);
+  border: 1px solid rgba(99, 179, 237, 0.28);
+
+  &:hover:not(:disabled) {
+    background: rgba(99, 179, 237, 0.22);
+    border-color: rgba(99, 179, 237, 0.5);
+    color: #b8e0ff;
+  }
+}
+
+.inv-btn-delete {
+  background: rgba(255, 60, 60, 0.10);
+  color: rgba(255, 130, 130, 0.85);
+  border: 1px solid rgba(255, 60, 60, 0.25);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 60, 60, 0.22);
+    border-color: rgba(255, 80, 80, 0.5);
+    color: #ff9090;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 }
 
@@ -1505,4 +1548,54 @@ position: fixed;
   color: rgba(180, 150, 220, 0.4);
   text-align: right;
   margin-top: -6px;
+}
+
+.inv-report-scrollable {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.inv-required {
+  color: rgba(255, 100, 100, 0.85);
+  margin-left: 3px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+// ─── Linked Investigation (cross-flight) ─────────────────────────────────────
+
+.inv-modal-header--linked {
+  border-bottom-color: rgba(99, 179, 237, 0.2);
+}
+
+.inv-linked-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(180, 220, 255, 0.95);
+}
+
+.inv-linked-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.inv-flight-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: rgba(99, 179, 237, 0.14);
+  border: 1px solid rgba(99, 179, 237, 0.32);
+  color: rgba(147, 210, 255, 0.9);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.inv-context--linked {
+  border-color: rgba(99, 179, 237, 0.18);
+  background: rgba(99, 179, 237, 0.05);
 }

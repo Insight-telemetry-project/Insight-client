@@ -207,7 +207,6 @@
     </div>
   </div>
 
-  <!-- Investigation Modal -->
   <div *ngIf="showInvestigationModal" class="inv-overlay">
     <div class="inv-backdrop" (click)="closeInvestigationModal()"></div>
     <div class="inv-modal">
@@ -217,15 +216,12 @@
       </div>
 
       <div class="inv-context" *ngIf="modalPoint">
-        <!-- <span class="inv-context-badge" [class.inv-anomaly]="modalPoint.type === 'anomaly'" [class.inv-historical]="modalPoint.type === 'historical'">
-          {{ modalPoint.type === 'anomaly' ? 'Anomaly' : 'Historical Match' }}
-        </span> -->
         <span class="inv-context-param">{{ modalPoint.param }}</span>
         <span class="inv-context-time"> {{ modalPoint.x | date: 'HH:mm:ss' }}</span>
       </div>
 
       <div class="inv-field">
-        <label class="inv-label">Name</label>
+        <label class="inv-label">Name <span class="inv-required">*</span></label>
         <input
           class="inv-input"
           [(ngModel)]="investigationName"
@@ -235,12 +231,12 @@
       </div>
 
       <div class="inv-field">
-        <label class="inv-label">Description</label>
+        <label class="inv-label">Description <span class="inv-required">*</span></label>
         <textarea
           class="inv-textarea"
           [(ngModel)]="investigationDescription"
           placeholder="Describe the fault or anomaly in detail..."
-          rows="4"
+          rows="7"
           maxlength="1000"
         ></textarea>
       </div>
@@ -250,7 +246,7 @@
         <button
           class="inv-btn inv-btn-save"
           (click)="saveInvestigation()"
-          [disabled]="!investigationName.trim() || investigationSaving"
+          [disabled]="!investigationName.trim() || !investigationDescription.trim() || investigationSaving"
         >
           {{ investigationSaving ? 'Saving...' : 'Save Investigation' }}
         </button>
@@ -258,37 +254,96 @@
     </div>
   </div>
 
-  <!-- Investigation Report Modal (read-only) -->
   <div *ngIf="showInvestigationReport && currentReport" class="inv-overlay">
     <div class="inv-backdrop" (click)="closeInvestigationReport()"></div>
     <div class="inv-modal">
-      <div class="inv-modal-header">
-        <span>Investigation Report</span>
-        <button class="inv-close-btn" type="button" (click)="closeInvestigationReport()">✕</button>
-      </div>
 
-      <div class="inv-context">
-        <span class="inv-context-param">{{ currentReport.param }}</span>
-        <span class="inv-context-time">@ {{ currentReport.time * 1000 | date: 'HH:mm:ss' }}</span>
-      </div>
+      <ng-container *ngIf="isOwnInvestigation">
+        <div class="inv-modal-header">
+          <span>Investigation</span>
+          <button class="inv-close-btn" type="button" (click)="closeInvestigationReport()">✕</button>
+        </div>
 
-      <div class="inv-report-block">
-        <div class="inv-label">Name</div>
-        <div class="inv-report-text inv-report-name">{{ currentReport.name }}</div>
-      </div>
+        <div class="inv-context">
+          <span class="inv-context-param">{{ currentReport.param }}</span>
+          <span class="inv-context-time"> {{ currentReport.time * 1000 | date: 'HH:mm:ss' }}</span>
+        </div>
 
-      <div class="inv-report-block">
-        <div class="inv-label">Description</div>
-        <div class="inv-report-text">{{ currentReport.description || '—' }}</div>
-      </div>
+        <ng-container *ngIf="!isEditingInvestigation">
+          <div class="inv-report-block">
+            <div class="inv-label">Name</div>
+            <div class="inv-report-text inv-report-name">{{ currentReport.name }}</div>
+          </div>
+          <div class="inv-report-block">
+            <div class="inv-label">Description</div>
+            <div class="inv-report-text inv-report-scrollable">{{ currentReport.description || '—' }}</div>
+          </div>
+          <div class="inv-report-meta" *ngIf="currentReport.createdAt">
+            Created {{ currentReport.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+          </div>
+          <div class="inv-footer">
+            <button class="inv-btn inv-btn-delete" (click)="deleteCurrentInvestigation()" [disabled]="investigationDeleting">
+              {{ investigationDeleting ? 'Deleting...' : 'Delete' }}
+            </button>
+            <button class="inv-btn inv-btn-edit" (click)="startEditingInvestigation()">Edit</button>
+            <button class="inv-btn inv-btn-cancel" (click)="closeInvestigationReport()">Close</button>
+          </div>
+        </ng-container>
 
-      <div class="inv-report-meta" *ngIf="currentReport.createdAt">
-        Created {{ currentReport.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-      </div>
+        <ng-container *ngIf="isEditingInvestigation">
+          <div class="inv-field">
+            <label class="inv-label">Name <span class="inv-required">*</span></label>
+            <input class="inv-input" [(ngModel)]="editingName" maxlength="100" placeholder="Investigation name..." />
+          </div>
+          <div class="inv-field">
+            <label class="inv-label">Description <span class="inv-required">*</span></label>
+            <textarea class="inv-textarea" [(ngModel)]="editingDescription" rows="7" maxlength="1000" placeholder="Describe the fault or anomaly..."></textarea>
+          </div>
+          <div class="inv-footer">
+            <button class="inv-btn inv-btn-cancel" (click)="cancelEditing()">Cancel</button>
+            <button
+              class="inv-btn inv-btn-save"
+              (click)="saveEditedInvestigation()"
+              [disabled]="!editingName.trim() || !editingDescription.trim() || investigationSaving"
+            >
+              {{ investigationSaving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </ng-container>
+      </ng-container>
 
-      <div class="inv-footer">
-        <button class="inv-btn inv-btn-cancel" (click)="closeInvestigationReport()">Close</button>
-      </div>
+      <ng-container *ngIf="!isOwnInvestigation">
+        <div class="inv-modal-header inv-modal-header--linked">
+          <div class="inv-linked-title">
+            <span class="inv-linked-icon"></span>
+            <span>Linked Investigation</span>
+          </div>
+          <button class="inv-close-btn" type="button" (click)="closeInvestigationReport()">✕</button>
+        </div>
+
+        <div class="inv-context inv-context--linked">
+          <span class="inv-flight-badge">Flight #{{ currentReport.masterIndex }}</span>
+          <span class="inv-context-param">{{ currentReport.param }}</span>
+          <span class="inv-context-time"> {{ currentReport.time * 1000 | date: 'HH:mm:ss' }}</span>
+        </div>
+
+        <div class="inv-report-block">
+          <div class="inv-label">Name</div>
+          <div class="inv-report-text inv-report-name">{{ currentReport.name }}</div>
+        </div>
+        <div class="inv-report-block">
+          <div class="inv-label">Description</div>
+          <div class="inv-report-text inv-report-scrollable">{{ currentReport.description || '—' }}</div>
+        </div>
+        <div class="inv-report-meta" *ngIf="currentReport.createdAt">
+          Created {{ currentReport.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+        </div>
+
+        <div class="inv-footer">
+          <button class="inv-btn inv-btn-cancel" (click)="closeInvestigationReport()">Close</button>
+        </div>
+      </ng-container>
+
     </div>
   </div>
 
@@ -371,7 +426,6 @@
             </div>
           </div>
 
-          <!-- Grouped Historical Cards by Time -->
           <div class="historicalCardsList">
             <div
               class="timeGroup"
@@ -409,7 +463,6 @@
                 </div>
               </button>
 
-              <!-- Items - Hidden by default, shown on expand -->
               <div class="timeGroupItems" *ngIf="expandedGroups.has(group.id)">
                 <div
                   class="historicalCardNew"
@@ -461,7 +514,7 @@
                     type="button"
                     (click)="openInvestigationReport($event, item.param, item.time, item.comparedFlightIndex)"
                   >
-                    📋 Investigation report found
+                     Investigation report found
                   </button>
                 </div>
               </div>

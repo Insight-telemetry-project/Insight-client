@@ -12,11 +12,11 @@ export class InvestigationService {
 
   public constructor(private readonly http: HttpClient) {}
 
-  public createInvestigation(investigation: Investigation): Observable<Investigation> {
-    return this.http.post<Investigation>(this.baseUrl, investigation);
-  }
+  // public createInvestigation(investigation: Investigation): Observable<Investigation> {
+  //   return this.http.post<Investigation>(this.baseUrl, investigation);
+  // }
 
-  public getInvestigationsForFlight(masterIndex: number): Observable<Investigation[]> {
-    return this.http.get<Investigation[]>(`${this.baseUrl}/flight/${masterIndex}`);
-  }
+  // public getInvestigationsForFlight(masterIndex: number): Observable<Investigation[]> {
+  //   return this.http.get<Investigation[]>(`${this.baseUrl}/flight/${masterIndex}`);
+  // }
 }

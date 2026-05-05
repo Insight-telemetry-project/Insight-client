@@ -67,10 +67,6 @@
         class="analysisProgress"
         *ngIf="progressMap.has(flight.flightNumber)"
       >
-        <!-- <div class="analysisText">
-          {{ getFlightAnalysisStatusText(flight.flightNumber) }}
-        </div> -->
-
         <div class="analysisHeader">
           <div class="analysisText">
             {{ getFlightAnalysisStatusText(flight.flightNumber) }}
@@ -281,7 +277,6 @@
     />
   </div>
 </div>
-<!-- EXPORT MODAL -->
 
 <div
   class="exportOverlay"

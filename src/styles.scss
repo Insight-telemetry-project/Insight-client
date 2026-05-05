@@ -11,6 +11,7 @@ body {
     linear-gradient(180deg, #0a0614 0%, #07040c 100%);
   overflow-x: hidden;
   color: rgba(255, 255, 255, 0.92);
+  font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 * {
@@ -23,6 +24,7 @@ input,
 textarea,
 select {
   color: inherit;
+  font-family: inherit;
 }
 
 ::placeholder {

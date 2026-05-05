@@ -74,6 +74,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   public investigationSaving: boolean = false;
   public showInvestigationReport: boolean = false;
   public currentReport: Investigation | null = null;
+  public isOwnInvestigation: boolean = false;
+  public isEditingInvestigation: boolean = false;
+  public editingName: string = '';
+  public editingDescription: string = '';
+  public investigationDeleting: boolean = false;
   public zoomedParams: Set<string> = new Set();
   public syncingParam: string | null = null;
   private zoomedExtremesMap: Map<string, { min: number; max: number }> = new Map();
@@ -303,6 +308,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       window.addEventListener('click', (event: MouseEvent) => {
+        if (this.showInvestigationReport || this.showInvestigationModal) return;
         const target = event.target as HTMLElement;
         if (
           target.closest('.highcharts-point') ||
@@ -1089,15 +1095,68 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     comparedFlightIndex: number,
   ): void {
     event.stopPropagation();
-    this.currentReport = this.getInvestigationForCard(param, time, comparedFlightIndex);
-    if (!this.currentReport) return;
+    const inv = this.getInvestigationForCard(param, time, comparedFlightIndex);
+    if (!inv) return;
+    this.currentReport = inv;
+    this.isOwnInvestigation = inv.masterIndex === this.masterIndex;
+    this.isEditingInvestigation = false;
     this.showInvestigationReport = true;
     this.changeDetectorRef.detectChanges();
   }
 
   public closeInvestigationReport(): void {
     this.showInvestigationReport = false;
+    this.isEditingInvestigation = false;
     this.changeDetectorRef.detectChanges();
+  }
+
+  public startEditingInvestigation(): void {
+    if (!this.currentReport) return;
+    this.editingName = this.currentReport.name;
+    this.editingDescription = this.currentReport.description;
+    this.isEditingInvestigation = true;
+    this.changeDetectorRef.detectChanges();
+  }
+
+  public cancelEditing(): void {
+    this.isEditingInvestigation = false;
+    this.changeDetectorRef.detectChanges();
+  }
+
+  public saveEditedInvestigation(): void {
+    if (!this.currentReport?.id || !this.editingName.trim() || !this.editingDescription.trim()) return;
+    this.investigationSaving = true;
+    this.archiveService.updateInvestigation(this.currentReport.id, this.editingName.trim(), this.editingDescription.trim()).subscribe({
+      next: (updated) => {
+        this.flightInvestigations.set(`${updated.param}_${updated.time}`, updated);
+        this.currentReport = updated;
+        this.isEditingInvestigation = false;
+        this.investigationSaving = false;
+        this.changeDetectorRef.detectChanges();
+      },
+      error: () => {
+        this.investigationSaving = false;
+        this.changeDetectorRef.detectChanges();
+      },
+    });
+  }
+
+  public deleteCurrentInvestigation(): void {
+    if (!this.currentReport?.id) return;
+    this.investigationDeleting = true;
+    this.archiveService.deleteInvestigation(this.currentReport.id).subscribe({
+      next: () => {
+        this.flightInvestigations.delete(`${this.currentReport!.param}_${this.currentReport!.time}`);
+        this.investigationDeleting = false;
+        this.showInvestigationReport = false;
+        this.currentReport = null;
+        this.changeDetectorRef.detectChanges();
+      },
+      error: () => {
+        this.investigationDeleting = false;
+        this.changeDetectorRef.detectChanges();
+      },
+    });
   }
 
   public openInvestigationModal(event: MouseEvent): void {
@@ -1117,7 +1176,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public saveInvestigation(): void {
-    if (!this.modalPoint || !this.investigationName.trim()) return;
+    if (!this.modalPoint || !this.investigationName.trim() || !this.investigationDescription.trim()) return;
 
     const payload: Investigation = {
       name: this.investigationName.trim(),
