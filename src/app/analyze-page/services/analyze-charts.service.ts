@@ -588,18 +588,51 @@ export class AnalyzeChartsService {
               position: { align: 'right', verticalAlign: 'top', x: -8, y: 8 },
             },
           } as any,
-          panning: {
-            enabled: true,
-            type: 'x',
-          },
-          panKey: 'ctrl',
-
           events: {
+            selection: function (e: any) {
+              if ((this as any).__ctrlDragging?.()) return false;
+              return true;
+            },
             load: function () {
               const chart = this;
               chart.container.ondblclick = function () {
                 chart.zoomOut();
               };
+
+              let ctrlDragging = false;
+              let dragStartX = 0;
+              let dragStartMin = 0;
+              let dragStartMax = 0;
+
+              const onMouseDown = (e: MouseEvent) => {
+                if (!e.ctrlKey) return;
+                const xAxis = chart.xAxis[0];
+                if (xAxis.min == null || xAxis.max == null) return;
+                ctrlDragging = true;
+                dragStartX = e.clientX;
+                dragStartMin = xAxis.min;
+                dragStartMax = xAxis.max;
+                e.preventDefault();
+                e.stopPropagation();
+              };
+
+              const onMouseMove = (e: MouseEvent) => {
+                if (!ctrlDragging) return;
+                if (!e.ctrlKey) { ctrlDragging = false; return; }
+                const xAxis = chart.xAxis[0];
+                const range = dragStartMax - dragStartMin;
+                const pixelDelta = e.clientX - dragStartX;
+                const dataDelta = -(pixelDelta / chart.plotWidth) * range;
+                xAxis.setExtremes(dragStartMin + dataDelta, dragStartMax + dataDelta, true, false);
+              };
+
+              const onMouseUp = () => { ctrlDragging = false; };
+
+              (chart as any).__ctrlDragging = () => ctrlDragging;
+
+              chart.container.addEventListener('mousedown', onMouseDown, true);
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
             },
           },
         },
@@ -650,7 +683,6 @@ export class AnalyzeChartsService {
           series: {
             animation: false,
             stickyTracking: false,
-            dataGrouping: { enabled: false },
             states: {
               inactive: {
                 opacity: 1,
