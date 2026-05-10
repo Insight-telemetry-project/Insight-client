@@ -84,6 +84,7 @@ export class AnalyzeChartsService {
         type: 'scatter',
         id: seriesId as any,
         name: `${paramName} anomalies`,
+        yAxis: 0,
         data: anomalyPoints,
         color: '#ff2d2d',
         marker: {
@@ -349,6 +350,7 @@ export class AnalyzeChartsService {
         id: seriesId,
         name: 'Historical',
         type: 'scatter',
+        yAxis: 0,
         data: dedupedPoints,
         zIndex: 7,
         color: '#facc15',
@@ -648,6 +650,7 @@ export class AnalyzeChartsService {
           series: {
             animation: false,
             stickyTracking: false,
+            dataGrouping: { enabled: false },
             states: {
               inactive: {
                 opacity: 1,
@@ -656,15 +659,18 @@ export class AnalyzeChartsService {
           },
           areaspline: {
             marker: { enabled: false },
+            dataGrouping: { enabled: false },
           },
           scatter: {
             stickyTracking: false,
+            dataGrouping: { enabled: false },
           },
         },
         series: [
           {
             type: 'areaspline',
             name: paramName,
+            yAxis: 0,
             data: fullData,
             turboThreshold: 0,
             enableMouseTracking: true,
