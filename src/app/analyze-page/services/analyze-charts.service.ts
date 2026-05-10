@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
-import * as Highcharts from 'highcharts';
+import * as Highcharts from 'highcharts/highstock';
 import { TelemetrySensorFields } from '../../common/interfaces/telemetry-sensor-fields.interface';
+
 @Injectable({ providedIn: 'root' })
 export class AnalyzeChartsService {
   constructor(private ngZone: NgZone) {
@@ -553,13 +554,14 @@ export class AnalyzeChartsService {
       .get('rgba') as string;
 
     return this.ngZone.runOutsideAngular(() => {
-      return Highcharts.chart(container, {
+      return Highcharts.stockChart(container, {
+        rangeSelector: { enabled: false },
         chart: {
           backgroundColor: 'transparent',
           animation: false,
           zooming: {
             type: 'x',
-            mouseWheel: { enabled: true, type: 'x' },
+            mouseWheel: { enabled: false },
             resetButton: {
               theme: {
                 fill: 'rgba(15, 20, 40, 0.88)',
@@ -681,6 +683,30 @@ export class AnalyzeChartsService {
             shadow: false,
           } as Highcharts.SeriesOptionsType,
         ],
+        navigator: {
+          enabled: true,
+          height: 36,
+          outlineColor: 'rgba(139, 92, 246, 0.35)',
+          outlineWidth: 1,
+          maskFill: 'rgba(139, 92, 246, 0.12)',
+          handles: {
+            backgroundColor: 'rgba(30, 20, 60, 0.9)',
+            borderColor: 'rgba(139, 92, 246, 0.8)',
+          },
+          xAxis: {
+            gridLineWidth: 0,
+            labels: {
+              style: { color: '#8b7ab5', fontSize: '10px' },
+            },
+          },
+          series: {
+            type: 'areaspline',
+            color: '#8b5cf6',
+            fillColor: 'rgba(139, 92, 246, 0.08)',
+            lineWidth: 1,
+          },
+        } as any,
+        scrollbar: { enabled: false } as any,
       });
     });
   }
