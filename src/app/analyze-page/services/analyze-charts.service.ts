@@ -648,13 +648,31 @@ export class AnalyzeChartsService {
             afterSetExtremes: (() => {
               let rafId: number | null = null;
               return function (e: any) {
-                const snapshot = { userMin: e.userMin, userMax: e.userMax, min: e.min, max: e.max };
+                const axis = this as Highcharts.Axis;
+                const isPanning = (axis.chart as any).__ctrlDragging?.() === true;
+                const dataMin = (axis as any).dataMin;
+                const dataMax = (axis as any).dataMax;
+                const snapshot = {
+                  userMin: e.userMin,
+                  userMax: e.userMax,
+                  min: e.min,
+                  max: e.max,
+                  isPanning,
+                  dataMin,
+                  dataMax,
+                };
                 if (rafId !== null) cancelAnimationFrame(rafId);
                 rafId = requestAnimationFrame(() => {
                   rafId = null;
                   const zone = (window as any).ngZoneRef;
                   if (!zone) return;
-                  const isReset = snapshot.userMin == null && snapshot.userMax == null;
+                  const noUserExtremes = snapshot.userMin == null && snapshot.userMax == null;
+                  const coversFullRange =
+                    snapshot.dataMin != null &&
+                    snapshot.dataMax != null &&
+                    snapshot.min <= snapshot.dataMin &&
+                    snapshot.max >= snapshot.dataMax;
+                  const isReset = !snapshot.isPanning && noUserExtremes && coversFullRange;
                   zone.run(() => {
                     window.dispatchEvent(new CustomEvent(
                       isReset ? 'chart-zoom-reset' : 'chart-zoom-update',

@@ -612,6 +612,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.sidebarMode === 'historical') {
+      this.related.relatedForParam = paramName;
       const gridItem = this.gridItems.find((grid) => grid.param === paramName);
 
       if (gridItem && gridItem.chart) {
