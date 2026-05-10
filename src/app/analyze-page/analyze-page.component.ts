@@ -316,17 +316,14 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const point = customEvent.detail;
 
-        this.selectedPoint = null;
-
-        this.modalPoint = point;
-
-        this.investigationName = '';
-        this.investigationDescription = '';
-        this.investigationSaving = false;
-
-        this.showInvestigationModal = true;
-
-        this.changeDetectorRef.detectChanges();
+        this.ngZone.run(() => {
+          this.selectedPoint = null;
+          this.modalPoint = point;
+          this.investigationName = '';
+          this.investigationDescription = '';
+          this.investigationSaving = false;
+          this.showInvestigationModal = true;
+        });
       });
 
       window.addEventListener('click', (event: MouseEvent) => {
