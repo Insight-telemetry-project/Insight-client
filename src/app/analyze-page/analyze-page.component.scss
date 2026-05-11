@@ -306,6 +306,7 @@
 }
 
 .gridChartHeader {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -324,6 +325,27 @@
   letter-spacing: 0.02em;
   flex-shrink: 0;
   line-height: 1.6;
+}
+
+.gridChartHeader.sidebarSelected {
+  border-bottom-color: rgba(190, 120, 255, 0.55);
+  background: rgba(160, 80, 255, 0.10);
+
+  .gridChartTitle {
+    color: #d8aaff;
+    text-shadow: 0 0 8px rgba(190, 100, 255, 0.6);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: rgba(190, 100, 255, 0.85);
+    border-radius: 4px 0 0 0;
+  }
 }
 
 .gridChartActions {

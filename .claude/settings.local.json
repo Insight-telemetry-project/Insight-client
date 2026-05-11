@@ -5,7 +5,9 @@
       "Bash(node -e \"const m = require\\('highcharts/modules/navigator'\\); console.log\\(typeof m\\); console.log\\(Object.keys\\(m\\).slice\\(0,10\\)\\); console.log\\(typeof m.default\\);\")",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nadav\\\\source\\\\repos\\\\Analyzer Service\" -Recurse -Filter \"*.cs\")",
       "Bash(Select-Object -First 50)",
-      "Bash(Format-Table FullName)"
+      "Bash(Format-Table FullName)",
+      "Bash(xargs grep *)",
+      "Bash(grep -E \"\\\\.\\(ts|html|scss\\)$\")"
     ]
   }
 }

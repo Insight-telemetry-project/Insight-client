@@ -23,7 +23,7 @@
           class="gridsterItemWrapper"
         >
           <div class="gridChartCard" (click)="onGridCardClick($event, item)">
-            <div class="gridChartHeader">
+            <div class="gridChartHeader" [class.sidebarSelected]="item.param === related.relatedForParam">
               <span class="gridChartTitle">{{ item.param }}</span>
               <div class="gridChartActions">
                 <button

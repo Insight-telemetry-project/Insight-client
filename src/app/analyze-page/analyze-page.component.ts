@@ -446,16 +446,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.selected.add(paramName);
-    this.sidebarParam = paramName;
-
     this.addGridItem(paramName);
-
-    this.related.clear();
-    this.historicalSimilarityService.reset();
-
-    if (this.sidebarMode === 'related') {
-      this.related.openFor(this.masterIndex, paramName, this.subscriptions);
-    }
   }
 
   public toggleRelatedList(): void {
@@ -630,10 +621,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private handleParamSelect(paramName: string): void {
     this.selected.add(paramName);
-    this.sidebarParam = paramName;
-
     this.addGridItem(paramName);
 
+    if (this.sidebarParam) return;
+
+    this.sidebarParam = paramName;
     this.related.clear();
     this.historicalSimilarityService.reset();
 
