@@ -245,7 +245,7 @@
               >
             </div>
           </div>
-          <button class="removeBtn" (click)="removeSelectedFileAt(pickedIndex)">
+          <button class="removeBtn" (click)="removeSelectedFileAt(pickedIndex)" [disabled]="isUploading">
             ✕
           </button>
         </div>

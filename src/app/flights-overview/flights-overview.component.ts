@@ -326,10 +326,6 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  public removeSelectedFile(): void {
-    this.selectedFiles = [];
-  }
-
   public exportFlights(): void {
     for (const flightNumber of this.selectedFlights) {
       this.archiveService
@@ -467,7 +463,6 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
     const filesToUpload: File[] = [...this.selectedFiles];
 
     this.isUploading = true;
-    this.selectedFiles = [];
 
     forkJoin(filesToUpload.map((file) => this.telemetryDeviceService.uploadPcap(file))).subscribe({
       next: (createdFlightIds: number[]) => {
@@ -614,6 +609,7 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
         this.isUploading = false;
         this.isUploadModalOpen = false;
         this.isDropActive = false;
+        this.selectedFiles = [];
       });
   }
 
