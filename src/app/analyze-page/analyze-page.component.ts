@@ -1006,6 +1006,13 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!freshTargetPoint) return;
 
       this.hoveredHistoricalId = targetHistoricalId;
+
+      const chartAny = chart as any;
+      // Set hoverPoint so series.setState('hover') knows where to position the halo
+      chartAny.hoverPoint = freshTargetPoint;
+      chartAny.hoverSeries = freshTargetPoint.series;
+      // series.setState renders the yellow halo; point.setState enlarges the marker
+      (freshTargetPoint.series as any).setState('hover');
       freshTargetPoint.setState('hover');
 
       window.dispatchEvent(
@@ -1016,6 +1023,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const clearHover = () => {
         this.hoveredHistoricalId = null;
+        (freshTargetPoint!.series as any).setState('');
+        freshTargetPoint!.setState('');
+        chartAny.hoverPoint = null;
+        chartAny.hoverSeries = null;
         window.dispatchEvent(
           new CustomEvent('historical-card-hover', { detail: null }),
         );

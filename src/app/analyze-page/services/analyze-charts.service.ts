@@ -748,12 +748,15 @@ export class AnalyzeChartsService {
         navigator: {
           enabled: true,
           height: 36,
-          outlineColor: 'rgba(139, 92, 246, 0.35)',
+          outlineColor: 'rgba(100, 88, 160, 0.25)',
           outlineWidth: 1,
-          maskFill: 'rgba(139, 92, 246, 0.12)',
+          maskFill: 'rgba(95, 85, 180, 0.09)',
           handles: {
-            backgroundColor: 'rgba(30, 20, 60, 0.9)',
-            borderColor: 'rgba(139, 92, 246, 0.8)',
+            backgroundColor: 'rgba(22, 19, 42, 0.96)',
+            borderColor: 'rgba(115, 100, 185, 0.45)',
+            width: 14,
+            height: 28,
+            borderRadius: 4,
           },
           xAxis: {
             gridLineWidth: 0,

@@ -328,12 +328,11 @@
 }
 
 .gridChartHeader.sidebarSelected {
-  border-bottom-color: rgba(190, 120, 255, 0.55);
-  background: rgba(160, 80, 255, 0.10);
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
 
   .gridChartTitle {
-    color: #d8aaff;
-    text-shadow: 0 0 8px rgba(190, 100, 255, 0.6);
+    color: #ffffff;
   }
 
   &::before {
@@ -343,7 +342,7 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: rgba(190, 100, 255, 0.85);
+    background: rgba(255, 255, 255, 0.55);
     border-radius: 4px 0 0 0;
   }
 }
@@ -477,6 +476,16 @@
     .highcharts-root {
       width: 100% !important;
       height: 100% !important;
+    }
+
+    .highcharts-navigator-handle {
+      filter: drop-shadow(0 1px 4px rgba(70, 60, 140, 0.22));
+      cursor: ew-resize;
+
+      path:last-child {
+        stroke: rgba(160, 145, 220, 0.45) !important;
+        stroke-width: 1.5px;
+      }
     }
   }
 }
