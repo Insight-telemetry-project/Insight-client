@@ -561,6 +561,7 @@ export class AnalyzeChartsService {
         chart: {
           backgroundColor: 'transparent',
           animation: false,
+          marginLeft: 55,
           zooming: {
             type: 'x',
             mouseWheel: { enabled: false },
@@ -690,7 +691,12 @@ export class AnalyzeChartsService {
           title: { text: '' },
           gridLineColor: 'rgba(255,255,255,0.08)',
           gridLineWidth: 1,
-          labels: { style: { color: '#cfcfe6' } },
+          opposite: false,
+          labels: {
+            style: { color: '#cfcfe6' },
+            align: 'right',
+            x: -8,
+          },
         },
         tooltip: {
           shared: false,
