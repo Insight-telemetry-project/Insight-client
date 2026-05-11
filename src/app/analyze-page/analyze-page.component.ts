@@ -361,6 +361,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           target.closest('.inv-overlay')
         )
           return;
+
         this.selectedPoint = null;
         this.changeDetectorRef.detectChanges();
       });
@@ -370,6 +371,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         const { param, min, max } = (
           event as CustomEvent<{ param: string; min: number; max: number }>
         ).detail;
+
         if (this.syncingParam === param) {
           this.zoomedExtremesMap.set(param, { min, max });
           this.applySyncExtremes(min, max, param);
@@ -891,10 +893,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toggleParam(paramName);
     }
 
-    if (
-      this.pendingHighlight &&
-      this.pendingHighlight.param === paramName
-    ) {
+    if (this.pendingHighlight && this.pendingHighlight.param === paramName) {
       const highlight = this.pendingHighlight;
       this.pendingHighlight = null;
       setTimeout(() => this.applyPendingHighlight(highlight, 0), 500);
@@ -1014,6 +1013,17 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
           detail: targetHistoricalId,
         }),
       );
+
+      const clearHover = () => {
+        this.hoveredHistoricalId = null;
+        window.dispatchEvent(
+          new CustomEvent('historical-card-hover', { detail: null }),
+        );
+      };
+
+      setTimeout(() => {
+        window.addEventListener('pointerdown', clearHover, { once: true });
+      }, 100);
     }, 400);
   }
 
@@ -1375,12 +1385,12 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public openInvestigationModal(): void {
-  this.investigationName = '';
-  this.investigationDescription = '';
-  this.investigationSaving = false;
-  this.showInvestigationModal = true;
-  this.changeDetectorRef.detectChanges();
-}
+    this.investigationName = '';
+    this.investigationDescription = '';
+    this.investigationSaving = false;
+    this.showInvestigationModal = true;
+    this.changeDetectorRef.detectChanges();
+  }
 
   public closeInvestigationModal(): void {
     this.showInvestigationModal = false;
