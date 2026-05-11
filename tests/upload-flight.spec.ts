@@ -63,11 +63,15 @@ async function setupSignalR(page: Page): Promise<void> {
         return;
       }
 
-      if (msg.includes('JoinFlight')) {
+      // SignalR batches multiple messages in one WS frame separated by \x1e
+      // Split and process each frame individually to avoid invalid JSON parse
+      for (const frame of msg.split('\x1e').filter(f => f.trim())) {
         try {
-          const parsed = JSON.parse(msg.replace(/\x1e/g, ''));
-          const flightId: number = parsed.arguments?.[0];
-          if (flightId) schedulePipeline(ws, flightId);
+          const parsed = JSON.parse(frame);
+          if (parsed.target === 'JoinFlight') {
+            const flightId: number = parsed.arguments?.[0];
+            if (flightId) schedulePipeline(ws, flightId);
+          }
         } catch {}
       }
     });
