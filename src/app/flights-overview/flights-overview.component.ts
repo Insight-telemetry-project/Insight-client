@@ -10,6 +10,7 @@ import { FlightArchiveService } from '../services/flight-archive.service';
 import { FlightSummary } from '../common/interfaces/flight-summary.interface';
 import { Router } from '@angular/router';
 import { TelemetryDeviceService } from '../services/telemetry-device.services';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AnalysisProgressService } from '../services/analysis-progress.service';
 import { HistoricalSimilarityService } from '../analyze-page/services/historical-similarity.service';
@@ -468,9 +469,9 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
     this.isUploading = true;
     this.selectedFiles = [];
 
-    this.telemetryDeviceService.uploadPcap(filesToUpload[0]).subscribe({
-      next: (createdFlightId: number) => {
-        this.onUploadSuccess([createdFlightId]);
+    forkJoin(filesToUpload.map((file) => this.telemetryDeviceService.uploadPcap(file))).subscribe({
+      next: (createdFlightIds: number[]) => {
+        this.onUploadSuccess(createdFlightIds);
       },
       error: () => {
         this.isUploading = false;
