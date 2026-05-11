@@ -1016,6 +1016,172 @@ test.describe('Analyze Page — Navigation', () => {
     await expect(page).toHaveURL(new RegExp(`/archive/${COMPARED_ID}`), { timeout: 5_000 });
     await expect(page).toHaveURL(new RegExp(`param=${PARAM_A}`));
   });
+
+  test('historical card click URL includes sourceFlightIndex and label instead of raw epoch times', async ({ page }) => {
+    await gotoFlight(page);
+    await expandHistoricalCard(page);
+
+    await page.locator('.historicalCardNew').click();
+
+    await expect(page).toHaveURL(new RegExp(`/archive/${COMPARED_ID}`), { timeout: 5_000 });
+    await expect(page).toHaveURL(new RegExp(`sourceFlightIndex=${FLIGHT_ID}`));
+    await expect(page).toHaveURL(new RegExp(`label=similar_pattern`));
+
+    const url = page.url();
+    expect(url).not.toContain('pointTime');
+    expect(url).not.toContain('startEpoch');
+    expect(url).not.toContain('endEpoch');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BACK NAVIGATION STATE RESET
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('Analyze Page — Back Navigation State Reset', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupBaseRoutes(page);
+    await gotoFlight(page);
+  });
+
+  test('pressing browser back resets sidebar to Related mode with no param selected', async ({ page }) => {
+    await expandHistoricalCard(page);
+    await page.locator('.historicalCardNew').click();
+    await expect(page).toHaveURL(new RegExp(`/archive/${COMPARED_ID}`), { timeout: 5_000 });
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await page.goBack();
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(
+      page.locator('.modeBtn').filter({ hasText: 'Related' }),
+    ).toHaveClass(/active/, { timeout: 5_000 });
+    await expect(page.locator('.sidebarHeader')).toContainText(
+      'Select a parameter to see related parameters',
+    );
+  });
+
+  test('pressing browser back does not show "Historical Similar Points for null"', async ({ page }) => {
+    await expandHistoricalCard(page);
+    await page.locator('.historicalCardNew').click();
+    await expect(page).toHaveURL(new RegExp(`/archive/${COMPARED_ID}`), { timeout: 5_000 });
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await page.goBack();
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.sidebarHeader')).not.toContainText('null');
+  });
+
+  test('pressing browser back clears historical cards from the visited flight', async ({ page }) => {
+    await expandHistoricalCard(page);
+    await page.locator('.historicalCardNew').click();
+    await expect(page).toHaveURL(new RegExp(`/archive/${COMPARED_ID}`), { timeout: 5_000 });
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await page.goBack();
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.historicalCardNew')).toHaveCount(0, { timeout: 5_000 });
+  });
+
+  test('pressing browser back deselects all chart grid items', async ({ page }) => {
+    await expandHistoricalCard(page);
+    await page.locator('.historicalCardNew').click();
+    await expect(page).toHaveURL(new RegExp(`/archive/${COMPARED_ID}`), { timeout: 5_000 });
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await page.goBack();
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.gridChartCard')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('.emptyState')).toBeVisible();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HISTORICAL FLIGHT NAVIGATION — AUTO-SELECT WITH ZOOM
+// ─────────────────────────────────────────────────────────────────────────────
+
+const COMPARED_ANOMALY_TIME = 2005;
+
+const comparedFlightMeta = {
+  anomalies: {
+    [PARAM_A]: [{ startEpoch: 2004, endEpoch: 2006, representativeEpoch: COMPARED_ANOMALY_TIME, label: 'similar_pattern' }],
+  },
+  historicalSimilarity: {
+    [PARAM_A]: [{
+      recordId: 'hist-reverse-1',
+      comparedFlightIndex: FLIGHT_ID,
+      startEpoch: 2004,
+      endEpoch: 2006,
+      label: 'similar_pattern',
+      finalScore: 0.91,
+      anomalyTime: COMPARED_ANOMALY_TIME,
+    }],
+  },
+};
+
+const comparedSpecialPoints = {
+  anomalies: { [PARAM_A]: [COMPARED_ANOMALY_TIME], [PARAM_B]: [], [PARAM_C]: [] },
+  historicalSimilarity: { [PARAM_A]: [{ anomalyTime: COMPARED_ANOMALY_TIME }], [PARAM_B]: [], [PARAM_C]: [] },
+};
+
+async function setupComparedFlightRoutes(page: any) {
+  await page.route(`**/TelemetryDataArchive/flight/${COMPARED_ID}`, async (route: any) =>
+    route.fulfill({ json: comparedFlightMeta }));
+
+  await page.route(`**/get-all-special-points-for-flight/${COMPARED_ID}`, async (route: any) =>
+    route.fulfill({ json: comparedSpecialPoints }));
+}
+
+test.describe('Analyze Page — Historical Flight Auto-Select', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupBaseRoutes(page);
+    await setupComparedFlightRoutes(page);
+  });
+
+  test('navigating to compared flight via URL auto-selects the parameter chart', async ({ page }) => {
+    await page.goto(
+      `http://localhost:4200/archive/${COMPARED_ID}?param=${PARAM_A}&sourceFlightIndex=${FLIGHT_ID}&label=similar_pattern`,
+    );
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.gridChartCard')).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.locator('.gridChartTitle')).toHaveText(PARAM_A);
+    await expect(page.locator('.gridChartBody .highcharts-root')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('auto-selected param card is marked as selected on the compared flight', async ({ page }) => {
+    await page.goto(
+      `http://localhost:4200/archive/${COMPARED_ID}?param=${PARAM_A}&sourceFlightIndex=${FLIGHT_ID}&label=similar_pattern`,
+    );
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.gridChartCard')).toHaveCount(1, { timeout: 15_000 });
+    await expect(
+      page.locator('.paramCard').filter({ hasText: PARAM_A }),
+    ).toHaveClass(/selected/, { timeout: 5_000 });
+  });
+
+  test('compared flight header shows the correct flight number', async ({ page }) => {
+    await page.goto(
+      `http://localhost:4200/archive/${COMPARED_ID}?param=${PARAM_A}&sourceFlightIndex=${FLIGHT_ID}&label=similar_pattern`,
+    );
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.title')).toContainText(`Flight ${COMPARED_ID}`);
+  });
+
+  test('navigating without sourceFlightIndex/label still auto-selects the param', async ({ page }) => {
+    await page.goto(
+      `http://localhost:4200/archive/${COMPARED_ID}?param=${PARAM_A}`,
+    );
+    await page.waitForSelector('.paramCard', { timeout: 10_000 });
+
+    await expect(page.locator('.gridChartCard')).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.locator('.gridChartTitle')).toHaveText(PARAM_A);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
