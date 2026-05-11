@@ -663,6 +663,28 @@ export class AnalyzeChartsService {
               chart.container.addEventListener('mousedown', onMouseDown, true);
               document.addEventListener('mousemove', onMouseMove);
               document.addEventListener('mouseup', onMouseUp);
+
+              const nav = (chart as any).navigator;
+              if (nav) {
+                let navRafId: number | null = null;
+                const origOnMouseMove = nav.onMouseMove.bind(nav);
+                nav.onMouseMove = function(e: any) {
+                  origOnMouseMove(e);
+                  if (!nav.hasDragged) return;
+                  const navAxis = nav.xAxis;
+                  if (!navAxis?.navigatorAxis?.toFixedRange) return;
+                  const ext = navAxis.navigatorAxis.toFixedRange(nav.zoomedMin, nav.zoomedMax);
+                  if (!ext || ext.min == null || ext.max == null) return;
+                  const min = Math.min(ext.min, ext.max);
+                  const max = Math.max(ext.min, ext.max);
+                  if (!isFinite(min) || !isFinite(max)) return;
+                  if (navRafId !== null) cancelAnimationFrame(navRafId);
+                  navRafId = requestAnimationFrame(() => {
+                    navRafId = null;
+                    chart.xAxis[0].setExtremes(min, max, true, false);
+                  });
+                };
+              }
             },
           },
         },
