@@ -15,6 +15,7 @@ export interface AnalysisProgress {
 })
 export class AnalysisProgressService {
   private connection!: signalR.HubConnection;
+  private startPromise: Promise<void> | null = null;
 
   private progressSubject = new Subject<AnalysisProgress>();
   public progress$ = this.progressSubject.asObservable();
@@ -57,7 +58,11 @@ export class AnalysisProgressService {
     }
 
     if (this.connection.state === signalR.HubConnectionState.Disconnected) {
-      await this.connection.start();
+      this.startPromise = this.connection.start();
+    }
+
+    if (this.startPromise) {
+      await this.startPromise;
     }
 
     if (
