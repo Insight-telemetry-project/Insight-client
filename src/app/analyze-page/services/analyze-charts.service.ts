@@ -87,6 +87,7 @@ export class AnalyzeChartsService {
         yAxis: 0,
         data: anomalyPoints,
         color: '#ff2d2d',
+        allowPointSelect: true,
         marker: {
           enabled: true,
           radius: 5,
@@ -102,12 +103,20 @@ export class AnalyzeChartsService {
               lineColor: '#000000',
               lineWidth: 2,
             },
+            select: {
+              enabled: true,
+              radius: 8,
+              fillColor: '#ff0000',
+              lineColor: '#000000',
+              lineWidth: 2,
+            },
           },
         },
         point: {
           events: {
             click: function (event: Highcharts.PointClickEventObject) {
               const point = this as Highcharts.Point;
+              point.select(true, false);
 
               const zone = (
                 window as unknown as {
@@ -138,7 +147,18 @@ export class AnalyzeChartsService {
             },
           },
         },
-        states: { hover: { enabled: true } },
+        states: {
+          hover: {
+            enabled: true,
+            halo: {
+              size: 14,
+              opacity: 0.45,
+              attributes: {
+                fill: '#ff5555',
+              },
+            },
+          },
+        },
         tooltip: {
           useHTML: true,
           pointFormat: `
@@ -407,6 +427,7 @@ export class AnalyzeChartsService {
             },
             click: function (event: Highcharts.PointClickEventObject) {
               const point = this as Highcharts.Point;
+              point.select(true, false);
 
               const historicalId = (
                 point.options as {
@@ -442,6 +463,7 @@ export class AnalyzeChartsService {
           },
         },
 
+        allowPointSelect: true,
         marker: {
           symbol: 'circle',
           radius: 6,
@@ -450,6 +472,13 @@ export class AnalyzeChartsService {
           lineWidth: 2,
           states: {
             hover: {
+              radius: 8,
+              fillColor: '#fde047',
+              lineColor: '#000000',
+              lineWidth: 3,
+            },
+            select: {
+              enabled: true,
               radius: 8,
               fillColor: '#fde047',
               lineColor: '#000000',

@@ -1007,13 +1007,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.hoveredHistoricalId = targetHistoricalId;
 
-      const chartAny = chart as any;
-      // Set hoverPoint so series.setState('hover') knows where to position the halo
-      chartAny.hoverPoint = freshTargetPoint;
-      chartAny.hoverSeries = freshTargetPoint.series;
-      // series.setState renders the yellow halo; point.setState enlarges the marker
-      (freshTargetPoint.series as any).setState('hover');
       freshTargetPoint.setState('hover');
+      this.renderHistoricalHalo(freshTargetPoint, chart);
 
       window.dispatchEvent(
         new CustomEvent('historical-card-hover', {
@@ -1023,10 +1018,8 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const clearHover = () => {
         this.hoveredHistoricalId = null;
-        (freshTargetPoint!.series as any).setState('');
         freshTargetPoint!.setState('');
-        chartAny.hoverPoint = null;
-        chartAny.hoverSeries = null;
+        this.removeHistoricalHalo(freshTargetPoint!.series);
         window.dispatchEvent(
           new CustomEvent('historical-card-hover', { detail: null }),
         );
@@ -1243,11 +1236,16 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       const chartInstance = gridItem.chart;
       if (!chartInstance) continue;
 
+      const xAxis = (chartInstance as any).xAxis?.[0];
+      const xMin: number | undefined = xAxis?.min;
+      const xMax: number | undefined = xAxis?.max;
+
       for (const series of chartInstance.series) {
         const seriesId = (series.options as any)?.id;
 
         if (!seriesId || !seriesId.startsWith('history:')) continue;
 
+        let matchedPoint: any = null;
         for (const point of series.points as any[]) {
           const historicalId = point?.options?.custom?.historicalId;
 
@@ -1255,13 +1253,69 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
             ? historicalId.split('_').slice(1).join('_')
             : null;
 
-          if (anomalyTime && pointTime === anomalyTime) {
+          const inVisibleRange =
+            xMin == null ||
+            xMax == null ||
+            (point.x != null && point.x >= xMin && point.x <= xMax);
+
+          if (anomalyTime && pointTime === anomalyTime && inVisibleRange) {
             point.setState('hover');
+            matchedPoint = point;
           } else {
             point.setState('');
           }
         }
+
+        if (matchedPoint) {
+          this.renderHistoricalHalo(matchedPoint, chartInstance);
+        } else {
+          this.removeHistoricalHalo(series);
+        }
       }
+    }
+  }
+
+  private renderHistoricalHalo(
+    point: any,
+    chart: Highcharts.Chart,
+  ): void {
+    const series = point.series as any;
+    const haloOptions = series.options?.states?.hover?.halo;
+
+    if (
+      !haloOptions ||
+      !haloOptions.size ||
+      point.plotX == null ||
+      point.plotY == null ||
+      typeof point.haloPath !== 'function'
+    ) {
+      return;
+    }
+
+    if (!series.halo) {
+      series.halo = (chart as any).renderer
+        .path()
+        .add(series.markerGroup || series.group);
+    }
+
+    const fillColor =
+      haloOptions.attributes?.fill || series.color || '#fde047';
+
+    series.halo
+      .attr({
+        d: point.haloPath(haloOptions.size),
+        fill: fillColor,
+        'fill-opacity': haloOptions.opacity ?? 0.45,
+        zIndex: -1,
+      })
+      .show();
+
+    series.halo.point = point;
+  }
+
+  private removeHistoricalHalo(series: any): void {
+    if (series && series.halo) {
+      series.halo.hide();
     }
   }
   private resetHistoricalLinks(): void {
@@ -1405,7 +1459,21 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public closeInvestigationModal(): void {
     this.showInvestigationModal = false;
+    this.deselectAllChartPoints();
     this.changeDetectorRef.detectChanges();
+  }
+
+  private deselectAllChartPoints(): void {
+    this.ngZone.runOutsideAngular(() => {
+      for (const gridItem of this.gridItems) {
+        const chart = gridItem.chart as any;
+        if (!chart || typeof chart.getSelectedPoints !== 'function') continue;
+        const selected = chart.getSelectedPoints();
+        for (const point of selected) {
+          point.select(false, false);
+        }
+      }
+    });
   }
 
   public saveInvestigation(): void {
@@ -1434,6 +1502,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         );
         this.investigationSaving = false;
         this.showInvestigationModal = false;
+        this.deselectAllChartPoints();
         this.changeDetectorRef.detectChanges();
       },
       error: () => {
