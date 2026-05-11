@@ -203,7 +203,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.selected.clear();
         this.clearGrid();
         this.related.clear();
+        this.sidebarParam = null;
+        this.sidebarMode = 'related';
         this.historicalSimilarityService.reset();
+        this.cachedGroupedHistoricalItems = [];
         this.resetHistoricalLinks();
         this.miniCharts.forEach((miniChart) => miniChart.destroy());
         this.miniCharts.clear();
