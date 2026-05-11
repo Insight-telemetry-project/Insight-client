@@ -120,6 +120,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private comparedFlightDataCache: Map<number, TelemetrySensorFields[]> =
     new Map();
   private pendingParamToAutoSelect: string | null = null;
+  private pendingHighlight: {
+    param: string;
+    sourceFlightIndex: number;
+    label: string;
+  } | null = null;
   private sidebarParam: string | null = null;
   private cachedGroupedHistoricalItems: HistoricalGroupItem[] = [];
   private lastHistoricalSortBy: 'time' | 'score' = 'time';
@@ -213,8 +218,26 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.chartsService.destroyMiniCharts(this.historicalMiniCharts);
         this.comparedFlightDataCache.clear();
         this.paramSearchText = '';
-        this.pendingParamToAutoSelect =
-          this.route.snapshot.queryParamMap.get('param');
+        const queryParamMap = this.route.snapshot.queryParamMap;
+        this.pendingParamToAutoSelect = queryParamMap.get('param');
+
+        const sourceFlightIndexParam = queryParamMap.get('sourceFlightIndex');
+        const labelParam = queryParamMap.get('label');
+
+        if (
+          this.pendingParamToAutoSelect &&
+          sourceFlightIndexParam &&
+          labelParam
+        ) {
+          this.pendingHighlight = {
+            param: this.pendingParamToAutoSelect,
+            sourceFlightIndex: Number(sourceFlightIndexParam),
+            label: labelParam,
+          };
+        } else {
+          this.pendingHighlight = null;
+        }
+
         this.loadFlight();
         this.loadInvestigations();
       },
@@ -486,7 +509,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public navigateToHistoricalFlight(sidebarItem: HistoricalSidebarItem): void {
     this.router.navigate(['/archive', sidebarItem.comparedFlightIndex], {
-      queryParams: { param: sidebarItem.param },
+      queryParams: {
+        param: sidebarItem.param,
+        sourceFlightIndex: this.masterIndex,
+        label: sidebarItem.label,
+      },
     });
   }
 
@@ -727,6 +754,11 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private clearGrid(): void {
     for (const gridItem of this.gridItems) {
+      const observer = (gridItem as GridItemWithObserver).resizeObserver;
+      if (observer) {
+        observer.disconnect();
+        (gridItem as GridItemWithObserver).resizeObserver = undefined;
+      }
       if (gridItem.chart) {
         gridItem.chart.destroy();
         gridItem.chart = undefined;
@@ -763,6 +795,7 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     const chartInstance = gridChartItem.chart;
 
     const resizeObserver = new ResizeObserver(() => {
+      if (!gridChartItem.chart || !(chartInstance as any).renderer) return;
       this.ngZone.runOutsideAngular(() => chartInstance.reflow());
     });
 
@@ -865,6 +898,131 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.selected.has(paramName)) {
       this.toggleParam(paramName);
     }
+
+    if (
+      this.pendingHighlight &&
+      this.pendingHighlight.param === paramName
+    ) {
+      const highlight = this.pendingHighlight;
+      this.pendingHighlight = null;
+      setTimeout(() => this.applyPendingHighlight(highlight, 0), 500);
+    }
+  }
+
+  private applyPendingHighlight(
+    highlight: {
+      param: string;
+      sourceFlightIndex: number;
+      label: string;
+    },
+    retryCount: number,
+  ): void {
+    const gridItem = this.gridItems.find((g) => g.param === highlight.param);
+    if (!gridItem || !gridItem.chart) {
+      if (retryCount < 10) {
+        setTimeout(
+          () => this.applyPendingHighlight(highlight, retryCount + 1),
+          300,
+        );
+      }
+      return;
+    }
+
+    const historicalSimilarityMap =
+      (this.flightMeta?.['historicalSimilarity'] as
+        | Record<string, any[]>
+        | undefined) ?? {};
+    const similarityEntries: any[] =
+      historicalSimilarityMap[highlight.param] ?? [];
+
+    const matchingEntry = similarityEntries.find(
+      (entry: any) =>
+        Number(entry.comparedFlightIndex) === highlight.sourceFlightIndex &&
+        entry.label === highlight.label,
+    );
+
+    let anomalyTimeMs: number;
+    let windowSpanMs: number;
+
+    if (matchingEntry) {
+      anomalyTimeMs = Number(matchingEntry.anomalyTime) * 1000;
+      const startMs = Number(matchingEntry.startEpoch) * 1000;
+      const endMs = Number(matchingEntry.endEpoch) * 1000;
+      windowSpanMs = Math.max(endMs - startMs, 0);
+    } else {
+      const flightStartSec = this.flightData[0]?.timestep ?? 0;
+      const flightEndSec =
+        this.flightData[this.flightData.length - 1]?.timestep ?? flightStartSec;
+      anomalyTimeMs = ((flightStartSec + flightEndSec) / 2) * 1000;
+      windowSpanMs = 0;
+    }
+
+    const minHalfWindowMs = 120 * 1000;
+    const halfWindowMs = Math.max(windowSpanMs * 3, minHalfWindowMs);
+
+    const zoomMin = anomalyTimeMs - halfWindowMs;
+    const zoomMax = anomalyTimeMs + halfWindowMs;
+
+    gridItem.chart.xAxis[0].setExtremes(zoomMin, zoomMax, true, false);
+
+    if (!matchingEntry) return;
+
+    const targetHistoricalId = `${highlight.sourceFlightIndex}_${Number(matchingEntry.anomalyTime)}`;
+    const chart = gridItem.chart;
+
+    let targetPointExists = false;
+
+    for (const series of chart.series) {
+      const seriesId = (series.options as any)?.id;
+      if (!seriesId || !seriesId.startsWith('history:')) continue;
+
+      for (const point of series.points) {
+        const historicalId = (point.options as any)?.custom?.historicalId;
+        if (historicalId === targetHistoricalId) {
+          targetPointExists = true;
+          break;
+        }
+      }
+
+      if (targetPointExists) break;
+    }
+
+    if (!targetPointExists && retryCount < 10) {
+      setTimeout(
+        () => this.applyPendingHighlight(highlight, retryCount + 1),
+        300,
+      );
+      return;
+    }
+
+    if (!targetPointExists) return;
+
+    setTimeout(() => {
+      let freshTargetPoint: import('highcharts').Point | null = null;
+      for (const series of chart.series) {
+        const seriesId = (series.options as any)?.id;
+        if (!seriesId || !seriesId.startsWith('history:')) continue;
+        for (const point of series.points) {
+          const historicalId = (point.options as any)?.custom?.historicalId;
+          if (historicalId === targetHistoricalId) {
+            freshTargetPoint = point;
+            break;
+          }
+        }
+        if (freshTargetPoint) break;
+      }
+
+      if (!freshTargetPoint) return;
+
+      this.hoveredHistoricalId = targetHistoricalId;
+      freshTargetPoint.setState('hover');
+
+      window.dispatchEvent(
+        new CustomEvent('historical-card-hover', {
+          detail: targetHistoricalId,
+        }),
+      );
+    }, 400);
   }
 
   private drawHistoricalMiniCharts(): void {
