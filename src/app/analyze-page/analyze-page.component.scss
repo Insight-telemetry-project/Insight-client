@@ -591,20 +591,20 @@
   text-align: left;
   border-radius: 12px;
   padding: 8px 12px;
-  border: 1px solid rgba(120, 78, 200, 0.14);
-  background: rgba(22, 14, 36, 0.50);
-  color: white;
+  border: 1px solid rgba(148, 100, 228, 0.38);
+  background: rgba(52, 32, 88, 0.55);
+  color: rgba(225, 210, 255, 0.92);
   cursor: pointer;
   transition: background 140ms ease, border-color 140ms ease;
 
   &:hover {
-    border-color: rgba(160, 112, 240, 0.34);
-    background: rgba(118, 76, 198, 0.18);
+    border-color: rgba(175, 130, 252, 0.60);
+    background: rgba(90, 58, 150, 0.50);
   }
 
   &.selected {
-    border-color: rgba(175, 130, 252, 0.52);
-    background: rgba(118, 76, 198, 0.28);
+    border-color: rgba(190, 148, 255, 0.75);
+    background: rgba(110, 72, 185, 0.45);
   }
 }
 
