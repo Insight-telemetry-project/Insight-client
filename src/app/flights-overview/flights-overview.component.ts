@@ -33,7 +33,7 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') public fileInput!: ElementRef<HTMLInputElement>;
 
   public isUploading: boolean = false;
-  public selectedFile: File | null = null;
+  public selectedFiles: File[] = [];
   public flights: FlightSummary[] = [];
   public expandedFlight: number | null = null;
   public parametersMap: Map<number, ParameterOverview[]> = new Map();
@@ -136,16 +136,33 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
 
   public onFilePicked(event: Event): void {
     const inputElement: HTMLInputElement = event.target as HTMLInputElement;
-    const file: File | null = inputElement.files?.item(0) ?? null;
-    if (!file) return;
+    const pickedFiles: FileList | null = inputElement.files;
+    if (!pickedFiles || pickedFiles.length === 0) return;
 
-    const fileName: string = file.name.toLowerCase();
-    const isAllowed: boolean =
-      fileName.endsWith('.pcap') || fileName.endsWith('.pcapng');
+    this.addFiles(Array.from(pickedFiles));
+  }
 
-    if (!isAllowed) return;
+  private addFiles(incomingFiles: File[]): void {
+    const allowedFiles: File[] = incomingFiles.filter((candidate: File) => {
+      const lowerName: string = candidate.name.toLowerCase();
+      return lowerName.endsWith('.pcap') || lowerName.endsWith('.pcapng');
+    });
 
-    this.selectedFile = file;
+    const existingKeys: Set<string> = new Set(
+      this.selectedFiles.map((existing: File) => `${existing.name}_${existing.size}`),
+    );
+
+    for (const newFile of allowedFiles) {
+      const fileKey: string = `${newFile.name}_${newFile.size}`;
+      if (existingKeys.has(fileKey)) continue;
+      this.selectedFiles.push(newFile);
+      existingKeys.add(fileKey);
+    }
+  }
+
+  public removeSelectedFileAt(index: number): void {
+    if (index < 0 || index >= this.selectedFiles.length) return;
+    this.selectedFiles.splice(index, 1);
   }
 
   @HostListener('window:dragenter', ['$event'])
@@ -187,16 +204,10 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
     event.preventDefault();
     this.isDropActive = false;
 
-    const file: File | null = event.dataTransfer?.files?.item(0) ?? null;
-    if (!file) return;
+    const droppedFiles: FileList | undefined = event.dataTransfer?.files;
+    if (!droppedFiles || droppedFiles.length === 0) return;
 
-    const fileName: string = file.name.toLowerCase();
-    const isAllowed: boolean =
-      fileName.endsWith('.pcap') || fileName.endsWith('.pcapng');
-
-    if (!isAllowed) return;
-
-    this.selectedFile = file;
+    this.addFiles(Array.from(droppedFiles));
   }
 
   public toggleFlight(masterIndex: number): void {
@@ -315,7 +326,7 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
   }
 
   public removeSelectedFile(): void {
-    this.selectedFile = null;
+    this.selectedFiles = [];
   }
 
   public exportFlights(): void {
@@ -420,47 +431,55 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
     return parts.join(' ');
   }
 
-  public uploadSelectedFile(): void {
-    if (!this.selectedFile || this.isUploading) return;
+  public uploadSelectedFiles(): void {
+    if (this.selectedFiles.length === 0 || this.isUploading) return;
 
-    const fileName: string = this.selectedFile.name;
-    const extractedFlightNumber: number | null =
-      this.extractFlightNumberFromFileName(fileName);
-
-    if (extractedFlightNumber !== null) {
-      const flightExists: boolean = this.isFlightAlreadyExists(
-        extractedFlightNumber,
-      );
-
-      if (flightExists) {
-        Swal.fire({
-          title: 'Flight already exists',
-          text: `Flight #${extractedFlightNumber} already exists in the system.`,
-          icon: 'warning',
-          background: '#120d22',
-          color: 'rgba(255, 255, 255, 0.88)',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#7c3aed',
-          customClass: {
-            popup: 'swal-dark-popup',
-            confirmButton: 'swal-confirm-btn',
-          },
-        });
-
-        return;
+    const duplicateFlightNumbers: number[] = [];
+    for (const candidateFile of this.selectedFiles) {
+      const extractedFlightNumber: number | null =
+        this.extractFlightNumberFromFileName(candidateFile.name);
+      if (
+        extractedFlightNumber !== null &&
+        this.isFlightAlreadyExists(extractedFlightNumber)
+      ) {
+        duplicateFlightNumbers.push(extractedFlightNumber);
       }
     }
 
-    this.isUploading = true;
+    if (duplicateFlightNumbers.length > 0) {
+      Swal.fire({
+        title: 'Flight already exists',
+        text: `Flight(s) #${duplicateFlightNumbers.join(', ')} already exist in the system.`,
+        icon: 'warning',
+        background: '#120d22',
+        color: 'rgba(255, 255, 255, 0.88)',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#7c3aed',
+        customClass: {
+          popup: 'swal-dark-popup',
+          confirmButton: 'swal-confirm-btn',
+        },
+      });
+      return;
+    }
 
-    this.telemetryDeviceService.uploadPcap(this.selectedFile).subscribe({
-      next: () => {
-        this.onUploadSuccess();
+    const filesToUpload: File[] = [...this.selectedFiles];
+
+    this.isUploading = true;
+    this.selectedFiles = [];
+
+    this.telemetryDeviceService.uploadPcap(filesToUpload[0]).subscribe({
+      next: (createdFlightId: number) => {
+        this.onUploadSuccess([createdFlightId]);
       },
       error: () => {
         this.isUploading = false;
       },
     });
+  }
+
+  public uploadSelectedFile(): void {
+    this.uploadSelectedFiles();
   }
 
   public getFlightAnalysisStatusText(flightId: number): string {
@@ -559,8 +578,13 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  private onUploadSuccess(): void {
+  private onUploadSuccess(uploadedFlightIds: number[]): void {
     this.expandedFlight = null;
+
+    for (const newFlightId of uploadedFlightIds) {
+      this.preparingMap.set(newFlightId, true);
+      this.progressService.connect(newFlightId);
+    }
 
     const existingFlightIds: Set<number> = new Set(
       this.flights.map((flight: FlightSummary) => flight.flightNumber),
@@ -571,27 +595,25 @@ export class FlightsOverviewComponent implements OnInit, OnDestroy {
       .subscribe((loadedFlights: FlightSummary[]) => {
         this.flights = loadedFlights ?? [];
 
-        this.parametersMap.clear();
-        this.rawAnomaliesMap.clear();
-
         this.flights.forEach((flight: FlightSummary) => {
           this.loadAnomaliesForFlight(flight.flightNumber);
         });
 
-        const newFlightsList: FlightSummary[] = this.flights.filter(
+        const discoveredNewFlights: FlightSummary[] = this.flights.filter(
           (flight: FlightSummary) =>
-            !existingFlightIds.has(flight.flightNumber),
+            !existingFlightIds.has(flight.flightNumber) &&
+            !uploadedFlightIds.includes(flight.flightNumber),
         );
 
-        newFlightsList.forEach((flight: FlightSummary) => {
+        discoveredNewFlights.forEach((flight: FlightSummary) => {
           this.preparingMap.set(flight.flightNumber, true);
           this.progressService.connect(flight.flightNumber);
         });
-      });
 
-    this.selectedFile = null;
-    this.isUploading = false;
-    this.closeUploadModal();
+        this.isUploading = false;
+        this.isUploadModalOpen = false;
+        this.isDropActive = false;
+      });
   }
 
   private executeDeleteFlight(flightNumber: number): void {

@@ -227,22 +227,27 @@
         (click)="onAddFlight()"
       >
         <img class="dropIcon" src="assets/images/file.png" />
-        <div class="dropText">Drag & drop PCAP here</div>
-        <div class="dropSubText">or click to browse · .pcap</div>
+        <div class="dropText">Drag & drop PCAP files here</div>
+        <div class="dropSubText">or click to browse · .pcap (multiple allowed)</div>
       </div>
 
-      <div class="filePreview" *ngIf="selectedFile">
-        <div class="fileItem">
+      <div class="filePreview" *ngIf="selectedFiles.length > 0">
+        <div
+          class="fileItem"
+          *ngFor="let pickedFile of selectedFiles; let pickedIndex = index"
+        >
           <div class="fileItemLeft">
             <span class="fileIconSmall">📄</span>
             <div class="fileDetails">
-              <span class="fileName">{{ selectedFile.name }}</span>
+              <span class="fileName">{{ pickedFile.name }}</span>
               <span class="fileSize"
-                >{{ (selectedFile.size / 1024).toFixed(1) }} KB</span
+                >{{ (pickedFile.size / 1024).toFixed(1) }} KB</span
               >
             </div>
           </div>
-          <button class="removeBtn" (click)="removeSelectedFile()">✕</button>
+          <button class="removeBtn" (click)="removeSelectedFileAt(pickedIndex)">
+            ✕
+          </button>
         </div>
       </div>
     </div>
@@ -257,10 +262,12 @@
       </button>
       <button
         class="uploadBtn"
-        [disabled]="!selectedFile || isUploading"
-        (click)="uploadSelectedFile()"
+        [disabled]="selectedFiles.length === 0 || isUploading"
+        (click)="uploadSelectedFiles()"
       >
-        <span *ngIf="!isUploading">Upload File</span>
+        <span *ngIf="!isUploading">
+          Upload {{ selectedFiles.length > 1 ? selectedFiles.length + ' Files' : 'File' }}
+        </span>
         <span *ngIf="isUploading" class="loadingContent">
           <span class="spinner"></span>
           Uploading...
@@ -272,6 +279,7 @@
       #fileInput
       type="file"
       accept=".pcap,.pcapng"
+      multiple
       class="hiddenFileInput"
       (change)="onFilePicked($event)"
     />

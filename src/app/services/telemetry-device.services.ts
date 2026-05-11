@@ -7,16 +7,15 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class TelemetryDeviceService {
-  // private readonly baseUrl: string = 'https://localhost:7130';
   private readonly baseUrl: string = environment.telemetryApi;
 
   public constructor(private readonly httpClient: HttpClient) {}
 
-  public uploadPcap(file: File): Observable<unknown> {
+  public uploadPcap(file: File): Observable<number> {
     const formData: FormData = new FormData();
     formData.append('pcapFile', file, file.name);
 
-    return this.httpClient.post(
+    return this.httpClient.post<number>(
       `${this.baseUrl}/packets/decode-stream-file`,
       formData
     );
