@@ -664,6 +664,54 @@ export class AnalyzeChartsService {
               document.addEventListener('mousemove', onMouseMove);
               document.addEventListener('mouseup', onMouseUp);
 
+              let selLabel: Highcharts.SVGElement | null = null;
+              let selDragging = false;
+              let selStartVal = 0;
+              let selStartClientX = 0;
+
+              const onSelMouseDown = (e: MouseEvent) => {
+                if (e.ctrlKey || e.button !== 0) return;
+                const rect = chart.container.getBoundingClientRect();
+                const px = e.clientX - rect.left - chart.plotLeft;
+                if (px < 0 || px > chart.plotWidth) return;
+                selDragging = true;
+                selStartVal = chart.xAxis[0].toValue(px);
+                selStartClientX = e.clientX;
+              };
+
+              const onSelMouseMove = (e: MouseEvent) => {
+                if (!selDragging) return;
+                const rect = chart.container.getBoundingClientRect();
+                const px = Math.max(0, Math.min(e.clientX - rect.left - chart.plotLeft, chart.plotWidth));
+                const curVal = chart.xAxis[0].toValue(px);
+                const durMs = Math.abs(curVal - selStartVal);
+                if (durMs < 500) { selLabel?.attr({ visibility: 'hidden' }); return; }
+                const durSec = Math.round(durMs / 1000);
+                const m = Math.floor(durSec / 60), s = durSec % 60;
+                const text = durSec < 60 ? `${durSec}s`
+                  : durSec < 3600 ? `${m}m ${s}s`
+                  : `${Math.floor(m / 60)}h ${m % 60}m`;
+                const centerX = (selStartClientX + e.clientX) / 2 - rect.left - 28;
+                const labelY = chart.plotTop + 10;
+                if (!selLabel) {
+                  selLabel = (chart.renderer as any).label(text, centerX, labelY)
+                    .attr({ fill: 'rgba(20,16,40,0.9)', stroke: 'rgba(139,92,246,0.55)', 'stroke-width': 1, r: 4, padding: 5, zIndex: 20 })
+                    .css({ color: '#d4caff', fontSize: '12px', fontWeight: '600' })
+                    .add();
+                } else {
+                  selLabel.attr({ text, x: centerX, y: labelY, visibility: 'visible' });
+                }
+              };
+
+              const onSelMouseUp = () => {
+                selDragging = false;
+                selLabel?.attr({ visibility: 'hidden' });
+              };
+
+              chart.container.addEventListener('mousedown', onSelMouseDown, true);
+              document.addEventListener('mousemove', onSelMouseMove);
+              document.addEventListener('mouseup', onSelMouseUp);
+
               const nav = (chart as any).navigator;
               if (nav) {
                 let navRafId: number | null = null;
