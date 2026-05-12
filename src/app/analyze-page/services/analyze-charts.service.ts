@@ -693,6 +693,7 @@ export class AnalyzeChartsService {
         legend: { enabled: false },
         xAxis: {
           type: 'datetime',
+          crosshair: false,
           gridLineColor: 'rgba(255,255,255,0.08)',
           gridLineWidth: 1,
           labels: { style: { color: '#cfcfe6' } },
@@ -801,7 +802,8 @@ export class AnalyzeChartsService {
           height: 36,
           outlineColor: 'rgba(100, 88, 160, 0.25)',
           outlineWidth: 1,
-          maskFill: 'rgba(95, 85, 180, 0.09)',
+          maskInside: false,
+          maskFill: 'rgba(8, 6, 22, 0.72)',
           handles: {
             backgroundColor: 'rgba(22, 19, 42, 0.96)',
             borderColor: 'rgba(115, 100, 185, 0.45)',

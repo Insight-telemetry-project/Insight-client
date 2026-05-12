@@ -600,6 +600,10 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
     return param;
   }
 
+  public trackByGridItem(index: number, item: GridChartItem): string {
+    return item.param;
+  }
+
   public getParamOrder(param: string): number {
     const index = this.filteredParameters.indexOf(param);
     return index === -1 ? 0 : index;
