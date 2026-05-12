@@ -12,9 +12,6 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root',
 })
 export class FlightArchiveService {
-  // private readonly baseUrl: string =
-  //   'https://localhost:7219/TelemetryDataArchive';
-
   private readonly baseUrl: string = `${environment.archiveApi}/TelemetryDataArchive`;
   public constructor(private readonly http: HttpClient) {}
 
