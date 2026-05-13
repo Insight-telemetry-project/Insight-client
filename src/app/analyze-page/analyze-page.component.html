@@ -369,7 +369,9 @@
             ? related.relatedForParam
               ? "Related: " + related.relatedForParam
               : "Select a parameter to see related parameters"
-            : "Historical Similar Points for " + related.relatedForParam
+            : related.relatedForParam
+              ? "Historical Similar Points for " + related.relatedForParam
+              : "Select a parameter to see historical similarities"
         }}
       </div>
 
@@ -422,7 +424,7 @@
             </div>
           </div>
 
-          <div class="historicalCardsList">
+          <div class="historicalCardsList" *ngIf="related.relatedForParam">
             <div
               class="timeGroup"
               *ngFor="

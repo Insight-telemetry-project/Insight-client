@@ -814,6 +814,13 @@ export class AnalyzePageComponent implements OnInit, AfterViewInit, OnDestroy {
       chartInstance,
     );
 
+    if (this.syncingParam) {
+      const extremes = this.zoomedExtremesMap.get(this.syncingParam);
+      if (extremes) {
+        chartInstance.xAxis[0].setExtremes(extremes.min, extremes.max, true, false);
+      }
+    }
+
     chartInstance.redraw(false);
   }
 
