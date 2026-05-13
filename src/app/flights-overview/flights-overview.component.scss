@@ -1155,6 +1155,34 @@
   opacity: 0.7;
   margin-bottom: 10px;
 }
+.noSearchResults {
+  width: 100%;
+  padding: 48px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.noSearchIcon {
+  font-size: 32px;
+  opacity: 0.35;
+}
+
+.noSearchText {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.noSearchSub {
+  font-size: 13px;
+  opacity: 0.45;
+  margin: 0;
+}
+
 .analysisPreparing {
   display: flex;
   align-items: center;

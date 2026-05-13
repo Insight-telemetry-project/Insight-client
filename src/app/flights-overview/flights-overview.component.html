@@ -51,6 +51,12 @@
       </button>
     </div>
   </div>
+  <div class="noSearchResults" *ngIf="flights.length > 0 && getVisibleFlights().length === 0">
+    <span class="noSearchIcon">⌕</span>
+    <p class="noSearchText">No flights found for "<strong>{{ flightSearchTerm }}</strong>"</p>
+    <p class="noSearchSub">Try a different flight number or name</p>
+  </div>
+
   <div class="flightsContainer" *ngIf="flights.length > 0; else noFlights">
     <div class="flightCard" *ngFor="let flight of getVisibleFlights()">
       <div

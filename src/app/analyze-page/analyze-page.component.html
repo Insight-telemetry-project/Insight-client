@@ -135,6 +135,12 @@
           </div>
         </div>
       </div>
+      <div class="noSearchResults" *ngIf="filteredParameters.length === 0 && paramSearchText.length > 0">
+        <span class="noSearchIcon">⌕</span>
+        <p class="noSearchText">No parameters found for "<strong>{{ paramSearchText }}</strong>"</p>
+        <p class="noSearchSub">Try a different parameter name</p>
+      </div>
+
       <div class="paramsGrid">
         <button
           class="paramCard"
